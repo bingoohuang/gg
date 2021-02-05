@@ -787,10 +787,10 @@ func TestComplexType_GetRealData(t *testing.T) {
 	assert.Equal(t, goo.ComplexType, numberType.Type())
 
 	complexType := numberType.(goo.Complex)
-	assert.Equal(t, 14.3, complexType.GetRealData(complexNumber))
+	assert.Equal(t, 14.3, complexType.RealData(complexNumber))
 
 	assert.Panics(t, func() {
-		complexType.GetRealData(23)
+		complexType.RealData(23)
 	})
 }
 
@@ -803,10 +803,10 @@ func TestComplexType_GetImaginaryData(t *testing.T) {
 	assert.Equal(t, goo.ComplexType, numberType.Type())
 
 	complexType := numberType.(goo.Complex)
-	assert.Equal(t, 22.5, complexType.GetImaginaryData(complexNumber))
+	assert.Equal(t, 22.5, complexType.ImaginaryData(complexNumber))
 
 	assert.Panics(t, func() {
-		complexType.GetImaginaryData(23)
+		complexType.ImaginaryData(23)
 	})
 }
 

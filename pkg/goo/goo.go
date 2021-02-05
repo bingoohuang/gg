@@ -49,7 +49,7 @@ func (t intType) Methods() []Method {
 	num := t.MethodNum()
 	methods := make([]Method, num)
 	for i := 0; i < num; i++ {
-		methods[i] = ToMemberMethod(t.typ.Method(i))
+		methods[i] = ConvertGoMethod(t.typ.Method(i))
 	}
 	return methods
 }
@@ -122,7 +122,7 @@ type Field interface {
 	Get(instance interface{}) interface{}
 }
 
-type memberField struct {
+type field struct {
 	name        string
 	typ         Type
 	tags        reflect.StructTag
@@ -131,8 +131,8 @@ type memberField struct {
 	index       []int
 }
 
-func newMemberField(name string, typ Type, isAnonymous, exported bool, tags reflect.StructTag, index []int) memberField {
-	return memberField{
+func newField(name string, typ Type, isAnonymous, exported bool, tags reflect.StructTag, index []int) field {
+	return field{
 		name:        name,
 		typ:         typ,
 		isAnonymous: isAnonymous,
@@ -142,14 +142,14 @@ func newMemberField(name string, typ Type, isAnonymous, exported bool, tags refl
 	}
 }
 
-func (f memberField) Name() string      { return f.name }
-func (f memberField) IsAnonymous() bool { return f.isAnonymous }
-func (f memberField) IsExported() bool  { return f.isExported }
-func (f memberField) CanSet() bool      { return f.isExported }
-func (f memberField) Type() Type        { return f.typ }
-func (f memberField) String() string    { return f.name }
+func (f field) Name() string      { return f.name }
+func (f field) IsAnonymous() bool { return f.isAnonymous }
+func (f field) IsExported() bool  { return f.isExported }
+func (f field) CanSet() bool      { return f.isExported }
+func (f field) Type() Type        { return f.typ }
+func (f field) String() string    { return f.name }
 
-func (f memberField) Tags() (fieldTags []Tag) {
+func (f field) Tags() (fieldTags []Tag) {
 	tags := f.tags
 	for tags != "" {
 		i := 0
@@ -194,14 +194,14 @@ func (f memberField) Tags() (fieldTags []Tag) {
 	return fieldTags
 }
 
-func (f memberField) TagByName(name string) (Tag, error) {
+func (f field) TagByName(name string) (Tag, error) {
 	if v, ok := f.tags.Lookup(name); ok {
 		return Tag{Name: name, Value: v}, nil
 	}
 	return Tag{}, fmt.Errorf("Tag named %s not found ", name)
 }
 
-func (f memberField) Set(instance interface{}, value interface{}) {
+func (f field) Set(instance interface{}, value interface{}) {
 	if !f.CanSet() {
 		panic("Field cannot be set because of it is an unexported f")
 	}
@@ -216,7 +216,7 @@ func (f memberField) Set(instance interface{}, value interface{}) {
 	v.Set(reflect.ValueOf(value))
 }
 
-func (f memberField) Get(instance interface{}) interface{} {
+func (f field) Get(instance interface{}) interface{} {
 	typ := TypeOf(instance)
 	if !typ.IsStruct() {
 		panic("Instance must only be a struct")
@@ -268,37 +268,36 @@ func (t funcType) OutNum() int { return t.typ.NumOut() }
 
 func (t funcType) OutTypes() []Type {
 	num := t.OutNum()
-	returnTypes := make([]Type, num)
+	outTypes := make([]Type, num)
 	for i := 0; i < num; i++ {
-		returnTypes[i] = FromGoType(t.typ.Out(i))
+		outTypes[i] = FromGoType(t.typ.Out(i))
 	}
-	return returnTypes
+	return outTypes
 }
 
 func (t funcType) Call(args []interface{}) []interface{} {
 	num := t.InNum()
-	if (args == nil && num != 0) || (args != nil && len(args) != num) {
+	if len(args) != num {
 		panic("Parameter counts don't match argument counts")
 	}
-	inputs := make([]reflect.Value, num)
+
+	in := make([]reflect.Value, num)
+	inTypes := t.InTypes()
 	for i, arg := range args {
 		if arg != nil {
-			inputs[i] = reflect.ValueOf(arg)
-			continue
-		}
-
-		if t := t.InTypes()[i]; t.IsPtr() {
-			inputs[i] = reflect.New(t.PtrType()).Elem()
+			in[i] = reflect.ValueOf(arg)
+		} else if t := inTypes[i]; t.IsPtr() {
+			in[i] = reflect.New(t.PtrType()).Elem()
 		} else {
-			inputs[i] = reflect.New(t.GoType()).Elem()
+			in[i] = reflect.New(t.GoType()).Elem()
 		}
 	}
-	results := t.val.Call(inputs)
-	outputs := make([]interface{}, len(results))
+	results := t.val.Call(in)
+	out := make([]interface{}, len(results))
 	for i, outputParam := range results {
-		outputs[i] = outputParam.Interface()
+		out[i] = outputParam.Interface()
 	}
-	return outputs
+	return out
 }
 
 type Map interface {
@@ -326,9 +325,7 @@ func (m mapType) KeyType() Type   { return m.keyType }
 func (m mapType) ValueType() Type { return m.valueType }
 
 func (m mapType) New() interface{} {
-	mapType := reflect.MapOf(m.keyType.GoType(), m.valueType.GoType())
-	instance := reflect.MakeMapWithSize(mapType, 0)
-	return instance.Interface()
+	return reflect.MakeMapWithSize(reflect.MapOf(m.keyType.GoType(), m.valueType.GoType()), 0).Interface()
 }
 
 type Method interface {
@@ -340,63 +337,62 @@ type Method interface {
 	InTypes() []Type
 }
 
-type memberMethod struct {
+type method struct {
 	typ        reflect.Type
 	name       string
 	isExported bool
-	fun        reflect.Value
+	fn         reflect.Value
 	index      int
 }
 
-func newMemberMethod(methodType reflect.Type, name string, exported bool, fun reflect.Value, index int) memberMethod {
-	return memberMethod{
+func newMethod(methodType reflect.Type, name string, exported bool, fn reflect.Value, index int) method {
+	return method{
 		typ:        methodType,
 		name:       name,
 		isExported: exported,
-		fun:        fun,
+		fn:         fn,
 		index:      index,
 	}
 }
 
-func (m memberMethod) Name() string     { return m.name }
-func (m memberMethod) IsExported() bool { return m.isExported }
-func (m memberMethod) String() string   { return m.name }
-func (m memberMethod) OutNum() int      { return m.typ.NumOut() }
-func (m memberMethod) InNum() int       { return m.typ.NumIn() }
+func (m method) Name() string     { return m.name }
+func (m method) IsExported() bool { return m.isExported }
+func (m method) String() string   { return m.name }
+func (m method) OutNum() int      { return m.typ.NumOut() }
+func (m method) InNum() int       { return m.typ.NumIn() }
 
-func (m memberMethod) Invoke(obj interface{}, args ...interface{}) []interface{} {
+func (m method) Invoke(obj interface{}, args ...interface{}) []interface{} {
 	typ := TypeOf(obj)
 	if !typ.IsStruct() {
 		panic("obj must be a struct instance")
 	}
 
-	if num := m.InNum(); (args == nil && num != 1) || (args != nil && len(args) != num-1) {
+	if num := m.InNum(); len(args) != num-1 {
 		panic("Parameter counts don't match argument counts")
 	}
 
-	tempArray := []interface{}{obj}
-
-	args = append(tempArray[:], args[:]...)
-	inputs := make([]reflect.Value, len(args))
+	args = append([]interface{}{obj}, args[:]...)
+	in := make([]reflect.Value, len(args))
+	inTypes := m.InTypes()
 	for i, arg := range args {
 		if arg != nil {
-			inputs[i] = reflect.ValueOf(arg)
-		} else if t := m.InTypes()[i]; t.IsPtr() {
-			inputs[i] = reflect.New(t.PtrType()).Elem()
+			in[i] = reflect.ValueOf(arg)
+		} else if t := inTypes[i]; t.IsPtr() {
+			in[i] = reflect.New(t.PtrType()).Elem()
 		} else {
-			inputs[i] = reflect.New(t.GoType()).Elem()
+			in[i] = reflect.New(t.GoType()).Elem()
 		}
 	}
 
-	results := typ.GoType().Method(m.index).Func.Call(inputs)
-	outputs := make([]interface{}, len(results))
+	results := typ.GoType().Method(m.index).Func.Call(in)
+	out := make([]interface{}, len(results))
 	for i, outputParam := range results {
-		outputs[i] = outputParam.Interface()
+		out[i] = outputParam.Interface()
 	}
-	return outputs
+	return out
 }
 
-func (m memberMethod) OutTypes() []Type {
+func (m method) OutTypes() []Type {
 	num := m.OutNum()
 	types := make([]Type, num)
 	for i := 0; i < num; i++ {
@@ -405,7 +401,7 @@ func (m memberMethod) OutTypes() []Type {
 	return types
 }
 
-func (m memberMethod) InTypes() []Type {
+func (m method) InTypes() []Type {
 	num := m.InNum()
 	types := make([]Type, num)
 	for i := 0; i < num; i++ {
@@ -450,9 +446,10 @@ type signedType struct {
 	*baseType
 }
 
-func newSignedIntegerType(baseTyp *baseType) signedType { return signedType{baseType: baseTyp} }
-
-func (t signedType) Type() NumberType { return IntType }
+func newSignedType(baseTyp *baseType) signedType { return signedType{baseType: baseTyp} }
+func (t signedType) Type() NumberType            { return IntType }
+func (t signedType) IsSigned() bool              { return true }
+func (t signedType) New() interface{}            { return reflect.New(t.GoType()).Interface() }
 
 func (t signedType) BitSize() BitSize {
 	switch t.kind {
@@ -472,8 +469,6 @@ func (t signedType) BitSize() BitSize {
 	}
 }
 
-func (t signedType) IsSigned() bool { return true }
-
 func (t signedType) Overflow(val interface{}) bool {
 	valType := TypeOf(val)
 	if !valType.IsNumber() || IntType != valType.(Number).Type() || !valType.(Integer).IsSigned() {
@@ -488,8 +483,6 @@ func (t signedType) Overflow(val interface{}) bool {
 		Bit32 == s && (math.MinInt32 > iv || math.MaxInt32 < iv)
 }
 
-func (t signedType) New() interface{} { return reflect.New(t.GoType()).Interface() }
-
 func (t signedType) ToString(val interface{}) string {
 	valType := TypeOf(val)
 	if !valType.IsNumber() || IntType != valType.(Number).Type() || !valType.(Integer).IsSigned() {
@@ -502,8 +495,10 @@ type unsignedType struct {
 	*baseType
 }
 
-func newUnsignedIntegerType(baseTyp *baseType) unsignedType { return unsignedType{baseType: baseTyp} }
-func (t unsignedType) Type() NumberType                     { return IntType }
+func newUnsignedType(baseTyp *baseType) unsignedType { return unsignedType{baseType: baseTyp} }
+func (t unsignedType) Type() NumberType              { return IntType }
+func (t unsignedType) IsSigned() bool                { return false }
+func (t unsignedType) New() interface{}              { return reflect.New(t.GoType()).Interface() }
 
 func (t unsignedType) BitSize() BitSize {
 	switch t.kind {
@@ -523,8 +518,6 @@ func (t unsignedType) BitSize() BitSize {
 	}
 }
 
-func (t unsignedType) IsSigned() bool { return false }
-
 func (t unsignedType) Overflow(val interface{}) bool {
 	valType := TypeOf(val)
 	if !valType.IsNumber() || IntType != valType.(Number).Type() || valType.(Integer).IsSigned() {
@@ -538,8 +531,6 @@ func (t unsignedType) Overflow(val interface{}) bool {
 		Bit16 == size && math.MaxUint16 < v ||
 		Bit32 == size && math.MaxUint32 < v
 }
-
-func (t unsignedType) New() interface{} { return reflect.New(t.GoType()).Interface() }
 
 func (t unsignedType) ToString(val interface{}) string {
 	typ := TypeOf(val)
@@ -584,8 +575,8 @@ func (t floatType) ToString(val interface{}) string {
 
 type Complex interface {
 	Number
-	GetImaginaryData(val interface{}) interface{}
-	GetRealData(val interface{}) interface{}
+	ImaginaryData(val interface{}) interface{}
+	RealData(val interface{}) interface{}
 }
 
 type complexType struct {
@@ -605,7 +596,7 @@ func BitSizeIf(k, ifv reflect.Kind, a, b BitSize) BitSize {
 	return b
 }
 
-func (t complexType) GetImaginaryData(val interface{}) interface{} {
+func (t complexType) ImaginaryData(val interface{}) interface{} {
 	typ := TypeOf(val)
 	if !typ.IsNumber() || ComplexType != typ.(Number).Type() {
 		panic("Given type is not compatible with t")
@@ -617,7 +608,7 @@ func (t complexType) GetImaginaryData(val interface{}) interface{} {
 	return imag(val.(complex128))
 }
 
-func (t complexType) GetRealData(val interface{}) interface{} {
+func (t complexType) RealData(val interface{}) interface{} {
 	typ := TypeOf(val)
 	if !typ.IsNumber() || ComplexType != typ.(Number).Type() {
 		panic("Given type is not compatible with t")
@@ -696,47 +687,31 @@ func (t stringType) ToNumber(val string, number Number) (interface{}, error) {
 	}
 
 	if numberType := number.Type(); IntType == numberType {
-		return t.getIntValue(val, number.(Integer))
+		return ParseInt(val, number.(Integer))
 	} else if FloatType == numberType {
-		return t.getFloatValue(val, number.(Float))
+		return getFloatValue(val, number.(Float))
 	}
 	return nil, errors.New("complex numbers does not support for now")
 }
 
 func (t stringType) ToInt(val string) int {
-	sizeInBits := bits.UintSize
 	var result interface{}
-	var err error
-	if sizeInBits == 32 {
-		result, err = t.getIntegerValueByBitSize(val, Bit32, true)
+	if bits.UintSize == 32 {
+		result = parseInt(val, Bit32, true)
 	} else {
-		result, err = t.getIntegerValueByBitSize(val, Bit64, true)
+		result = parseInt(val, Bit64, true)
 	}
-	PanicIf(err)
 
-	if sizeInBits == 32 {
+	if bits.UintSize == 32 {
 		return result.(int)
 	}
 	return int(result.(int64))
 }
 
-func (t stringType) ToInt8(val string) int8 {
-	result, err := t.getIntegerValueByBitSize(val, Bit8, true)
-	PanicIf(err)
-	return result.(int8)
-}
-
-func (t stringType) ToInt16(val string) int16 {
-	result, err := t.getIntegerValueByBitSize(val, Bit16, true)
-	PanicIf(err)
-	return result.(int16)
-}
-
-func (t stringType) ToInt32(val string) int32 {
-	result, err := t.getIntegerValueByBitSize(val, Bit32, true)
-	PanicIf(err)
-	return result.(int32)
-}
+func (t stringType) ToInt8(val string) int8   { return parseInt(val, Bit8, true).(int8) }
+func (t stringType) ToInt16(val string) int16 { return parseInt(val, Bit16, true).(int16) }
+func (t stringType) ToInt32(val string) int32 { return parseInt(val, Bit32, true).(int32) }
+func (t stringType) ToInt64(val string) int64 { return parseInt(val, Bit64, true).(int64) }
 
 func PanicIf(err error) {
 	if err != nil {
@@ -744,76 +719,43 @@ func PanicIf(err error) {
 	}
 }
 
-func (t stringType) ToInt64(val string) int64 {
-	result, err := t.getIntegerValueByBitSize(val, Bit64, true)
-	PanicIf(err)
-	return result.(int64)
-}
-
 func (t stringType) ToUint(val string) uint {
-	sizeInBits := bits.UintSize
 	var result interface{}
-	var err error
-	if sizeInBits == 32 {
-		result, err = t.getIntegerValueByBitSize(val, Bit32, false)
+	if bits.UintSize == 32 {
+		result = parseInt(val, Bit32, false)
 	} else {
-		result, err = t.getIntegerValueByBitSize(val, Bit64, false)
+		result = parseInt(val, Bit64, false)
 	}
 
-	PanicIf(err)
-
-	if sizeInBits == 32 {
+	if bits.UintSize == 32 {
 		return result.(uint)
 	}
 	lastValue := result.(uint64)
 	return uint(lastValue)
 }
 
-func (t stringType) ToUint8(val string) uint8 {
-	result, err := t.getIntegerValueByBitSize(val, Bit8, false)
+func (t stringType) ToUint8(val string) uint8     { return parseInt(val, Bit8, false).(uint8) }
+func (t stringType) ToUint16(val string) uint16   { return parseInt(val, Bit16, false).(uint16) }
+func (t stringType) ToUint32(val string) uint32   { return parseInt(val, Bit32, false).(uint32) }
+func (t stringType) ToUint64(val string) uint64   { return parseInt(val, Bit64, false).(uint64) }
+func (t stringType) ToFloat32(val string) float32 { return float32(ParseFloat(val, int(Bit32))) }
+func (t stringType) ToFloat64(val string) float64 { return ParseFloat(val, int(Bit64)) }
+
+func ParseFloat(val string, bitSize int) float64 {
+	v, err := strconv.ParseFloat(val, bitSize)
 	PanicIf(err)
-	return result.(uint8)
+	return v
 }
 
-func (t stringType) ToUint16(val string) uint16 {
-	result, err := t.getIntegerValueByBitSize(val, Bit16, false)
-	PanicIf(err)
-	return result.(uint16)
-}
-
-func (t stringType) ToUint32(val string) uint32 {
-	result, err := t.getIntegerValueByBitSize(val, Bit32, false)
-	PanicIf(err)
-	return result.(uint32)
-}
-
-func (t stringType) ToUint64(val string) uint64 {
-	result, err := t.getIntegerValueByBitSize(val, Bit64, false)
-	PanicIf(err)
-	return result.(uint64)
-}
-
-func (t stringType) ToFloat32(val string) float32 {
-	result, err := strconv.ParseFloat(val, int(Bit32))
-	PanicIf(err)
-	return float32(result)
-}
-
-func (t stringType) ToFloat64(val string) float64 {
-	result, err := strconv.ParseFloat(val, int(Bit64))
-	PanicIf(err)
-	return result
-}
-
-func (t stringType) getIntValue(strValue string, integer Integer) (resultValue interface{}, err error) {
+func ParseInt(s string, typ Integer) (resultValue interface{}, err error) {
 	var value interface{}
 	var signedValue int64
 	var unsignedValue uint64
-	if integer.IsSigned() {
-		signedValue, err = strconv.ParseInt(strValue, 10, 64)
+	if typ.IsSigned() {
+		signedValue, err = strconv.ParseInt(s, 10, 64)
 		value = signedValue
 	} else {
-		unsignedValue, err = strconv.ParseUint(strValue, 10, 64)
+		unsignedValue, err = strconv.ParseUint(s, 10, 64)
 		value = unsignedValue
 	}
 
@@ -821,35 +763,34 @@ func (t stringType) getIntValue(strValue string, integer Integer) (resultValue i
 		return nil, err
 	}
 
-	if integer.Overflow(value) {
-		return nil, errors.New("The given value is out of range of the integer type : " + integer.String())
+	if typ.Overflow(value) {
+		return nil, errors.New("The given value is out of range of the typ type : " + typ.String())
 	}
 
-	integerVal := reflect.New(integer.GoType()).Elem()
-	if integer.IsSigned() {
-		integerVal.SetInt(signedValue)
+	intVal := reflect.New(typ.GoType()).Elem()
+	if typ.IsSigned() {
+		intVal.SetInt(signedValue)
 	} else {
-		integerVal.SetUint(unsignedValue)
+		intVal.SetUint(unsignedValue)
 	}
-	resultValue = integerVal.Interface()
+	resultValue = intVal.Interface()
 	return
 }
 
-func (t stringType) getIntegerValueByBitSize(strValue string, bitSize BitSize, isSigned bool) (resultValue interface{}, err error) {
+func parseInt(s string, bitSize BitSize, isSigned bool) (result interface{}) {
 	if Bit128 == bitSize {
 		panic("BitSize does not support 128")
 	}
 
 	var signedValue int64
 	var unsignedValue uint64
+	var err error
 	if isSigned {
-		signedValue, err = strconv.ParseInt(strValue, 10, 64)
+		signedValue, err = strconv.ParseInt(s, 10, 64)
 	} else {
-		unsignedValue, err = strconv.ParseUint(strValue, 10, 64)
+		unsignedValue, err = strconv.ParseUint(s, 10, 64)
 	}
-	if err != nil {
-		return nil, err
-	}
+	PanicIf(err)
 
 	overflow := false
 	if isSigned {
@@ -863,31 +804,31 @@ func (t stringType) getIntegerValueByBitSize(strValue string, bitSize BitSize, i
 	}
 
 	if overflow {
-		return nil, errors.New("the given value is out of range of the integer type")
+		panic("the given value is out of range of the integer type")
 	}
 
 	if isSigned {
 		if Bit8 == bitSize {
-			return int8(signedValue), nil
+			return int8(signedValue)
 		} else if Bit16 == bitSize {
-			return int16(signedValue), nil
+			return int16(signedValue)
 		} else if Bit32 == bitSize {
-			return int32(signedValue), nil
+			return int32(signedValue)
 		}
-		return signedValue, nil
+		return signedValue
 	}
 
 	if Bit8 == bitSize {
-		return uint8(unsignedValue), nil
+		return uint8(unsignedValue)
 	} else if Bit16 == bitSize {
-		return uint16(unsignedValue), nil
+		return uint16(unsignedValue)
 	} else if Bit32 == bitSize {
-		return uint32(unsignedValue), nil
+		return uint32(unsignedValue)
 	}
-	return unsignedValue, nil
+	return unsignedValue
 }
 
-func (t stringType) getFloatValue(strValue string, float Float) (resultValue interface{}, err error) {
+func getFloatValue(strValue string, float Float) (resultValue interface{}, err error) {
 	var value float64
 	value, err = strconv.ParseFloat(strValue, 64)
 	if err != nil {
@@ -993,7 +934,7 @@ func (t structType) Methods() (methods []Method) {
 		} else {
 			method = t.typ.Method(i)
 		}
-		methods = append(methods, ToMemberMethod(method))
+		methods = append(methods, ConvertGoMethod(method))
 	}
 	return methods
 }
@@ -1191,31 +1132,33 @@ func sanitizedName(str string) string {
 }
 
 func getActualTypeFromBaseType(b *baseType) Type {
-	if b.IsFunc() {
+	switch {
+	case b.IsFunc():
 		return newFuncType(b)
-	} else if b.IsInterface() {
+	case b.IsInterface():
 		return newIntType(b)
-	} else if b.IsStruct() {
+	case b.IsStruct():
 		return newStructType(b)
-	} else if b.IsNumber() {
-		if IsSigned(b.typ) {
-			return newSignedIntegerType(b)
-		} else if IsUnsigned(b.typ) {
-			return newUnsignedIntegerType(b)
-		} else if IsFloat(b.typ) {
+	case b.IsNumber():
+		switch {
+		case IsSigned(b.typ):
+			return newSignedType(b)
+		case IsUnsigned(b.typ):
+			return newUnsignedType(b)
+		case IsFloat(b.typ):
 			return newFloatType(b)
-		} else if IsComplex(b.typ) {
+		case IsComplex(b.typ):
 			return newComplexType(b)
 		}
-	} else if b.IsString() {
+	case b.IsString():
 		return newStringType(b)
-	} else if b.IsBool() {
+	case b.IsBool():
 		return newBoolType(b)
-	} else if b.IsMap() {
+	case b.IsMap():
 		return newMapType(b)
-	} else if b.IsArray() {
+	case b.IsArray():
 		return newArrayType(b)
-	} else if b.IsSlice() {
+	case b.IsSlice():
 		return newSliceType(b)
 	}
 	panic(b.Name() + " isn't supported for now")
@@ -1225,9 +1168,9 @@ func getTypeName(typ reflect.Type, val reflect.Value) string {
 	defer func() { recover() }()
 	switch typ.Kind() {
 	case reflect.Struct, reflect.Interface:
-		return getBaseTypeName(typ)
+		return GoTypeName(typ)
 	case reflect.Func:
-		return getFuncName(val)
+		return GoFuncName(val)
 	}
 	return typ.Name()
 }
@@ -1256,18 +1199,16 @@ func GoPtrTypeAndValue(obj interface{}) (reflect.Type, reflect.Value) {
 	}
 
 	var ptrType reflect.Type
+	var ptrVal reflect.Value
 	if typ.Kind() == reflect.Ptr {
 		ptrType = typ
+		ptrVal = reflect.ValueOf(obj).Elem()
 	}
 
-	var ptrVal reflect.Value
-	if v := reflect.ValueOf(obj); v.Kind() == reflect.Ptr {
-		ptrVal = v.Elem()
-	}
 	return ptrType, ptrVal
 }
 
-func getBaseTypeName(typ reflect.Type) string {
+func GoTypeName(typ reflect.Type) string {
 	name := typ.Name()
 	if name != "" {
 		return name
@@ -1279,7 +1220,7 @@ func getPkgName(typ reflect.Type, val reflect.Value) string {
 	defer func() { recover() }()
 
 	if reflect.Func == typ.Kind() {
-		return getFuncPkgName(val)
+		return FuncPkgName(val)
 	}
 	if i := strings.LastIndex(typ.String(), "."); i >= 0 {
 		return typ.String()[:i]
@@ -1291,12 +1232,12 @@ func getPkgFullName(typ reflect.Type, val reflect.Value) string {
 	defer func() { recover() }()
 
 	if reflect.Func == typ.Kind() {
-		return getFuncPkgFullName(val)
+		return FuncPkgFullName(val)
 	}
 	return sanitizedName(typ.PkgPath())
 }
 
-func getFuncName(val reflect.Value) string {
+func GoFuncName(val reflect.Value) string {
 	fullName := runtime.FuncForPC(val.Pointer()).Name()
 	if pos := strings.LastIndex(fullName, "."); pos < 0 {
 		return fullName[pos+1:]
@@ -1304,7 +1245,7 @@ func getFuncName(val reflect.Value) string {
 	return fullName
 }
 
-func getFuncPkgFullName(val reflect.Value) string {
+func FuncPkgFullName(val reflect.Value) string {
 	fullName := runtime.FuncForPC(val.Pointer()).Name()
 	if pos := strings.LastIndex(fullName, "."); pos < 0 {
 		return fullName[:pos]
@@ -1312,8 +1253,8 @@ func getFuncPkgFullName(val reflect.Value) string {
 	return sanitizedName(fullName)
 }
 
-func getFuncPkgName(val reflect.Value) string {
-	fullName := getFuncPkgFullName(val)
+func FuncPkgName(val reflect.Value) string {
+	fullName := FuncPkgFullName(val)
 	if pos := strings.LastIndex(fullName, "."); pos < 0 {
 		return fullName[pos+1:]
 	}
@@ -1321,14 +1262,14 @@ func getFuncPkgName(val reflect.Value) string {
 }
 
 func ConvertGoField(f reflect.StructField) Field {
-	return newMemberField(f.Name, FromGoType(f.Type), f.Anonymous, IsFieldExported(f), f.Tag, f.Index)
+	return newField(f.Name, FromGoType(f.Type), f.Anonymous, IsFieldExported(f), f.Tag, f.Index)
 }
 
 func IsFieldExported(f reflect.StructField) bool { return unicode.IsUpper(rune(f.Name[0])) }
 func IsMethodExported(m reflect.Method) bool     { return unicode.IsUpper(rune(m.Name[0])) }
 
-func ToMemberMethod(m reflect.Method) Method {
-	return newMemberMethod(m.Type, m.Name, IsMethodExported(m), m.Func, m.Index)
+func ConvertGoMethod(m reflect.Method) Method {
+	return newMethod(m.Type, m.Name, IsMethodExported(m), m.Func, m.Index)
 }
 
 func IsNumber(typ reflect.Type) bool {

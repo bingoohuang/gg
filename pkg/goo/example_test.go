@@ -19,23 +19,16 @@ func MyFunc(string, int, MyStruct) (string, error) {
 }
 
 func ExampleTypeOf() {
-	testFunctionType := goo.TypeOf(MyFunc)
-	if testFunctionType.IsFunc() {
-		functionType := testFunctionType.ToFuncType()
-
-		args := make([]interface{}, 3)
-		args[0] = "test"
-		args[1] = 25
-		args[2] = MyStruct{}
-		outputs := functionType.Call(args)
+	fn := goo.TypeOf(MyFunc)
+	if fn.IsFunc() {
+		fnType := fn.ToFuncType()
+		outputs := fnType.Call([]interface{}{"test", 25, MyStruct{}})
 		if len(outputs) > 0 {
 			// ...
 		}
 	}
 
-	testStructInstance := &MyStruct{}
-	testStructType := goo.TypeOf(testStructInstance)
-
+	testStructType := goo.TypeOf(&MyStruct{})
 	if testStructType.IsStruct() {
 		structType := testStructType.ToStructType()
 		for _, method := range structType.Methods() {
@@ -50,12 +43,10 @@ func ExampleTypeOf() {
 
 		// ...
 		structType.FieldsExported()
-		structType.Fields()
-		fields := structType.Fields()
-		for _, field := range fields {
+		for _, field := range structType.Fields() {
 			field.Name()
 			field.Type()
-			field.Get(testStructInstance)
+			field.Get(&MyStruct{})
 			//field.Set(testStructInstance, nil)
 			field.Tags()
 			tag, err := field.TagByName("json")
@@ -76,7 +67,6 @@ func ExampleTypeOf() {
 	}
 
 	testInterfaceType := goo.TypeOf((*MyInterface)(nil))
-
 	if testInterfaceType.IsInterface() {
 		interfaceType := testInterfaceType.ToInterfaceType()
 		interfaceType.Methods()
@@ -84,8 +74,7 @@ func ExampleTypeOf() {
 		interfaceType.MethodNum()
 	}
 
-	signedInt := 25
-	testSignedIntType := goo.TypeOf(signedInt)
+	testSignedIntType := goo.TypeOf(25)
 	if testSignedIntType.IsNumber() {
 		numberType := testSignedIntType.ToNumberType()
 		if goo.IntType == numberType.Type() {
@@ -96,8 +85,7 @@ func ExampleTypeOf() {
 		}
 	}
 
-	float32Val := float32(42.28)
-	testFloat32Type := goo.TypeOf(float32Val)
+	testFloat32Type := goo.TypeOf(float32(42.28))
 	if testFloat32Type.IsNumber() {
 		numberType := testFloat32Type.ToNumberType()
 		if goo.FloatType == numberType.Type() {
@@ -108,8 +96,7 @@ func ExampleTypeOf() {
 		}
 	}
 
-	testMap := make(map[string]bool, 0)
-	testMapType := goo.TypeOf(testMap)
+	testMapType := goo.TypeOf(make(map[string]bool, 0))
 	if testMapType.IsMap() {
 		mapType := testMapType.ToMapType()
 
@@ -132,21 +119,14 @@ func ExampleTypeOf() {
 		}
 	}
 
-	str := "test"
-	stringTestType := goo.TypeOf(str)
+	stringTestType := goo.TypeOf("test")
 	if stringTestType.IsString() {
 		stringType := stringTestType.ToStringType()
-
 		stringType.ToUint8("20")
-		// ...
 		stringType.ToUint64("58745")
-
 		stringType.ToInt8("-23")
-		// ..
 		stringType.ToUint64("9823")
-
 		stringType.ToFloat32("23.52")
-		// ..
 		stringType.ToFloat64("82387.32")
 	}
 
