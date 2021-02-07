@@ -16,6 +16,13 @@ func TestPanicMe(t *testing.T) {
 	assert.Equal(t, "", buf.String())
 }
 
+func TestSafeEq(t *testing.T) {
+	tpl, _ := NewTextTemplate("").Parse(`{{if safeEq . "FieldA" "1" "1"}}1{{end}}`)
+	var buf bytes.Buffer
+	tpl.Execute(&buf, map[string]string{"FieldA": "0"})
+	assert.Equal(t, "", buf.String())
+}
+
 func TestContains(t *testing.T) {
 	tpl, _ := NewTextTemplate("").Parse(`{{if contains . "FieldA"}}FieldA:{{.FieldA}}{{else}}NotFound{{end}}`)
 	var buf bytes.Buffer

@@ -40,6 +40,7 @@ func FindInSlice(slice interface{}, f func(value interface{}) bool) int {
 }
 
 var TextFuncMap = WrapRecover(textTemplate.FuncMap{
+	"safeEq":   SafeEq,
 	"contains": Contains,
 	"replace": func(s1, s2 string) string {
 		return strings.Replace(s2, s1, "", -1)
@@ -456,6 +457,26 @@ func Inject(funcs map[string]interface{}, force bool, prefix string) {
 			funcs[prefix+k] = v
 		}
 	}
+}
+
+func SafeEq(v interface{}, name string, defaultValue, compareValue interface{}) bool {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	switch rv.Kind() {
+	case reflect.Map:
+		if v := rv.MapIndex(reflect.ValueOf(name)); v.IsValid() {
+			return v.Interface() == compareValue
+		}
+	case reflect.Struct:
+		if v := rv.FieldByName(name); v.IsValid() {
+			return v.Interface() == compareValue
+		}
+	}
+
+	return defaultValue == compareValue
 }
 
 func Contains(v interface{}, name string) bool {
