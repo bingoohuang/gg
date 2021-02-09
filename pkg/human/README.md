@@ -2,10 +2,10 @@
 
 forked from https://github.com/dustin/go-humanize
 
-Just a few functions for helping humanize times and sizes.
+Just a few functions for helping human times and sizes.
 
 `go get` it as `github.com/bingoohuang/gg/pkg/human`, import it as
-`"github.com/bingoohuang/gg/pkg/human"`, use it as `humanize`.
+`"github.com/bingoohuang/gg/pkg/human"`, use it as `human`.
 
 See [godoc](https://pkg.go.dev/github.com/bingoohuang/gg/pkg/human) for
 complete documentation.
@@ -18,8 +18,8 @@ strings like, `83MB` or `79MiB` (whichever you prefer).
 Example:
 
 ```go
-fmt.Printf("That file is %s.", humanize.Bytes(82854982)) // That file is 82.9MB.
-fmt.Printf("That file is %s.", humanize.IBytes(82854982)) // That file is 79MiB.
+fmt.Printf("That file is %s.", human.Bytes(82854982)) // That file is 82.9MB.
+fmt.Printf("That file is %s.", human.IBytes(82854982)) // That file is 79MiB.
 ```
 
 ## Times
@@ -30,7 +30,7 @@ For example, `12 seconds ago` or `3 days from now`.
 Example:
 
 ```go
-fmt.Printf("This was touched %s.", humanize.Time(someTimeInstance)) // This was touched 7 hours ago.
+fmt.Printf("This was touched %s.", human.Time(someTimeInstance)) // This was touched 7 hours ago.
 ```
 
 Thanks to Kyle Lemons for the time implementation from an IRC
@@ -51,7 +51,7 @@ to label ordinals.
 Example:
 
 ```go
-fmt.Printf("You're my %s best friend.", humanize.Ordinal(193)) // You are my 193rd best friend.
+fmt.Printf("You're my %s best friend.", human.Ordinal(193)) // You are my 193rd best friend.
 ```
 
 ## Commas
@@ -67,7 +67,7 @@ Want to shove commas into numbers? Be my guest.
 Example:
 
 ```go
-fmt.Printf("You owe $%s.\n", humanize.Comma(6582491)) // You owe $6,582,491.
+fmt.Printf("You owe $%s.\n", human.Comma(6582491)) // You owe $6,582,491.
 ```
 
 ## Ftoa
@@ -76,9 +76,9 @@ Nicer float64 formatter that removes trailing zeros.
 
 ```go
 fmt.Printf("%f", 2.24)                // 2.240000
-fmt.Printf("%s", humanize.Ftoa(2.24)) // 2.24
+fmt.Printf("%s", human.Ftoa(2.24)) // 2.24
 fmt.Printf("%f", 2.0)                 // 2.000000
-fmt.Printf("%s", humanize.Ftoa(2.0))  // 2
+fmt.Printf("%s", human.Ftoa(2.0))  // 2
 ```
 
 ## SI notation
@@ -88,12 +88,12 @@ Format numbers with [SI notation][sinotation].
 Example:
 
 ```go
-humanize.SI(0.00000000223, "M") // 2.23 nM
+human.SI(0.00000000223, "M") // 2.23 nM
 ```
 
 ## English-specific functions
 
-The following functions are in the `humanize/english` subpackage.
+The following functions are in the `human/english` subpackage.
 
 ### Plurals
 
