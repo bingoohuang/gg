@@ -807,7 +807,7 @@ func (f *FlagSet) parseOne() (bool, error) {
 		return false, nil
 	}
 	s := f.args[0]
-	if len(s) == 0 || s[0] != '-' || len(s) == 1 {
+	if len(s) < 2 || s[0] != '-' {
 		return false, nil
 	}
 	numMinuses := 1
@@ -915,6 +915,10 @@ func (f *FlagSet) parseConfigFile() error {
 		cFile = cf.Value.String()
 	}
 	if cFile == "" {
+		cFile = f.findConfigArgInUnresolved()
+	}
+
+	if cFile == "" {
 		return nil
 	}
 
@@ -930,6 +934,23 @@ func (f *FlagSet) parseConfigFile() error {
 	}
 
 	return nil
+}
+
+func (f *FlagSet) findConfigArgInUnresolved() string {
+	configArg := "-" + DefaultConfigFlagName
+	for i := 0; i < len(f.args); i++ {
+		if strings.HasPrefix(f.args[i], configArg) {
+			if f.args[i] == configArg && i+1 < len(f.args) {
+				return f.args[i+1]
+			}
+
+			if strings.HasPrefix(f.args[i], configArg+"=") {
+				return f.args[i][len(configArg)+1:]
+				break
+			}
+		}
+	}
+	return ""
 }
 
 func (f *FlagSet) parseEnv() error {
