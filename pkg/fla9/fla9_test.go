@@ -16,14 +16,13 @@ import (
 
 func ExampleFlag() {
 	var (
-		config string
-		length float64
-		age    int
 		name   string
+		age    int
+		length float64
 		female bool
 	)
 
-	fla9.StringVar(&config, "config", "testdata/test.conf", "help message")
+	fla9.String("config", "testdata/test.conf", "help message")
 	fla9.StringVar(&name, "name", "", "help message")
 	fla9.IntVar(&age, "age", 0, "help message")
 	fla9.Float64Var(&length, "length", 0, "help message")
