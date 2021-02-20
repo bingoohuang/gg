@@ -885,6 +885,69 @@ func (f *FlagSet) parseOne() (bool, error) {
 // are defined and before flags are accessed by the program.
 // The return value will be ErrHelp if -help or -h were set but not defined.
 func (f *FlagSet) Parse(arguments []string) error {
+	if _, ok := f.formal[DefaultConfigFlagName]; !ok {
+		f.String(DefaultConfigFlagName, "", "config file")
+		defer delete(f.formal, DefaultConfigFlagName)
+	}
+
+	if err := f.parseArgs(arguments); err != nil {
+		return err
+	}
+
+	if err := f.parseEnv(); err != nil {
+		return err
+	}
+
+	if err := f.parseConfigFile(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *FlagSet) parseConfigFile() error {
+	// Parse configuration from file
+	var cFile string
+	if cf := f.formal[DefaultConfigFlagName]; cf != nil {
+		cFile = cf.Value.String()
+	}
+	if cf := f.actual[DefaultConfigFlagName]; cf != nil {
+		cFile = cf.Value.String()
+	}
+	if cFile == "" {
+		return nil
+	}
+
+	if err := f.ParseFile(cFile, true); err != nil {
+		switch f.errorHandling {
+		case ContinueOnError:
+			return err
+		case ExitOnError:
+			os.Exit(2)
+		case PanicOnError:
+			panic(err)
+		}
+	}
+
+	return nil
+}
+
+func (f *FlagSet) parseEnv() error {
+	// Parse environment variables
+	if err := f.ParseEnv(os.Environ()); err != nil {
+		switch f.errorHandling {
+		case ContinueOnError:
+			return err
+		case ExitOnError:
+			os.Exit(2)
+		case PanicOnError:
+			panic(err)
+		}
+	}
+	return nil
+}
+
+func (f *FlagSet) parseArgs(arguments []string) error {
 	f.parsed = true
 	f.args = arguments
 	for {
@@ -904,42 +967,6 @@ func (f *FlagSet) Parse(arguments []string) error {
 			panic(err)
 		}
 	}
-
-	// Parse environment variables
-	if err := f.ParseEnv(os.Environ()); err != nil {
-		switch f.errorHandling {
-		case ContinueOnError:
-			return err
-		case ExitOnError:
-			os.Exit(2)
-		case PanicOnError:
-			panic(err)
-		}
-		return err
-	}
-
-	// Parse configuration from file
-	var cFile string
-	if cf := f.formal[DefaultConfigFlagName]; cf != nil {
-		cFile = cf.Value.String()
-	}
-	if cf := f.actual[DefaultConfigFlagName]; cf != nil {
-		cFile = cf.Value.String()
-	}
-	if cFile != "" {
-		if err := f.ParseFile(cFile, true); err != nil {
-			switch f.errorHandling {
-			case ContinueOnError:
-				return err
-			case ExitOnError:
-				os.Exit(2)
-			case PanicOnError:
-				panic(err)
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 
