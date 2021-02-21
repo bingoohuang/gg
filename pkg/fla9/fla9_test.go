@@ -42,6 +42,34 @@ func ExampleFlag() {
 	// female: false
 }
 
+func ExampleSampleFile() {
+	var (
+		name   string
+		age    int
+		length float64
+		female bool
+	)
+
+	fla9.String("config", "testdata/a.conf", "help message")
+	fla9.StringVar(&name, "name", "", "help message")
+	fla9.IntVar(&age, "age", 0, "help message")
+	fla9.Float64Var(&length, "length", 0, "help message")
+	fla9.BoolVar(&female, "female", false, "help message")
+
+	fla9.Parse()
+
+	fmt.Println("length:", length)
+	fmt.Println("age:", age)
+	fmt.Println("name:", name)
+	fmt.Println("female:", female)
+
+	// Output:
+	// length: 175.5
+	// age: 2
+	// name: Gloria
+	// female: false
+}
+
 // Example 1: A single string flag called "species" with default value "gopher".
 var species = fla9.String("species", "gopher", "the species we are studying")
 
