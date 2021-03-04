@@ -1,9 +1,5 @@
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 /*
-	Package flag implements command-line flag parsing.
+	Package fla9 implements command-line flag parsing.
 
 	Usage:
 
@@ -68,6 +64,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
@@ -923,6 +920,10 @@ func (f *FlagSet) parseConfigFile() error {
 	}
 
 	if err := f.ParseFile(cFile, true); err != nil {
+		if os.IsNotExist(err) {
+			f.createSampleFile(cFile + ".sample")
+			fmt.Println(cFile + ".sample created")
+		}
 		switch f.errorHandling {
 		case ContinueOnError:
 			return err
@@ -1167,4 +1168,23 @@ func (f *FlagSet) ParseFile(path string, ignoreUndefinedConf bool) error {
 	}
 
 	return scanner.Err()
+}
+
+func (f *FlagSet) createSampleFile(filename string) {
+	sampleContent := ""
+	f.VisitAll(func(fla *Flag) {
+		if fla.Name == DefaultConfigFlagName {
+			return
+		}
+
+		if fla.Usage != "" {
+			sampleContent += "# " + fla.Usage + "\n"
+		}
+
+		sampleContent += "# " + fla.Name + " = " + fla.Value.String() + "\n\n"
+	})
+
+	if err := ioutil.WriteFile(filename, []byte(sampleContent), 0600); err != nil {
+		fmt.Printf("write file %s failed, error %v\n", filename, err)
+	}
 }

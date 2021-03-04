@@ -1,0 +1,24 @@
+# help message
+# age = 0
+
+# comma-separated list of intervals to use between events
+# deltaT = []
+
+# help message
+# female = false
+
+# the variety of gopher (shorthand)
+# g = pocket
+
+# the variety of gopher
+# gopher_type = pocket
+
+# help message
+# length = 0
+
+# help message
+# name = 
+
+# the species we are studying
+# species = gopher
+
