@@ -22,7 +22,7 @@ func ExampleFlag() {
 		female bool
 	)
 
-	fla9.String("config", "testdata/test.conf", "help message")
+	fla9.String("conf", "testdata/test.conf", "help message")
 	fla9.StringVar(&name, "name", "", "help message")
 	fla9.IntVar(&age, "age", 0, "help message")
 	fla9.Float64Var(&length, "length", 0, "help message")
@@ -42,7 +42,8 @@ func ExampleFlag() {
 	// female: false
 }
 
-func ExampleSampleFile() {
+/*
+func TestConfSampleFileCreated(t *testing.T) {
 	var (
 		name   string
 		age    int
@@ -50,7 +51,8 @@ func ExampleSampleFile() {
 		female bool
 	)
 
-	fla9.String("config", "testdata/a.conf", "help message")
+	_ = os.Remove("testdata/a.conf.sample")
+	fla9.String("conf", "testdata/a.conf", "help message")
 	fla9.StringVar(&name, "name", "", "help message")
 	fla9.IntVar(&age, "age", 0, "help message")
 	fla9.Float64Var(&length, "length", 0, "help message")
@@ -58,17 +60,10 @@ func ExampleSampleFile() {
 
 	fla9.Parse()
 
-	fmt.Println("length:", length)
-	fmt.Println("age:", age)
-	fmt.Println("name:", name)
-	fmt.Println("female:", female)
-
-	// Output:
-	// length: 175.5
-	// age: 2
-	// name: Gloria
-	// female: false
+	_, err := os.Stat("testdata/a.conf.sample")
+	assert.Nil(t, err)
 }
+*/
 
 // Example 1: A single string flag called "species" with default value "gopher".
 var species = fla9.String("species", "gopher", "the species we are studying")
@@ -675,7 +670,7 @@ func TestDefaultConfigFlagname(t *testing.T) {
 	f.Float64("float64", 0, "float64 value")
 	f.Duration("duration", 5*time.Second, "time.Duration value")
 
-	f.String(fla9.DefaultConfigFlagName, "./testdata/test.conf", "config path")
+	f.String(fla9.DefaultConFlagName, "./testdata/test.conf", "config path")
 
 	if err := os.Unsetenv("STRING"); err != nil {
 		t.Error(err)
@@ -692,7 +687,7 @@ func TestDefaultConfigFlagname(t *testing.T) {
 
 func TestDefaultConfigFlagnameMissingFile(t *testing.T) {
 	f := fla9.NewFlagSet("test", fla9.ContinueOnError)
-	f.String(fla9.DefaultConfigFlagName, "./testdata/missing", "config path")
+	f.String(fla9.DefaultConFlagName, "./testdata/missing", "config path")
 
 	if err := os.Unsetenv("STRING"); err != nil {
 		t.Error(err)
@@ -723,8 +718,8 @@ func TestFlagSetParseErrors(t *testing.T) {
 		t.Fatalf("error unsetting env: %s", err.Error())
 	}
 
-	fs.String("config", "", "config filename")
-	args = []string{"-config", "testdata/bad_test.conf"}
+	fs.String("conf", "", "config filename")
+	args = []string{"-conf", "testdata/bad_test.conf"}
 	expected = `invalid value "bad" for configuration variable int: strconv.ParseInt: parsing "bad": invalid syntax`
 	if err := fs.Parse(args); err == nil || err.Error() != expected {
 		t.Errorf("expected error %q parsing from config, got: %v", expected, err)

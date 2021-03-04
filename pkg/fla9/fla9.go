@@ -882,9 +882,9 @@ func (f *FlagSet) parseOne() (bool, error) {
 // are defined and before flags are accessed by the program.
 // The return value will be ErrHelp if -help or -h were set but not defined.
 func (f *FlagSet) Parse(arguments []string) error {
-	if _, ok := f.formal[DefaultConfigFlagName]; !ok {
-		f.String(DefaultConfigFlagName, "", "config file")
-		defer delete(f.formal, DefaultConfigFlagName)
+	if _, ok := f.formal[DefaultConFlagName]; !ok {
+		f.String(DefaultConFlagName, "", "config file")
+		defer delete(f.formal, DefaultConFlagName)
 	}
 
 	if err := f.parseArgs(arguments); err != nil {
@@ -905,10 +905,10 @@ func (f *FlagSet) Parse(arguments []string) error {
 func (f *FlagSet) parseConfigFile() error {
 	// Parse configuration from file
 	var cFile string
-	if cf := f.formal[DefaultConfigFlagName]; cf != nil {
+	if cf := f.formal[DefaultConFlagName]; cf != nil {
 		cFile = cf.Value.String()
 	}
-	if cf := f.actual[DefaultConfigFlagName]; cf != nil {
+	if cf := f.actual[DefaultConFlagName]; cf != nil {
 		cFile = cf.Value.String()
 	}
 	if cFile == "" {
@@ -938,7 +938,7 @@ func (f *FlagSet) parseConfigFile() error {
 }
 
 func (f *FlagSet) findConfigArgInUnresolved() string {
-	configArg := "-" + DefaultConfigFlagName
+	configArg := "-" + DefaultConFlagName
 	for i := 0; i < len(f.args); i++ {
 		if strings.HasPrefix(f.args[i], configArg) {
 			if f.args[i] == configArg && i+1 < len(f.args) {
@@ -1098,10 +1098,10 @@ func NewFlagSetWithEnvPrefix(name string, prefix string, errorHandling ErrorHand
 	return f
 }
 
-// DefaultConfigFlagName defines the flag name of the optional config file
+// DefaultConFlagName defines the flag name of the optional config file
 // path. Used to lookup and parse the config file when a default is set and
 // available on disk.
-var DefaultConfigFlagName = "config"
+var DefaultConFlagName = "conf"
 
 // ParseFile parses flags from the file in path.
 // Same format as commandline arguments, newlines and lines beginning with a
@@ -1173,7 +1173,7 @@ func (f *FlagSet) ParseFile(path string, ignoreUndefinedConf bool) error {
 func (f *FlagSet) createSampleFile(filename string) {
 	sampleContent := ""
 	f.VisitAll(func(fla *Flag) {
-		if fla.Name == DefaultConfigFlagName {
+		if fla.Name == DefaultConFlagName {
 			return
 		}
 
