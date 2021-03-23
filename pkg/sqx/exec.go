@@ -27,7 +27,11 @@ func (s SQL) QueryAsString(db *sql.DB) (string, error) {
 		return "", err
 	}
 
-	return row[0], err
+	if len(row) == 0 {
+		return "", nil
+	}
+
+	return row[0], nil
 }
 
 // Update executes an update/delete query and returns rows affected.
