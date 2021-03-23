@@ -41,14 +41,18 @@ func (s SQL) Update(db *sql.DB) (int64, error) {
 	return r.RowsAffected()
 }
 
-type RowScanner interface {
-	ScanRow(rows *sql.Rows, rowIndex int, columns []string) (bool, error)
+type RowScannerInit interface {
+	InitRowScanner(columns []string)
 }
 
-type ScanRowFn func(rows *sql.Rows, rowIndex int, columns []string) (bool, error)
+type RowScanner interface {
+	ScanRow(rows *sql.Rows, rowIndex int) (bool, error)
+}
 
-func (s ScanRowFn) ScanRow(rows *sql.Rows, rowIndex int, columns []string) (bool, error) {
-	return s(rows, rowIndex, columns)
+type ScanRowFn func(rows *sql.Rows, rowIndex int) (bool, error)
+
+func (s ScanRowFn) ScanRow(rows *sql.Rows, rowIndex int) (bool, error) {
+	return s(rows, rowIndex)
 }
 
 // QueryOption defines the query options.
@@ -81,7 +85,7 @@ func WithMaxRows(maxRows int) QueryOptionFn {
 	return func(o *QueryOption) { o.MaxRows = maxRows }
 }
 
-// WithTagNames set the tagNames for mapping struct fields to query columns.
+// WithTagNames set the tagNames for mapping struct fields to query Columns.
 func WithTagNames(tagNames ...string) QueryOptionFn {
 	return func(o *QueryOption) { o.TagNames = tagNames }
 }
@@ -139,44 +143,49 @@ func (s SQL) QueryAsBeans(db *sql.DB, result interface{}, optionFns ...QueryOpti
 	return decoder.Decode(input)
 }
 
-// QueryAsMap query a single row as a map return.
-func (s SQL) QueryAsMap(db *sql.DB, optionFns ...QueryOptionFn) (map[string]string, error) {
-	var m map[string]string
-	f := func(rows *sql.Rows, rowIndex int, columns []string) (bool, error) {
-		if r, err := scanMapRow(rows, columns); err != nil {
-			return false, err
-		} else {
-			m = r
-			return false, nil
-		}
+type MapScanner struct {
+	Data    []map[string]string
+	Columns []string
+	MaxRows int
+}
+
+func (r *MapScanner) Data0() map[string]string {
+	if len(r.Data) == 0 {
+		return nil
 	}
 
-	err := s.QueryRaw(db, append(optionFns, WithScanRow(f))...)
-	return m, err
+	return r.Data[0]
 }
 
-type mapScanner struct {
-	data []map[string]string
+func (m *MapScanner) InitRowScanner(columns []string) {
+	m.Columns = append(m.Columns, columns...)
 }
 
-func (m *mapScanner) ScanRow(rows *sql.Rows, _ int, columns []string) (bool, error) {
-	if v, err := scanMapRow(rows, columns); err != nil {
+func (m *MapScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
+	if v, err := ScanMapRow(rows, m.Columns); err != nil {
 		return false, err
 	} else {
-		m.data = append(m.data, v)
-		return true, nil
+		m.Data = append(m.Data, v)
+		return m.MaxRows == 0 || len(m.Data) < m.MaxRows, nil
 	}
 }
 
 // QueryAsMaps query rows as map slice.
 func (s SQL) QueryAsMaps(db *sql.DB, optionFns ...QueryOptionFn) ([]map[string]string, error) {
-	scanner := &mapScanner{data: make([]map[string]string, 0)}
+	scanner := &MapScanner{Data: make([]map[string]string, 0)}
 	err := s.QueryRaw(db, append(optionFns, WithRowScanner(scanner))...)
-	return scanner.data, err
+	return scanner.Data, err
 }
 
-func scanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
-	holders, err := scanRow(len(columns), rows)
+// QueryAsMap query a single row as a map return.
+func (s SQL) QueryAsMap(db *sql.DB, optionFns ...QueryOptionFn) (map[string]string, error) {
+	scanner := &MapScanner{Data: make([]map[string]string, 0), MaxRows: 1}
+	err := s.QueryRaw(db, append(optionFns, WithRowScanner(scanner))...)
+	return scanner.Data0(), err
+}
+
+func ScanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
+	holders, err := ScanRow(len(columns), rows)
 	if err != nil {
 		return nil, err
 	}
@@ -189,43 +198,55 @@ func scanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
 	return m, nil
 }
 
-// QueryAsRow query a single row as a string slice return.
-func (s SQL) QueryAsRow(db *sql.DB, optionFns ...QueryOptionFn) ([]string, error) {
-	var row []string
-	f := func(rows *sql.Rows, rowIndex int, columns []string) (bool, error) {
-		if m, err := scanStringRow(rows, columns); err != nil {
-			return false, err
-		} else {
-			row = m
-			return false, nil
-		}
+type StringRowScanner struct {
+	Data    [][]string
+	Columns []string
+	MaxRows int
+}
+
+func (r *StringRowScanner) InitRowScanner(columns []string) {
+	r.Columns = append(r.Columns, columns...)
+}
+
+func (r *StringRowScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
+	if m, err := scanStringRow(rows, r.Columns); err != nil {
+		return false, err
+	} else {
+		r.Data = append(r.Data, m)
+		return r.MaxRows == 0 || len(r.Data) < r.MaxRows, nil
+	}
+}
+
+func (r *StringRowScanner) Data0() []string {
+	if len(r.Data) == 0 {
+		return nil
 	}
 
-	err := s.QueryRaw(db, append(optionFns, WithScanRow(f))...)
-	return row, err
+	return r.Data[0]
+}
+
+// QueryAsRow query a single row as a string slice return.
+func (s SQL) QueryAsRow(db *sql.DB, optionFns ...QueryOptionFn) ([]string, error) {
+	f := &StringRowScanner{MaxRows: 1}
+	if err := s.QueryRaw(db, append(optionFns, WithRowScanner(f))...); err != nil {
+		return nil, err
+	}
+
+	return f.Data0(), nil
 }
 
 // QueryAsRows query rows as [][]string.
 func (s SQL) QueryAsRows(db *sql.DB, optionFns ...QueryOptionFn) ([][]string, error) {
-	rowsData := make([][]string, 0)
-	f := func(rows *sql.Rows, rowIndex int, columns []string) (bool, error) {
-		if m, err := scanStringRow(rows, columns); err != nil {
-			return false, err
-		} else {
-			rowsData = append(rowsData, m)
-			return true, nil
-		}
-	}
-
-	if err := s.QueryRaw(db, append(optionFns, WithScanRow(f))...); err != nil {
+	f := &StringRowScanner{}
+	if err := s.QueryRaw(db, append(optionFns, WithRowScanner(f))...); err != nil {
 		return nil, err
 	}
 
-	return rowsData, nil
+	return f.Data, nil
 }
 
 func scanStringRow(rows *sql.Rows, columns []string) ([]string, error) {
-	holders, err := scanRow(len(columns), rows)
+	holders, err := ScanRow(len(columns), rows)
 	if err != nil {
 		return nil, err
 	}
@@ -246,8 +267,12 @@ func (s SQL) QueryRaw(db *sql.DB, optionFns ...QueryOptionFn) error {
 
 	defer r.Close()
 
+	if initial, ok := option.Scanner.(RowScannerInit); ok {
+		initial.InitRowScanner(columns)
+	}
+
 	for rn := 0; r.Next() && option.allowRowNum(rn+1); rn++ {
-		if continued, err := option.Scanner.ScanRow(r, rn, columns); err != nil {
+		if continued, err := option.Scanner.ScanRow(r, rn); err != nil {
 			return err
 		} else if !continued {
 			break
@@ -257,7 +282,7 @@ func (s SQL) QueryRaw(db *sql.DB, optionFns ...QueryOptionFn) error {
 	return nil
 }
 
-func scanRow(columnSize int, r *sql.Rows) ([]sql.NullString, error) {
+func ScanRow(columnSize int, r *sql.Rows) ([]sql.NullString, error) {
 	holders := make([]sql.NullString, columnSize)
 	pointers := make([]interface{}, columnSize)
 	for i := 0; i < columnSize; i++ {

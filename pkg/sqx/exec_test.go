@@ -88,7 +88,7 @@ func TestQuery(t *testing.T) {
 
 	var ageValue int
 
-	err = s.QueryRaw(db, sqx.WithScanRow(func(rows *sql.Rows, _ int, _ []string) (bool, error) {
+	err = s.QueryRaw(db, sqx.WithScanRow(func(rows *sql.Rows, _ int) (bool, error) {
 		return false, rows.Scan(&ageValue)
 	}))
 	assert.Nil(t, err)
