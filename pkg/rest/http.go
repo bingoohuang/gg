@@ -23,16 +23,16 @@ type Rest struct {
 }
 
 // Post execute HTTP POST request.
-func (r *Rest) Post() (*Rsp, error) { return r.do("POST") }
+func (r Rest) Post() (*Rsp, error) { return r.do("POST") }
 
 // Get execute HTTP GET request.
-func (r *Rest) Get() (*Rsp, error) { return r.do("GET") }
+func (r Rest) Get() (*Rsp, error) { return r.do("GET") }
 
 // Delete execute HTTP GET request.
-func (r *Rest) Delete() (*Rsp, error) { return r.do("DELETE") }
+func (r Rest) Delete() (*Rsp, error) { return r.do("DELETE") }
 
 // Upload execute HTTP GET request.
-func (r *Rest) Upload(filename string, fileData []byte) (*Rsp, error) {
+func (r Rest) Upload(filename string, fileData []byte) (*Rsp, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, _ := writer.CreateFormFile("file", filename)
@@ -65,12 +65,12 @@ var Client = &http.Client{
 }
 
 // Do execute HTTP method request.
-func (r *Rest) Do() (*Rsp, error) {
+func (r Rest) Do() (*Rsp, error) {
 	return r.do(If(r.Method == "", "GET", r.Method))
 }
 
 // Do execute HTTP method request.
-func (r *Rest) do(method string) (*Rsp, error) {
+func (r Rest) do(method string) (*Rsp, error) {
 	var ctx context.Context
 	if r.Context != nil {
 		ctx = r.Context
@@ -85,7 +85,7 @@ func (r *Rest) do(method string) (*Rsp, error) {
 		return nil, err
 	}
 	req.Close = r.DisableKeepAlive
-	if r != nil && req.Header.Get("Content-Type") == "" {
+	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", If(IsJSONBytes(r.Body),
 			"application/json; charset=utf-8", "text/plain; charset=utf-8"))
 	}
