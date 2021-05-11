@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/bingoohuang/gg/pkg/mapstruct"
 )
@@ -20,7 +21,7 @@ func (s SQL) QueryAsNumber(db *sql.DB) (int64, error) {
 	return strconv.ParseInt(str, 10, 64)
 }
 
-// QueryAsNumber executes a query which only returns number like count(*) sql.
+// QueryAsString executes a query which only returns number like count(*) sql.
 func (s SQL) QueryAsString(db *sql.DB) (string, error) {
 	row, err := s.QueryAsRow(db)
 	if err != nil {
@@ -37,7 +38,14 @@ func (s SQL) QueryAsString(db *sql.DB) (string, error) {
 // Update executes an update/delete query and returns rows affected.
 func (s SQL) Update(db *sql.DB) (int64, error) {
 	log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
-	r, err := db.Exec(s.Query, s.Vars...)
+
+	var r sql.Result
+	var err error
+	if s.Ctx != nil {
+		r, err = db.ExecContext(s.Ctx, s.Query, s.Vars...)
+	} else {
+		r, err = db.Exec(s.Query, s.Vars...)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -61,9 +69,10 @@ func (s ScanRowFn) ScanRow(rows *sql.Rows, rowIndex int) (bool, error) {
 
 // QueryOption defines the query options.
 type QueryOption struct {
-	MaxRows  int
-	TagNames []string
-	Scanner  RowScanner
+	MaxRows          int
+	TagNames         []string
+	Scanner          RowScanner
+	LowerColumnNames bool
 }
 
 // QueryOptionFn define the prototype function to set QueryOption.
@@ -87,6 +96,11 @@ func (q QueryOptionFns) Options() *QueryOption {
 // WithMaxRows set the max rows of QueryOption.
 func WithMaxRows(maxRows int) QueryOptionFn {
 	return func(o *QueryOption) { o.MaxRows = maxRows }
+}
+
+// WithLowerColumnNames set the LowerColumnNames of QueryOption.
+func WithLowerColumnNames(v bool) QueryOptionFn {
+	return func(o *QueryOption) { o.LowerColumnNames = v }
 }
 
 // WithTagNames set the tagNames for mapping struct fields to query Columns.
@@ -304,7 +318,13 @@ func (s SQL) prepareQuery(db *sql.DB, optionFns ...QueryOptionFn) (*QueryOption,
 	option := QueryOptionFns(optionFns).Options()
 
 	log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
-	r, err := db.Query(s.Query, s.Vars...)
+	var r *sql.Rows
+	var err error
+	if s.Ctx != nil {
+		r, err = db.QueryContext(s.Ctx, s.Query, s.Vars...)
+	} else {
+		r, err = db.Query(s.Query, s.Vars...)
+	}
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -312,6 +332,12 @@ func (s SQL) prepareQuery(db *sql.DB, optionFns ...QueryOptionFn) (*QueryOption,
 	columns, err := r.Columns()
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	if option.LowerColumnNames {
+		for i, col := range columns {
+			columns[i] = strings.ToLower(col)
+		}
 	}
 
 	return option, r, columns, nil

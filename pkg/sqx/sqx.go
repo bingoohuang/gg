@@ -1,6 +1,7 @@
 package sqx
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -18,6 +19,7 @@ var ErrConditionKind = errors.New("condition kind should be struct or its pointe
 type SQL struct {
 	Query string
 	Vars  []interface{}
+	Ctx   context.Context
 }
 
 // Append apppends sub statement to the query.

@@ -16,7 +16,7 @@ func ExampleCreateCount() { // nolint:govet
 	fmt.Println(fmt.Sprintf("%+v", ret), err)
 
 	// Output:
-	// &{Query:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲]} <nil>
+	// &{Query:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲] Ctx:<nil>} <nil>
 }
 
 func TestCreateCount(t *testing.T) {

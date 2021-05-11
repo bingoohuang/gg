@@ -37,6 +37,7 @@ func (s SQL) CreateCount() (*SQL, error) {
 	c := &SQL{
 		Query: sqlparser.String(sel),
 		Vars:  s.Vars,
+		Ctx:   s.Ctx,
 	}
 
 	if limitVarsCount > 0 && len(s.Vars) >= limitVarsCount {
