@@ -37,7 +37,9 @@ func (s SQL) QueryAsString(db *sql.DB) (string, error) {
 
 // Update executes an update/delete query and returns rows affected.
 func (s SQL) Update(db *sql.DB) (int64, error) {
-	log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+	if s.Log {
+		log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+	}
 
 	var r sql.Result
 	var err error
@@ -317,7 +319,9 @@ func ScanRow(columnSize int, r *sql.Rows) ([]sql.NullString, error) {
 func (s SQL) prepareQuery(db *sql.DB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
 	option := QueryOptionFns(optionFns).Options()
 
-	log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+	if s.Log {
+		log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+	}
 	var r *sql.Rows
 	var err error
 	if s.Ctx != nil {

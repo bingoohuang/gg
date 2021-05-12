@@ -20,6 +20,7 @@ type SQL struct {
 	Query string
 	Vars  []interface{}
 	Ctx   context.Context
+	Log   bool
 }
 
 // Append apppends sub statement to the query.
