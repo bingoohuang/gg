@@ -2,7 +2,9 @@ package ctl
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -18,9 +20,7 @@ type Config struct {
 	Initing      bool
 	PrintVersion bool
 	VersionInfo  string
-
-	ConfTemplate []byte
-	ConfFileName string
+	InitFiles    embed.FS
 }
 
 // ProcessInit generates ctl and conf.yml files for -init argument.
@@ -29,7 +29,7 @@ func (c Config) ProcessInit() {
 		if err := initCtl(); err != nil {
 			fmt.Printf(err.Error())
 		}
-		if err := c.initConf(); err != nil {
+		if err := c.initFiles(); err != nil {
 			fmt.Printf(err.Error())
 		}
 	}
@@ -43,20 +43,43 @@ func (c Config) ProcessInit() {
 	}
 }
 
-func (c Config) initConf() error {
-	_, err := os.Stat(c.ConfFileName)
-	if err == nil {
-		fmt.Println(c.ConfFileName, "already exists, ignored!")
+func (c Config) initFiles() error {
+	firstDir := false
+	return fs.WalkDir(c.InitFiles, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == "." {
+			return nil
+		}
+
+		if d.IsDir() {
+			if firstDir {
+				return fs.SkipDir
+			}
+
+			firstDir = true
+			return nil
+		}
+
+		if _, err := os.Stat(d.Name()); err == nil {
+			fmt.Println(d.Name(), "already exists, ignored!")
+			return nil
+		}
+
+		// 0644->即用户具有读写权限，组用户和其它用户具有只读权限；
+		data, err := c.InitFiles.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if err := ioutil.WriteFile(d.Name(), data, 0o644); err != nil {
+			return err
+		}
+
+		fmt.Println(d.Name(), "created!")
 		return nil
-	}
-
-	// 0644->即用户具有读写权限，组用户和其它用户具有只读权限；
-	if err := ioutil.WriteFile(c.ConfFileName, c.ConfTemplate, 0o644); err != nil {
-		return err
-	}
-
-	fmt.Println(c.ConfFileName, "created!")
-	return nil
+	})
 }
 
 //go:embed ctl
