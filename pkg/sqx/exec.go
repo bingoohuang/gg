@@ -229,7 +229,7 @@ func (r *StringRowScanner) InitRowScanner(columns []string) {
 }
 
 func (r *StringRowScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
-	if m, err := scanStringRow(rows, r.Columns); err != nil {
+	if m, err := ScanStringRow(rows, r.Columns); err != nil {
 		return false, err
 	} else {
 		r.Data = append(r.Data, m)
@@ -265,7 +265,7 @@ func (s SQL) QueryAsRows(db *sql.DB, optionFns ...QueryOptionFn) ([][]string, er
 	return f.Data, nil
 }
 
-func scanStringRow(rows *sql.Rows, columns []string) ([]string, error) {
+func ScanStringRow(rows *sql.Rows, columns []string) ([]string, error) {
 	holders, err := ScanRow(len(columns), rows)
 	if err != nil {
 		return nil, err
