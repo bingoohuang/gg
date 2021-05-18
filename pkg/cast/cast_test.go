@@ -15,6 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type MyString string
+
+func TestConvertableString(t *testing.T) {
+	value := ToInt(MyString("100"))
+	assert.Equal(t, 100, value)
+}
+
 func TestToUintE(t *testing.T) {
 	tests := []struct {
 		input  interface{}

@@ -34,9 +34,9 @@ func ExampleCondition() {
 	fmt.Println(fmt.Sprintf("%+v", ret), err)
 
 	// Output:
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? order by code Vars:[%天问一号% 火星基地] Ctx:<nil>} <nil>
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code Vars:[%嫦娥% 广寒宫 100] Ctx:<nil>} <nil>
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code limit ?, ? Vars:[%嫦娥% 广寒宫 100 1 10] Ctx:<nil>} <nil>
+	// &{Query:select code, name, addr, email from person where name like ? and addr = ? order by code Vars:[%天问一号% 火星基地] Ctx:<nil> Log:false} <nil>
+	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code Vars:[%嫦娥% 广寒宫 100] Ctx:<nil> Log:false} <nil>
+	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code limit ?, ? Vars:[%嫦娥% 广寒宫 100 1 10] Ctx:<nil> Log:false} <nil>
 }
 
 func TestEmbeddedCondition(t *testing.T) {

@@ -412,6 +412,10 @@ func ToIntE(i interface{}) (int, error) {
 	case nil:
 		return 0, nil
 	default:
+		v, err := strconv.ParseInt(fmt.Sprintf("%v", i), 0, 0)
+		if err == nil {
+			return int(v), nil
+		}
 		return 0, fmt.Errorf("unable to cast %#v of type %T to int", i, i)
 	}
 }
