@@ -39,8 +39,12 @@ func ParseArgs(a interface{}, args []string) {
 		fi, fv := rt.Field(i), ra.Field(i)
 		t := fi.Tag.Get
 		name := t("flag")
-		if name == "" || !fv.CanAddr() {
+		if name == "-" || !fv.CanAddr() {
 			continue
+		}
+
+		if name == "" {
+			name = toFlagName(fi.Name)
 		}
 
 		val, usage, required := t("val"), t("usage"), t("required")
@@ -141,4 +145,21 @@ func (i *arrayFlags) String() string { return i.Value }
 func (i *arrayFlags) Set(value string) error {
 	*i.pp = append(*i.pp, value)
 	return nil
+}
+
+func toFlagName(filedName string) string {
+	var sb strings.Builder
+
+	for i := 0; i < len(filedName); i++ {
+		c := filedName[i]
+		if 'A' <= c && c <= 'Z' {
+			if sb.Len() != 0 {
+				sb.WriteByte('-')
+			}
+			sb.WriteByte(c - 'A' + 'a')
+		} else {
+			sb.WriteByte(c)
+		}
+	}
+	return sb.String()
 }
