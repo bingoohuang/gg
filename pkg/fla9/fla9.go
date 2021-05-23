@@ -837,13 +837,20 @@ func (f *FlagSet) parseOne() (bool, error) {
 			break
 		}
 	}
-	m := f.formal
-	flag, alreadythere := m[name] // BUG
+	flag, alreadythere := f.formal[name] // BUG
+	if !alreadythere {
+		if flag, value = checkCombine(f.formal, name); flag != nil {
+			name = flag.Name
+			alreadythere = true
+		}
+	}
+
 	if !alreadythere {
 		if name == "help" || name == "h" { // special case for nice help message.
 			f.usage()
 			return false, ErrHelp
 		}
+
 		return false, f.failf("flag provided but not defined: -%s", name)
 	}
 	if fv, ok := flag.Value.(boolFlag); ok && fv.IsBoolFlag() { // special case: doesn't need an arg
@@ -875,6 +882,15 @@ func (f *FlagSet) parseOne() (bool, error) {
 	}
 	f.actual[name] = flag
 	return true, nil
+}
+
+func checkCombine(m map[string]*Flag, name string) (*Flag, string) {
+	for i := len(name) - 1; i > 0; i-- {
+		if flag, ok := m[name[:i]]; ok {
+			return flag, name[i:]
+		}
+	}
+	return nil, ""
 }
 
 // Parse parses flag definitions from the argument list, which should not
@@ -1140,6 +1156,13 @@ func (f *FlagSet) ParseFile(path string, ignoreUndefinedConf bool) error {
 
 		flag, alreadyThere := f.formal[name]
 		if !alreadyThere {
+			if flag, value = checkCombine(f.formal, name); flag != nil {
+				name = flag.Name
+				alreadyThere = true
+			}
+		}
+
+		if !alreadyThere {
 			if ignoreUndefinedConf {
 				continue
 			}
@@ -1148,6 +1171,7 @@ func (f *FlagSet) ParseFile(path string, ignoreUndefinedConf bool) error {
 				f.usage()
 				return ErrHelp
 			}
+
 			return f.failf("configuration variable provided but not defined: %s", name)
 		}
 
