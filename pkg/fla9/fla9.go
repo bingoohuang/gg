@@ -842,6 +842,7 @@ func (f *FlagSet) parseOne() (bool, error) {
 		if flag, value = checkCombine(f.formal, name); flag != nil {
 			name = flag.Name
 			alreadythere = true
+			hasValue = true
 		}
 	}
 
