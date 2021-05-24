@@ -147,19 +147,24 @@ func (i *arrayFlags) Set(value string) error {
 	return nil
 }
 
-func toFlagName(filedName string) string {
+func toFlagName(name string) string {
 	var sb strings.Builder
 
-	for i := 0; i < len(filedName); i++ {
-		c := filedName[i]
-		if 'A' <= c && c <= 'Z' {
-			if sb.Len() != 0 {
-				sb.WriteByte('-')
+	isUpper := func(c uint8) bool { return 'A' <= c && c <= 'Z' }
+
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if isUpper(c) {
+			if sb.Len() > 0 {
+				if i+1 < len(name) && (!(i-1 >= 0 && isUpper(name[i-1])) || !isUpper(name[i+1])) {
+					sb.WriteByte('-')
+				}
 			}
 			sb.WriteByte(c - 'A' + 'a')
 		} else {
 			sb.WriteByte(c)
 		}
 	}
+
 	return sb.String()
 }

@@ -51,3 +51,10 @@ Usage of pcap (%s):
 
 // VersionInfo is optional for customized version.
 func (a Arg) VersionInfo() string { return "v0.0.2 2021-05-19 08:33:18" }
+
+func TestTagName(t *testing.T) {
+	assert.Equal(t, "abc", toFlagName("ABC"))
+	assert.Equal(t, "hello-world", toFlagName("HelloWorld"))
+	assert.Equal(t, "hello-url", toFlagName("HelloURL"))
+	assert.Equal(t, "hello-url-addr", toFlagName("HelloURLAddr"))
+}
