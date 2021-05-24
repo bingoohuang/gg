@@ -146,6 +146,7 @@ func Example() {
 func ResetForTesting(usage func()) {
 	fla9.CommandLine = fla9.NewFlagSet(os.Args[0], fla9.ContinueOnError)
 	fla9.Usage = usage
+	fla9.CommandLine.Usage = usage
 }
 
 func boolString(s string) string {

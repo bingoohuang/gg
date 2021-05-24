@@ -473,7 +473,7 @@ func (f *FlagSet) PrintDefaults() {
 func PrintDefaults() { CommandLine.PrintDefaults() }
 
 // defaultUsage is the default function to print a usage message.
-func defaultUsage(f *FlagSet) {
+func (f *FlagSet) defaultUsage() {
 	if f.name == "" {
 		fmt.Fprintf(f.out(), "Usage:\n")
 	} else {
@@ -788,11 +788,7 @@ func (f *FlagSet) failf(format string, a ...interface{}) error {
 // or the appropriate default usage function otherwise.
 func (f *FlagSet) usage() {
 	if f.Usage == nil {
-		if f == CommandLine {
-			Usage()
-		} else {
-			defaultUsage(f)
-		}
+		f.defaultUsage()
 	} else {
 		f.Usage()
 	}
@@ -837,16 +833,15 @@ func (f *FlagSet) parseOne() (bool, error) {
 			break
 		}
 	}
-	flag, alreadythere := f.formal[name] // BUG
-	if !alreadythere {
+	flag := f.formal[name] // BUG
+	if flag == nil {
 		if flag, value = checkCombine(f.formal, name); flag != nil {
 			name = flag.Name
-			alreadythere = true
 			hasValue = true
 		}
 	}
 
-	if !alreadythere {
+	if flag == nil {
 		if name == "help" || name == "h" { // special case for nice help message.
 			f.usage()
 			return false, ErrHelp
@@ -1029,6 +1024,18 @@ func Parsed() bool {
 // methods of CommandLine.
 var CommandLine = NewFlagSet(os.Args[0], ExitOnError)
 
+func init() {
+	// Override generic FlagSet default Usage with call to global Usage.
+	// Note: This is not CommandLine.Usage = Usage,
+	// because we want any eventual call to use any updated value of Usage,
+	// not the value it has when this line is run.
+	CommandLine.Usage = commandLineUsage
+}
+
+func commandLineUsage() {
+	Usage()
+}
+
 // NewFlagSet returns a new, empty flag set with the specified name and
 // error handling property.
 func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
@@ -1036,6 +1043,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		name:          name,
 		errorHandling: errorHandling,
 	}
+	f.Usage = f.defaultUsage
 	return f
 }
 
