@@ -1,9 +1,9 @@
 package flagparse
 
 import (
-	"flag"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/cast"
+	flag "github.com/bingoohuang/gg/pkg/fla9"
 	"os"
 	"reflect"
 	"strings"
