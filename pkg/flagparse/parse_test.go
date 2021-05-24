@@ -33,10 +33,11 @@ func TestParse(t *testing.T) {
 type Arg struct {
 	Duration time.Duration `flag:"d"`
 	MyFlag   myFlag        `flag:"my"`
-	Out      []string      `flag:"out"`
-	Port     int           `flag:"p" val:"1234"`
-	Input    string        `flag:"i" val:"" required:"true"`
-	Version  bool          `flag:"v" val:"false" usage:"Show version"`
+	Out      []string
+	Port     int    `flag:"p" val:"1234"`
+	Input    string `flag:"i" val:"" required:"true"`
+	Version  bool   `flag:"v" val:"false" usage:"Show version"`
+	Other    string `flag:"-"`
 }
 
 // Usage is optional for customized show.
