@@ -37,6 +37,10 @@ func ParseArgs(a interface{}, args []string) {
 	rt := ra.Type()
 	for i := 0; i < rt.NumField(); i++ {
 		fi, fv := rt.Field(i), ra.Field(i)
+		if fi.PkgPath != "" { // ignore unexported
+			continue
+		}
+
 		t := fi.Tag.Get
 		name := t("flag")
 		if name == "-" || !fv.CanAddr() {
