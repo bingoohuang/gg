@@ -31,6 +31,7 @@ func Parse(a interface{}) {
 func ParseArgs(a interface{}, args []string) {
 	f := flag.NewFlagSet(args[0], flag.ExitOnError)
 	checkVersionShow := func() {}
+	checkVersionChecked := false
 	requiredVars := make([]requiredVar, 0)
 
 	ra := reflect.ValueOf(a).Elem()
@@ -82,7 +83,7 @@ func ParseArgs(a interface{}, args []string) {
 			f.IntVar(p.(*int), name, cast.ToInt(val), usage)
 		case reflect.Bool:
 			pp := p.(*bool)
-			checkVersionShow = checkVersion(a, fi.Name, pp)
+			checkVersionShow, checkVersionChecked = checkVersion(checkVersionChecked, a, fi.Name, pp)
 			f.BoolVar(pp, name, cast.ToBool(val), usage)
 		case reflect.Float64:
 			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
@@ -124,19 +125,19 @@ func checkRequired(requiredVars []requiredVar, f *flag.FlagSet) {
 	}
 }
 
-func checkVersion(arg interface{}, fiName string, bp *bool) func() {
-	if fiName == "Version" {
+func checkVersion(checked bool, arg interface{}, fiName string, bp *bool) (func(), bool) {
+	if !checked && fiName == "Version" {
 		if vs, ok := arg.(VersionShower); ok {
 			return func() {
 				if *bp {
 					fmt.Println(vs.VersionInfo())
 					os.Exit(0)
 				}
-			}
+			}, true
 		}
 	}
 
-	return func() {}
+	return func() {}, false
 }
 
 type arrayFlags struct {
