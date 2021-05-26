@@ -8,7 +8,7 @@ import (
 )
 
 func TestRegisterSignals(t *testing.T) {
-	c := RegisterSignals(nil)
+	c, _ := RegisterSignals(nil)
 	proc, _ := os.FindProcess(os.Getpid())
 	if err := proc.Signal(os.Interrupt); err != nil {
 		t.Failed()

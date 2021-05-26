@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterSignals registers signal handlers.
-func RegisterSignals(c context.Context, signals ...os.Signal) context.Context {
+func RegisterSignals(c context.Context, signals ...os.Signal) (context.Context, context.CancelFunc) {
 	if c == nil {
 		c = context.Background()
 	}
@@ -24,5 +24,5 @@ func RegisterSignals(c context.Context, signals ...os.Signal) context.Context {
 		cancel()
 	}()
 
-	return cc
+	return cc, cancel
 }
