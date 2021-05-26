@@ -30,8 +30,7 @@ func Parse(a interface{}) {
 
 func ParseArgs(a interface{}, args []string) {
 	f := flag.NewFlagSet(args[0], flag.ExitOnError)
-	checkVersionShow := func() {}
-	checkVersionChecked := false
+	var checkVersionShow func()
 	requiredVars := make([]requiredVar, 0)
 
 	ra := reflect.ValueOf(a).Elem()
@@ -83,7 +82,7 @@ func ParseArgs(a interface{}, args []string) {
 			f.IntVar(p.(*int), name, cast.ToInt(val), usage)
 		case reflect.Bool:
 			pp := p.(*bool)
-			checkVersionShow, checkVersionChecked = checkVersion(checkVersionChecked, a, fi.Name, pp)
+			checkVersionShow = checkVersion(checkVersionShow, a, fi.Name, pp)
 			f.BoolVar(pp, name, cast.ToBool(val), usage)
 		case reflect.Float64:
 			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
@@ -101,7 +100,9 @@ func ParseArgs(a interface{}, args []string) {
 	}
 
 	_ = f.Parse(args[1:])
-	checkVersionShow()
+	if checkVersionShow != nil {
+		checkVersionShow()
+	}
 	checkRequired(requiredVars, f)
 }
 
@@ -125,19 +126,19 @@ func checkRequired(requiredVars []requiredVar, f *flag.FlagSet) {
 	}
 }
 
-func checkVersion(checked bool, arg interface{}, fiName string, bp *bool) (func(), bool) {
-	if !checked && fiName == "Version" {
+func checkVersion(checker func(), arg interface{}, fiName string, bp *bool) func() {
+	if checker == nil && fiName == "Version" {
 		if vs, ok := arg.(VersionShower); ok {
 			return func() {
 				if *bp {
 					fmt.Println(vs.VersionInfo())
 					os.Exit(0)
 				}
-			}, true
+			}
 		}
 	}
 
-	return func() {}, false
+	return checker
 }
 
 type arrayFlags struct {
