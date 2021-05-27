@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type PostProcessor interface {
+	PostProcess()
+}
+
 type VersionShower interface {
 	VersionInfo() string
 }
@@ -104,6 +108,10 @@ func ParseArgs(a interface{}, args []string) {
 		checkVersionShow()
 	}
 	checkRequired(requiredVars, f)
+
+	if v, ok := a.(PostProcessor); ok {
+		v.PostProcess()
+	}
 }
 
 var (
