@@ -10,7 +10,7 @@ var reScheme = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+-.]*://`)
 
 const defaultScheme, defaultHost = "http", "127.0.0.1"
 
-func FixURI(uri string) string {
+func FixURI(uri string) (string, error) {
 	if uri == ":" {
 		uri = ":80"
 	}
@@ -27,7 +27,7 @@ func FixURI(uri string) string {
 
 	u, err := url.Parse(uri)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
 	u.Host = strings.TrimSuffix(u.Host, ":")
@@ -35,5 +35,5 @@ func FixURI(uri string) string {
 		u.Path = "/"
 	}
 
-	return u.String()
+	return u.String(), nil
 }
