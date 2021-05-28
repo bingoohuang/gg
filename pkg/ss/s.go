@@ -18,13 +18,21 @@ func If(b bool, s1, s2 string) string {
 	return s2
 }
 
+func ContainsAny(s string, ss ...string) bool {
+	for _, of := range ss {
+		if strings.Contains(s, of) {
+			return true
+		}
+	}
+	return false
+}
+
 func AnyOf(s string, ss ...string) bool {
 	for _, of := range ss {
 		if s == of {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -34,6 +42,5 @@ func HasPrefix(s string, ss ...string) bool {
 			return true
 		}
 	}
-
 	return false
 }
