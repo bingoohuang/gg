@@ -1,6 +1,10 @@
 package ss
 
-import "strings"
+import (
+	"bytes"
+	"encoding/json"
+	"strings"
+)
 
 func Or(a, b string) string {
 	if a == "" {
@@ -43,4 +47,15 @@ func HasPrefix(s string, ss ...string) bool {
 		}
 	}
 	return false
+}
+
+func Jsonify(v interface{}) string {
+	b := &bytes.Buffer{}
+	encoder := json.NewEncoder(b)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(v); err != nil {
+		return err.Error()
+	}
+
+	return b.String()
 }
