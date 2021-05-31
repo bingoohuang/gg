@@ -104,11 +104,11 @@ func NewPattern(sample, s string) (*Pattern, error) {
 			}
 		}
 
+		dotSample := strings.TrimRight(sample[:pos], " ")
 		if ss.ContainsAny(name, "time", "date") && len(converters) == 0 {
-			converters = []Converter{TimeValue()}
+			converters = []Converter{TimeValue(dotSample)}
 		}
 
-		dotSample := strings.TrimRight(sample[:pos], " ")
 		digits := digitsRegexp.MatchString(dotSample)
 		dot := Dot{
 			Byte:       sample[pos],
@@ -139,10 +139,10 @@ func (uriPath) Convert(v interface{}) (interface{}, error) {
 
 func UriPath() Converter { return &uriPath{} }
 
-type timeValue struct{}
+type timeValue struct{ layout string }
 
-func (timeValue) Convert(v interface{}) (interface{}, error) {
-	return time.Parse("02/Jan/2006:15:04:05 -0700", v.(string))
+func (t timeValue) Convert(v interface{}) (interface{}, error) {
+	return time.Parse(t.layout, v.(string))
 }
 
-func TimeValue() Converter { return &timeValue{} }
+func TimeValue(layout string) Converter { return &timeValue{layout: layout} }
