@@ -1,3 +1,5 @@
+# chinaid
+
 fork from [China ID](https://github.com/mritd/chinaid)
 
 > chinaid 是一个用于生成中国各种信息的测试库，比如姓名、身份证号、地址、邮箱、银行卡号等。
@@ -36,3 +38,9 @@ fmt.Println("日期:", chinaid.RandDate())
 银行卡: 6230959897028597497
 日期: 1977-06-16 23:41:28 +0800 CST
 ```
+
+## Resources
+
+1. [Chinese Id Card Number (Resident Identity Card) and name Generator](https://www.myfakeinfo.com/nationalidno/get-china-citizenidandname.php)
+2. [China ID](https://github.com/mritd/chinaid)
+
