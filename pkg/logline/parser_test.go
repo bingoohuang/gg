@@ -7,8 +7,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	loglineSampl := `192.158.7.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true&wt=json HTTP/1.1 200  41824     - 8      0.008 6 - - Go-http-client/1.1`
-	const pattern = `ip         # # ##date                      ##method#uri|path                 #        #code#bytesSent#-#millis#`
+	loglineSampl := `127.0.0.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true HTTP/1.1 200  41824     - 8      0.008 6 - - Nginx/1.1`
+	const pattern = `ip       # # ##time                      ##method#uri|path         #        #code#bytesSent#-#millis#`
 
 	p, err := NewPattern(loglineSampl, pattern)
 	assert.Nil(t, err)
@@ -19,7 +19,7 @@ func TestParse(t *testing.T) {
 	tt, _ := TimeValue(`02/Jan/2006:15:04:05 -0700`).Convert("26/May/2021:18:55:45 +0800")
 	assert.Equal(t, map[string]interface{}{
 		"ip":        "192.158.77.11",
-		"date":      tt,
+		"time":      tt,
 		"method":    http.MethodGet,
 		"uri":       "/solr/licenseIndex/select",
 		"code":      200,
