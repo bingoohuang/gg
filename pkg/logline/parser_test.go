@@ -15,6 +15,8 @@ func TestParse(t *testing.T) {
 	// 3. 值名称为time时表示日期时间，对应的样本中的时间值，要修改成golang的时间格式(layout)，参见 https://golang.org/src/time/format.go
 	// 4. 竖线表示过滤器，目前仅支持path过滤器，就是从uri(带query)中取出path(不带query)
 	// 5. 捕获标识符对应的样本值为整数时会解析成int类型，为小数时会解析成float64类型
+
+	// pattern="%h %l %u %t %r %s %b %S %D %T %F %{Referer}i %{X-Forwarded-For}i %{User-Agent}i %{X-Real-IP}i"
 	const samplee = `127.0.0.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true HTTP/1.1 200  41824     - 8      0.008   6 - - Nginx/1.1`
 	const pattern = `ip       # # ##time                      ##method#uri|path         #        #code#bytesSent#-#millis#seconds#`
 
@@ -37,7 +39,6 @@ func TestParse(t *testing.T) {
 	}, m)
 
 	// pattern: '%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D'
-	// %D	Time taken to process the request, in millis
 	logSamplee := "10.1.6.1 - - [02/Jan/2006:15:04:05 -0700] !HEAD   /         HTTP/1.0! 200  94        !-! !-! 0     "
 	logPattern := "ip      # #  #time                      # #method#path|path#        ##code#bytesSent## # # ##millis"
 	p2, err2 := NewPattern(logSamplee, logPattern, WithReplace(`!`, `"`))
