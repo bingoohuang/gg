@@ -8,11 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 )
-
-type Converter interface {
-	Convert(v interface{}) (interface{}, error)
-}
 
 var filters = map[string]Converter{
 	"path": UriPath(),
@@ -24,9 +21,15 @@ type Pattern struct {
 	Dots       []Dot
 }
 
+// SliceToString preferred for large body payload (zero allocation and faster)
+func SliceToString(b []byte) string { return *(*string)(unsafe.Pointer(&b)) }
+
+func (p Pattern) ParseBytes(s []byte) map[string]interface{} {
+	return p.Parse(SliceToString(s))
+}
+
 func (p Pattern) Parse(s string) map[string]interface{} {
 	m := make(map[string]interface{})
-	var err error
 
 	for _, dot := range p.Dots {
 		pos := strings.IndexByte(s, dot.Byte)
@@ -34,26 +37,14 @@ func (p Pattern) Parse(s string) map[string]interface{} {
 			break
 		}
 
-		ss := s[:pos]
-		var val interface{} = ss
+		var val interface{} = s[:pos]
 		s = s[pos+1:]
+
 		if dot.Name == "-" || dot.Name == "" {
 			continue
 		}
 
-		if len(dot.Converters) > 0 {
-			for _, c := range dot.Converters {
-				val, err = c.Convert(val)
-				if err != nil {
-					break
-				}
-			}
-		} else if dot.Digits {
-			if v, err := strconv.Atoi(ss); err == nil {
-				m[dot.Name] = v
-				continue
-			}
-		}
+		val, _ = dot.Converters.Convert(val)
 		m[dot.Name] = val
 	}
 
@@ -62,68 +53,82 @@ func (p Pattern) Parse(s string) map[string]interface{} {
 
 type Dot struct {
 	Byte       byte
-	Digits     bool
 	Name       string
-	Sample     string
-	Converters []Converter
+	Converters Converters
 }
 
 var ErrBadPattern = errors.New("bad pattern")
 
 var digitsRegexp = regexp.MustCompile(`^\d+$`)
 
-func NewPattern(sample, s string) (*Pattern, error) {
-	if len(s) > len(sample) {
+func NewPattern(sample, pattern string) (*Pattern, error) {
+	if len(pattern) > len(sample) {
 		return nil, ErrBadPattern
 	}
 	var dots []Dot
 
 	for {
-		pos := strings.IndexByte(s, '#')
+		pos := strings.IndexByte(pattern, '#')
 		if pos < 0 {
 			break
 		}
 
+		parts := split(strings.TrimSpace(pattern[:pos]), "|")
+		name := parts[0]
+
 		var converters []Converter
 
-		name := strings.TrimSpace(s[:pos])
-		if name != "" {
-			var parts []string
-			for _, v := range strings.Split(name, "|") {
-				v = strings.TrimSpace(v)
-				if v != "" {
-					parts = append(parts, v)
-				}
-			}
-			if len(parts) > 0 {
-				name = parts[0]
-
-				for i := 1; i < len(parts); i++ {
-					converters = append(converters, filters[parts[i]])
-				}
-			}
-		}
-
 		dotSample := strings.TrimRight(sample[:pos], " ")
-		if ss.ContainsAny(name, "time", "date") && len(converters) == 0 {
-			converters = []Converter{TimeValue(dotSample)}
+		if ss.ContainsAny(name, "time", "date") {
+			converters = append(converters, TimeValue(dotSample))
+		} else if digitsRegexp.MatchString(dotSample) {
+			converters = append(converters, DigitsValue())
 		}
 
-		digits := digitsRegexp.MatchString(dotSample)
-		dot := Dot{
-			Byte:       sample[pos],
-			Name:       name,
-			Sample:     dotSample,
-			Digits:     digits,
-			Converters: converters,
+		for i := 1; i < len(parts); i++ {
+			converters = append(converters, filters[parts[i]])
 		}
+
+		dot := Dot{Byte: sample[pos], Name: name, Converters: converters}
 		dots = append(dots, dot)
-
-		s = s[pos+1:]
+		pattern = pattern[pos+1:]
 		sample = sample[pos+1:]
 	}
 
-	return &Pattern{Pattern: s, Dots: dots}, nil
+	return &Pattern{Pattern: pattern, Dots: dots}, nil
+}
+
+func split(name, sep string) []string {
+	var parts []string
+	for _, v := range strings.Split(name, sep) {
+		if v = strings.TrimSpace(v); v != "" {
+			parts = append(parts, v)
+		}
+	}
+
+	if len(parts) == 0 {
+		return []string{name}
+	}
+
+	return parts
+}
+
+type Converter interface {
+	Convert(v interface{}) (interface{}, error)
+}
+
+type Converters []Converter
+
+func (c Converters) Convert(v interface{}) (interface{}, error) {
+	for _, f := range c {
+		if vv, err := f.Convert(v); err != nil {
+			return v, err
+		} else {
+			v = vv
+		}
+	}
+
+	return v, nil
 }
 
 type uriPath struct{}
@@ -146,3 +151,9 @@ func (t timeValue) Convert(v interface{}) (interface{}, error) {
 }
 
 func TimeValue(layout string) Converter { return &timeValue{layout: layout} }
+
+type digitsValue struct{}
+
+func (t digitsValue) Convert(v interface{}) (interface{}, error) { return strconv.Atoi(v.(string)) }
+
+func DigitsValue() Converter { return &digitsValue{} }
