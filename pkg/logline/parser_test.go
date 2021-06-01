@@ -7,8 +7,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	const sample1 = `127.0.0.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true HTTP/1.1 200  41824     - 8      0.008 6 - - Nginx/1.1`
-	const pattern = `ip       # # ##time                      ##method#uri|path         #        #code#bytesSent#-#millis#`
+	const sample1 = `127.0.0.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true HTTP/1.1 200  41824     - 8      0.008   6 - - Nginx/1.1`
+	const pattern = `ip       # # ##time                      ##method#uri|path         #        #code#bytesSent#-#millis#seconds#`
 
 	p, err := NewPattern(sample1, pattern)
 	assert.Nil(t, err)
@@ -25,6 +25,7 @@ func TestParse(t *testing.T) {
 		"code":      200,
 		"bytesSent": 41824,
 		"millis":    8,
+		"seconds":   0.008,
 	}, m)
 
 	// https://qsli.github.io/2016/12/23/tomcat-access-log/
