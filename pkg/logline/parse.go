@@ -41,20 +41,24 @@ func (p Pattern) Parse(s string) map[string]interface{} {
 	m := make(map[string]interface{})
 
 	for _, dot := range p.Dots {
+		if dot.EOF {
+			if dot.Valid() {
+				val, _ := dot.Converters.Convert(s)
+				m[dot.Name] = val
+			}
+			break
+		}
 		pos := strings.IndexByte(s, dot.Byte)
 		if pos < 0 {
 			break
 		}
 
-		var val interface{} = s[:pos]
-		s = s[pos+1:]
-
-		if dot.Name == "-" || dot.Name == "" {
-			continue
+		if dot.Valid() {
+			val, _ := dot.Converters.Convert(s[:pos])
+			m[dot.Name] = val
 		}
 
-		val, _ = dot.Converters.Convert(val)
-		m[dot.Name] = val
+		s = s[pos+1:]
 	}
 
 	return m
@@ -66,6 +70,7 @@ type Dot struct {
 	Name       string
 	Sample     string
 	Converters Converters
+	EOF        bool
 }
 
 func (d Dot) Valid() bool {
@@ -85,25 +90,66 @@ const (
 	Digits
 )
 
-func NewPattern(sample, pattern string) (*Pattern, error) {
+func WithReplace(pairs ...string) func(*Option) {
+	return func(option *Option) {
+		option.Replaces = pairs
+	}
+}
+
+type Option struct {
+	Replaces []string
+}
+
+func (o Option) Replace(s string) string {
+	for i := 0; i+1 < len(o.Replaces); i += 2 {
+		s = strings.ReplaceAll(s, o.Replaces[i], o.Replaces[i+1])
+	}
+
+	return s
+}
+
+type OptionFn func(*Option)
+type OptionFns []OptionFn
+
+func (fs OptionFns) Apply(option *Option) {
+	for _, f := range fs {
+		f(option)
+	}
+}
+
+func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 	if len(pattern) > len(sample) {
 		return nil, ErrBadPattern
 	}
 	var dots []Dot
 
+	option := &Option{}
+	OptionFns(options).Apply(option)
+	sample = option.Replace(sample)
 	for {
 		pos := strings.IndexByte(pattern, '#')
-		if pos < 0 {
+		if pos < 0 && pattern == "" {
 			break
 		}
 
-		parts := split(strings.TrimSpace(pattern[:pos]), "|")
+		left, leftSample := "", ""
+		var anchorByte byte
+
+		if pos < 0 {
+			left = pattern
+			leftSample = sample
+		} else {
+			anchorByte = sample[pos]
+			left = pattern[:pos]
+			leftSample = sample[:pos]
+		}
+		parts := split(strings.TrimSpace(left), "|")
 		name := parts[0]
 
 		var converters []Converter
 		typ := String
 
-		dotSample := strings.TrimRight(sample[:pos], " ")
+		dotSample := strings.Trim(leftSample, " ")
 		if ss.ContainsAny(name, "time", "date") {
 			converters = append(converters, TimeValue(dotSample))
 			typ = DateTime
@@ -120,8 +166,12 @@ func NewPattern(sample, pattern string) (*Pattern, error) {
 			converters = append(converters, filters[parts[i]])
 		}
 
-		dot := Dot{Byte: sample[pos], Name: name, Converters: converters, Type: typ, Sample: dotSample}
+		dot := Dot{Byte: anchorByte, Name: name, Converters: converters, Type: typ, Sample: dotSample, EOF: pos < 0}
 		dots = append(dots, dot)
+
+		if pos < 0 {
+			break
+		}
 		pattern = pattern[pos+1:]
 		sample = sample[pos+1:]
 	}
@@ -176,10 +226,20 @@ func (t timeValue) Convert(v interface{}) (interface{}, error) {
 	return time.Parse(t.layout, v.(string))
 }
 
-func (t digitsValue) Convert(v interface{}) (interface{}, error) { return strconv.Atoi(v.(string)) }
+func (t digitsValue) Convert(v interface{}) (interface{}, error) {
+	vs := v.(string)
+	if vs == "" || vs == "-" {
+		return 0, nil
+	}
+	return strconv.Atoi(vs)
+}
 
 func (t floatValue) Convert(v interface{}) (interface{}, error) {
-	return strconv.ParseFloat(v.(string), 64)
+	vs := v.(string)
+	if vs == "" || vs == "-" {
+		return float64(0), nil
+	}
+	return strconv.ParseFloat(vs, 64)
 }
 func (uriPath) Convert(v interface{}) (interface{}, error) {
 	u, err := url.Parse(v.(string))
