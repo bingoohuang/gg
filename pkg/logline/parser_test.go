@@ -10,6 +10,11 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	// 1. 样本与模式对照书写，模式中的#对应的样本字符为锚定符
+	// 2. 需要捕获锚定符之间的值时，给定一个标识符（例如ip,time)，如果不需要取值则使用空格略过
+	// 3. 值名称为time时表示日期时间，对应的样本中的时间值，要修改成golang的时间格式(layout)，参见 https://golang.org/src/time/format.go
+	// 4. 竖线表示过滤器，目前仅支持path过滤器，就是从uri(带query)中取出path(不带query)
+	// 5. 捕获标识符对应的样本值为整数时会解析成int类型，为小数时会解析成float64类型
 	const samplee = `127.0.0.1 - - [02/Jan/2006:15:04:05 -0700] GET    /path?indent=true HTTP/1.1 200  41824     - 8      0.008   6 - - Nginx/1.1`
 	const pattern = `ip       # # ##time                      ##method#uri|path         #        #code#bytesSent#-#millis#seconds#`
 
