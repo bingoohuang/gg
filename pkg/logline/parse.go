@@ -12,7 +12,8 @@ import (
 )
 
 var filters = map[string]Converter{
-	"path": UriPath(),
+	"path":     UriPath(),
+	"duration": DurationPath(),
 }
 
 type Pattern struct {
@@ -216,7 +217,9 @@ func FloatValue() Converter             { return &floatValue{} }
 func DigitsValue() Converter            { return &digitsValue{} }
 func TimeValue(layout string) Converter { return &timeValue{layout: layout} }
 func UriPath() Converter                { return &uriPath{} }
+func DurationPath() Converter           { return &durationPath{} }
 
+type durationPath struct{}
 type uriPath struct{}
 type timeValue struct{ layout string }
 type digitsValue struct{}
@@ -248,4 +251,13 @@ func (uriPath) Convert(v interface{}) (interface{}, error) {
 	}
 
 	return u.Path, nil
+}
+
+func (d durationPath) Convert(v interface{}) (interface{}, error) {
+	du, err := time.ParseDuration(v.(string))
+	if err != nil {
+		return v, err
+	}
+
+	return du.Seconds(), nil
 }
