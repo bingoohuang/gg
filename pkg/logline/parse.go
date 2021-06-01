@@ -24,6 +24,16 @@ type Pattern struct {
 // SliceToString preferred for large body payload (zero allocation and faster)
 func SliceToString(b []byte) string { return *(*string)(unsafe.Pointer(&b)) }
 
+func (p Pattern) Names() (names []string) {
+	for _, dot := range p.Dots {
+		if dot.Name == "-" || dot.Name == "" {
+			continue
+		}
+		names = append(names, dot.Name)
+	}
+	return
+}
+
 func (p Pattern) ParseBytes(s []byte) map[string]interface{} {
 	return p.Parse(SliceToString(s))
 }
