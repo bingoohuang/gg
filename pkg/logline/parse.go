@@ -50,7 +50,7 @@ func (p Pattern) Parse(s string) (m map[string]interface{}, ok bool) {
 			count++
 			break
 		}
-		pos := strings.IndexByte(s, dot.Byte)
+		pos := strings.Index(s, dot.Anchor)
 		if pos < 0 {
 			break
 		}
@@ -61,7 +61,7 @@ func (p Pattern) Parse(s string) (m map[string]interface{}, ok bool) {
 			m[dot.Name] = val
 		}
 
-		s = s[pos+1:]
+		s = s[pos+len(dot.Anchor):]
 	}
 
 	ok = count == len(p.Dots)
@@ -71,7 +71,7 @@ func (p Pattern) Parse(s string) (m map[string]interface{}, ok bool) {
 
 type Dot struct {
 	Type
-	Byte       byte
+	Anchor     string
 	Name       string
 	Sample     string
 	Converters Converters
@@ -135,18 +135,22 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 		}
 
 		left, leftSample := "", ""
-		var anchorByte byte
+		var anchor string
 
 		if pos < 0 {
 			left = pattern
 			leftSample = sample
 		} else {
-			if pos >= len(sample) {
+			more := nextCrosses(pos, pattern)
+
+			if pos+more >= len(sample) {
 				return nil, ErrBadPattern
 			}
-			anchorByte = sample[pos]
+
+			anchor = sample[pos : pos+more+1]
 			left = pattern[:pos]
 			leftSample = sample[:pos]
+			pos += more
 		}
 		parts := split(strings.TrimSpace(left), "|")
 		name := parts[0]
@@ -182,7 +186,7 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 			}
 		}
 
-		dot := Dot{Byte: anchorByte, Name: name, Converters: converters, Type: typ, Sample: dotSample, EOF: pos < 0}
+		dot := Dot{Anchor: anchor, Name: name, Converters: converters, Type: typ, Sample: dotSample, EOF: pos < 0}
 		dots = append(dots, dot)
 
 		if pos < 0 {
@@ -193,6 +197,15 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 	}
 
 	return &Pattern{Pattern: pattern, Dots: dots}, nil
+}
+
+func nextCrosses(pos int, pattern string) int {
+	for i := pos + 1; i < len(pattern); i++ {
+		if pattern[i] != '#' {
+			return i - pos - 1
+		}
+	}
+	return 0
 }
 
 func split(name, sep string) []string {
