@@ -25,7 +25,9 @@ func TestParse(t *testing.T) {
 
 	line := `192.158.77.11 - - [26/May/2021:18:55:45 +0800] GET /solr/licenseIndex/select?indent=true&5-26T10rows=2500&sort=id+asc&start=0&wt=json HTTP/1.1 200 41824 - 8 0.008 6 - - Go-http-client/1.1`
 
-	m := p.Parse(line)
+	m, ok := p.Parse(line)
+	assert.True(t, ok)
+
 	tt, _ := TimeValue(`02/Jan/2006:15:04:05 -0700`).Convert("26/May/2021:18:55:45 +0800")
 	assert.Equal(t, map[string]interface{}{
 		"ip":        "192.158.77.11",
@@ -45,7 +47,8 @@ func TestParse(t *testing.T) {
 	assert.Nil(t, err2)
 
 	line = `10.16.26.21 - - [19/May/2021:00:00:13 +0800] "POST /upload1 HTTP/1.1" 200 94 "-" "Apache-HttpClient/4.5.1 (Java/1.8.0_74)" 42`
-	m2 := p2.Parse(line)
+	m2, ok2 := p2.Parse(line)
+	assert.True(t, ok2)
 	tt, _ = TimeValue(`02/Jan/2006:15:04:05 -0700`).Convert("19/May/2021:00:00:13 +0800")
 	assert.Equal(t, map[string]interface{}{
 		"ip":        "10.16.26.21",
@@ -75,9 +78,9 @@ func parseFile(file string, p *Pattern) {
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		lineNo++
-		m := p.ParseBytes(line)
+		m, ok := p.ParseBytes(line)
 
-		fmt.Fprintf(out, "%v\n", m)
+		fmt.Fprintf(out, "%v, ok:%t\n", m, ok)
 	}
 
 	fmt.Printf("total lines: %d\n", lineNo)

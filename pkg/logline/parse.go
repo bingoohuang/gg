@@ -34,19 +34,20 @@ func (p Pattern) Names() (names []string) {
 	return
 }
 
-func (p Pattern) ParseBytes(s []byte) map[string]interface{} {
+func (p Pattern) ParseBytes(s []byte) (map[string]interface{}, bool) {
 	return p.Parse(SliceToString(s))
 }
 
-func (p Pattern) Parse(s string) map[string]interface{} {
-	m := make(map[string]interface{})
-
+func (p Pattern) Parse(s string) (m map[string]interface{}, ok bool) {
+	m = make(map[string]interface{})
+	count := 0
 	for _, dot := range p.Dots {
 		if dot.EOF {
 			if dot.Valid() {
 				val, _ := dot.Converters.Convert(s)
 				m[dot.Name] = val
 			}
+			count++
 			break
 		}
 		pos := strings.IndexByte(s, dot.Byte)
@@ -54,6 +55,7 @@ func (p Pattern) Parse(s string) map[string]interface{} {
 			break
 		}
 
+		count++
 		if dot.Valid() {
 			val, _ := dot.Converters.Convert(s[:pos])
 			m[dot.Name] = val
@@ -62,7 +64,9 @@ func (p Pattern) Parse(s string) map[string]interface{} {
 		s = s[pos+1:]
 	}
 
-	return m
+	ok = count == len(p.Dots)
+
+	return
 }
 
 type Dot struct {
