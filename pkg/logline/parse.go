@@ -147,7 +147,7 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 		parts := split(strings.TrimSpace(left), "|")
 		name := parts[0]
 
-		var converters []Converter
+		var converters Converters
 		typ := String
 
 		dotSample := strings.Trim(leftSample, " ")
@@ -165,6 +165,17 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 
 		for i := 1; i < len(parts); i++ {
 			converters = append(converters, filters[parts[i]])
+		}
+
+		if typ == String && len(converters) > 0 {
+			if v, err := converters.Convert(dotSample); err == nil {
+				switch v.(type) {
+				case float64, float32:
+					typ = Float
+				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+					typ = Digits
+				}
+			}
 		}
 
 		dot := Dot{Byte: anchorByte, Name: name, Converters: converters, Type: typ, Sample: dotSample, EOF: pos < 0}
