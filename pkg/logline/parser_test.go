@@ -38,7 +38,7 @@ func TestParse(t *testing.T) {
 
 	// pattern: '%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D'
 	// %D	Time taken to process the request, in millis
-	logSamplee := "10.1.6.1 - - [02/Jan/2006:15:04:05 -0700] !HEAD   /         HTTP/1.0! 200  94        !-! !-! 0     "
+	logSamplee := "10.1.6.1 - - [02/Jan/2006:15:04:05 -0700] !HEAD   /         HTTP/1.0! 200  94        !-! !-! 0"
 	logPattern := "ip      # #  #time                      # #method#path|path#        ##code#bytesSent## # # ##millis"
 	p2, err2 := NewPattern(logSamplee, logPattern, WithReplace(`!`, `"`))
 	assert.Nil(t, err2)

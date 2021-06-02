@@ -118,9 +118,6 @@ func (fs OptionFns) Apply(option *Option) {
 }
 
 func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
-	if len(pattern) > len(sample) {
-		return nil, ErrBadPattern
-	}
 	var dots []Dot
 
 	option := &Option{}
@@ -139,6 +136,9 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 			left = pattern
 			leftSample = sample
 		} else {
+			if pos >= len(sample) {
+				return nil, ErrBadPattern
+			}
 			anchorByte = sample[pos]
 			left = pattern[:pos]
 			leftSample = sample[:pos]
