@@ -6,6 +6,21 @@ import (
 	"strings"
 )
 
+func EvalVarsMap(s string, genFnMap map[string]func() GenFn, vars map[string]interface{}) Result {
+	missedVars := map[string]struct{}{}
+	if vars == nil {
+		vars = map[string]interface{}{}
+	}
+
+	result := Parse(s, genFnMap, missedVars).Eval(vars)
+	result.MissedVars = missedVars
+	return result
+}
+
+func Eval(s string, genFnMap map[string]func() GenFn) Result {
+	return EvalVarsMap(s, genFnMap, nil)
+}
+
 type Part interface {
 	Eval(vars map[string]interface{}) string
 }
@@ -30,8 +45,10 @@ func (l Var) Eval(vars map[string]interface{}) string {
 	return fmt.Sprintf("%s", v)
 }
 
-func (l Parts) Eval() Result {
-	vars := map[string]interface{}{}
+func (l Parts) Eval(vars map[string]interface{}) Result {
+	if vars == nil {
+		vars = map[string]interface{}{}
+	}
 
 	sb := strings.Builder{}
 	for _, p := range l {
@@ -51,14 +68,6 @@ type Result struct {
 	Value      string
 	Vars       map[string]interface{}
 	MissedVars map[string]struct{}
-}
-
-func Eval(s string, genFnMap map[string]func() GenFn) Result {
-	missedVars := map[string]struct{}{}
-
-	result := Parse(s, genFnMap, missedVars).Eval()
-	result.MissedVars = missedVars
-	return result
 }
 
 func Parse(s string, genFnMap map[string]func() GenFn, missedVars map[string]struct{}) (parts Parts) {
