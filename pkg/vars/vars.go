@@ -6,75 +6,83 @@ import (
 	"strings"
 )
 
-func EvalVarsMap(s string, genFnMap map[string]func() GenFn, vars map[string]interface{}) Result {
-	missedVars := map[string]struct{}{}
-	if vars == nil {
-		vars = map[string]interface{}{}
-	}
+type GenFn func() interface{}
 
-	result := Parse(s, genFnMap, missedVars).Eval(vars)
-	result.MissedVars = missedVars
-	return result
+type MapGenValue struct {
+	GenMap     map[string]func() GenFn
+	Map        map[string]GenFn
+	MissedVars map[string]bool
+	Vars       map[string]interface{}
 }
 
-func Eval(s string, genFnMap map[string]func() GenFn) Result {
-	return EvalVarsMap(s, genFnMap, nil)
+func NewMapGenValue(m map[string]func() GenFn) *MapGenValue {
+	return &MapGenValue{
+		GenMap:     m,
+		Map:        make(map[string]GenFn),
+		Vars:       make(map[string]interface{}),
+		MissedVars: make(map[string]bool),
+	}
+}
+
+func (m *MapGenValue) GetValue(name string) interface{} {
+	if fn, ok := m.Map[name]; ok {
+		return fn()
+	}
+
+	var f GenFn
+
+	if fn, ok := m.GenMap[name]; ok {
+		ff := fn()
+		f = func() interface{} {
+			v := ff()
+			m.Vars[name] = v
+			return v
+		}
+	} else {
+		f = func() interface{} { return name }
+		m.MissedVars[name] = true
+	}
+
+	m.Map[name] = f
+	return f()
+}
+
+type VarValue interface {
+	GetValue(name string) interface{}
+}
+
+func Eval(s string, varValue VarValue) string {
+	return Parse(s).Eval(varValue)
 }
 
 type Part interface {
-	Eval(vars map[string]interface{}) string
+	Eval(varValue VarValue) string
 }
 
-type GenFn func() interface{}
-
 type Var struct {
-	Gen  GenFn
 	Name string
 }
 
 type Literal struct{ V string }
 
-func (l Literal) Eval(map[string]interface{}) string { return l.V }
-func (l Var) Eval(vars map[string]interface{}) string {
-	v, ok := vars[l.Name]
-	if !ok {
-		v = l.Gen()
-		vars[l.Name] = v
-	}
+func (l Literal) Eval(VarValue) string      { return l.V }
+func (l Var) Eval(varValue VarValue) string { return fmt.Sprintf("%s", varValue.GetValue(l.Name)) }
 
-	return fmt.Sprintf("%s", v)
-}
-
-func (l Parts) Eval(vars map[string]interface{}) Result {
-	if vars == nil {
-		vars = map[string]interface{}{}
-	}
-
+func (l Parts) Eval(varValue VarValue) string {
 	sb := strings.Builder{}
 	for _, p := range l {
-		sb.WriteString(p.Eval(vars))
+		sb.WriteString(p.Eval(varValue))
 	}
-	return Result{
-		Value: sb.String(),
-		Vars:  vars,
-	}
+	return sb.String()
 }
 
 type Parts []Part
 
 var varRe = regexp.MustCompile(`\$?\{[^{}]+?\}|\{\{[^{}]+?\}\}`)
 
-type Result struct {
-	Value      string
-	Vars       map[string]interface{}
-	MissedVars map[string]struct{}
-}
-
-func Parse(s string, genFnMap map[string]func() GenFn, missedVars map[string]struct{}) (parts Parts) {
+func Parse(s string) (parts Parts) {
 	locs := varRe.FindAllStringSubmatchIndex(s, -1)
 	start := 0
-
-	localGenFn := make(map[string]GenFn)
 
 	for _, loc := range locs {
 		parts = append(parts, &Literal{V: s[start:loc[0]]})
@@ -83,17 +91,9 @@ func Parse(s string, genFnMap map[string]func() GenFn, missedVars map[string]str
 		sub = strings.TrimSuffix(sub, "}")
 		start = loc[1]
 
-		vn := strings.ToLower(strings.TrimSpace(sub))
-		if _, ok := localGenFn[vn]; !ok {
-			if ff, fok := genFnMap[vn]; !fok {
-				missedVars[vn] = struct{}{}
-				localGenFn[vn] = func() interface{} { return sub }
-			} else {
-				localGenFn[vn] = ff()
-			}
-		}
+		vn := strings.TrimSpace(sub)
 
-		parts = append(parts, &Var{Name: vn, Gen: localGenFn[vn]})
+		parts = append(parts, &Var{Name: vn})
 	}
 
 	if start < len(s) {

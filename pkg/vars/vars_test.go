@@ -6,25 +6,24 @@ import (
 )
 
 func TestVars(t *testing.T) {
-	s := Eval("hello {name}", map[string]func() GenFn{
+	m := map[string]func() GenFn{
 		"name": func() GenFn { return func() interface{} { return "bingoo" } },
-	})
-	assert.Equal(t, "hello bingoo", s.Value)
-	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, s.Vars)
+	}
+	mv := NewMapGenValue(m)
+	s := Eval("hello {name}", mv)
+	assert.Equal(t, "hello bingoo", s)
+	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, mv.Vars)
 
-	s = Eval("hello {{name}}", map[string]func() GenFn{
-		"name": func() GenFn { return func() interface{} { return "bingoo" } },
-	})
-	assert.Equal(t, "hello bingoo", s.Value)
-	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, s.Vars)
+	s = Eval("hello {{name}}", mv)
+	assert.Equal(t, "hello bingoo", s)
+	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, mv.Vars)
 
-	s = Eval("hello ${name}", map[string]func() GenFn{
-		"name": func() GenFn { return func() interface{} { return "bingoo" } },
-	})
-	assert.Equal(t, "hello bingoo", s.Value)
-	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, s.Vars)
+	s = Eval("hello ${name}", mv)
+	assert.Equal(t, "hello bingoo", s)
+	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, mv.Vars)
 
-	s = Eval("hello ${name}", map[string]func() GenFn{})
-	assert.Equal(t, "hello name", s.Value)
-	assert.Equal(t, map[string]struct{}{"name": {}}, s.MissedVars)
+	mv = NewMapGenValue(map[string]func() GenFn{})
+	s = Eval("hello ${name}", mv)
+	assert.Equal(t, "hello name", s)
+	assert.Equal(t, map[string]bool{"name": true}, mv.MissedVars)
 }
