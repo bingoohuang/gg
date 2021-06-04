@@ -110,7 +110,7 @@ func newCountValue(val int, p *int) *countValue {
 }
 
 func (i *countValue) Set(s string) error {
-	*i = countValue(len(s) + 1)
+	*i += countValue(len(s) + 1)
 	return nil
 }
 

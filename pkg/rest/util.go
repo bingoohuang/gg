@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/bingoohuang/gg/pkg/ss"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,12 +36,25 @@ func ReadCloseBody(r *http.Response) ([]byte, error) {
 	if r.Body == nil {
 		return nil, nil
 	}
-	defer r.Body.Close()
 
 	data, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+
 	if err != nil {
 		return nil, err
 	}
 
 	return data, nil
+}
+
+func DiscardCloseBody(r *http.Response) error {
+	if r == nil {
+		return nil
+	}
+	if r.Body == nil {
+		return nil
+	}
+	_, err := io.Copy(io.Discard, r.Body)
+	r.Body.Close()
+	return err
 }
