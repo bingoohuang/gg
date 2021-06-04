@@ -901,6 +901,11 @@ func (f *FlagSet) parseOne() (bool, error) {
 			}
 		}
 	} else {
+		if !hasValue {
+			if _, ok := flag.Value.(*countValue); ok {
+				hasValue = true
+			}
+		}
 		// It must have a value, which might be the next argument.
 		if !hasValue && len(f.args) > 0 {
 			// value is the next arg
