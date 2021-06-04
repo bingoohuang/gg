@@ -20,12 +20,13 @@ func (i *myFlag) Set(value string) error {
 
 func TestParse(t *testing.T) {
 	arg := &Arg{}
-	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s"})
+	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv"})
 	assert.Equal(t, 10*time.Second, arg.Duration)
 	assert.Equal(t, myFlag{Value: "mymy"}, arg.MyFlag)
 	assert.Equal(t, []string{"a", "b"}, arg.Out)
 	assert.Equal(t, 1234, arg.Port)
 	assert.Equal(t, "5003", arg.Input)
+	assert.Equal(t, 3, arg.V)
 	// ... use arg
 }
 
@@ -36,8 +37,9 @@ type Arg struct {
 	Out      []string
 	Port     int    `flag:"p" val:"1234"`
 	Input    string `flag:"i" val:"" required:"true"`
-	Version  bool   `flag:"v" val:"false" usage:"Show version"`
+	Version  bool   `val:"false" usage:"Show version"`
 	Other    string `flag:"-"`
+	V        int    `flag:"v" count:"true"`
 }
 
 // Usage is optional for customized show.

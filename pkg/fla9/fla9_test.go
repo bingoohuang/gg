@@ -21,6 +21,7 @@ func ExampleFlag() {
 		length      float64
 		female      bool
 		connections int
+		v           int
 	)
 
 	fla9.String("conf", "testdata/test.conf", "help message")
@@ -29,14 +30,16 @@ func ExampleFlag() {
 	fla9.IntVar(&connections, "c", 0, "help message")
 	fla9.Float64Var(&length, "length", 0, "help message")
 	fla9.BoolVar(&female, "female", false, "help message")
+	fla9.CountVar(&v, "v", 0, "-v -vv -vvv")
 
-	fla9.Parse()
+	fla9.CommandLine.Parse([]string{"-vv"})
 
 	fmt.Println("connections:", connections)
 	fmt.Println("length:", length)
 	fmt.Println("age:", age)
 	fmt.Println("name:", name)
 	fmt.Println("female:", female)
+	fmt.Println("v:", v)
 
 	// Output:
 	// connections: 12345
@@ -44,6 +47,7 @@ func ExampleFlag() {
 	// age: 2
 	// name: Gloria
 	// female: false
+	// v: 2
 }
 
 /*

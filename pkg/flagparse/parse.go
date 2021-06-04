@@ -83,7 +83,11 @@ func ParseArgs(a interface{}, args []string) {
 				requiredVars = append(requiredVars, requiredVar{name: name, p: pp})
 			}
 		case reflect.Int:
-			f.IntVar(p.(*int), name, cast.ToInt(val), usage)
+			if count := t("count"); count == "true" {
+				f.CountVar(p.(*int), name, cast.ToInt(val), usage)
+			} else {
+				f.IntVar(p.(*int), name, cast.ToInt(val), usage)
+			}
 		case reflect.Bool:
 			pp := p.(*bool)
 			checkVersionShow = checkVersion(checkVersionShow, a, fi.Name, pp)

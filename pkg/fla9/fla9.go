@@ -102,6 +102,21 @@ type boolFlag interface {
 	IsBoolFlag() bool
 }
 
+type countValue int
+
+func newCountValue(val int, p *int) *countValue {
+	*p = val
+	return (*countValue)(p)
+}
+
+func (i *countValue) Set(s string) error {
+	*i = countValue(len(s) + 1)
+	return nil
+}
+
+func (i *countValue) Get() interface{} { return int(*i) }
+func (i *countValue) String() string   { return fmt.Sprintf("%v", *i) }
+
 // -- int Value
 type intValue int
 
@@ -579,6 +594,32 @@ func (f *FlagSet) Int(name string, value int, usage string) *int {
 // The return value is the address of an int variable that stores the value of the flag.
 func Int(name string, value int, usage string) *int {
 	return CommandLine.Int(name, value, usage)
+}
+
+// CountVar defines an int flag with specified name, default value, and usage string.
+// The argument p points to an int variable in which to store the value of the flag.
+func (f *FlagSet) CountVar(p *int, name string, value int, usage string) {
+	f.Var(newCountValue(value, p), name, usage)
+}
+
+// CountVar defines an int flag with specified name, default value, and usage string.
+// The argument p points to an int variable in which to store the value of the flag.
+func CountVar(p *int, name string, value int, usage string) {
+	CommandLine.Var(newCountValue(value, p), name, usage)
+}
+
+// Count defines an int flag with specified name, default value, and usage string.
+// The return value is the address of an int variable that stores the value of the flag.
+func (f *FlagSet) Count(name string, value int, usage string) *int {
+	p := new(int)
+	f.CountVar(p, name, value, usage)
+	return p
+}
+
+// Count defines an int flag with specified name, default value, and usage string.
+// The return value is the address of an int variable that stores the value of the flag.
+func Count(name string, value int, usage string) *int {
+	return CommandLine.Count(name, value, usage)
 }
 
 // Int64Var defines an int64 flag with specified name, default value, and usage string.
