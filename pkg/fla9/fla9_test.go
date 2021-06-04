@@ -23,6 +23,10 @@ func ExampleFlag() {
 		connections int
 		v           int
 		p           int
+		b1          bool
+		b2          bool
+		b3          bool
+		b4          bool
 	)
 
 	fla9.String("conf", "testdata/test.conf", "help message")
@@ -34,8 +38,12 @@ func ExampleFlag() {
 	fla9.CountVar(&v, "v", 0, "-v -vv -vvv")
 	fla9.CountVar(&p, "p", 0, "-p -pp -ppp")
 	fla9.CountVar(&p, "q", 0, "-q -qq -qqq")
+	fla9.BoolVar(&b1, "b1", false, "b1")
+	fla9.BoolVar(&b2, "b2", false, "b2")
+	fla9.BoolVar(&b3, "b3", false, "b3")
+	fla9.BoolVar(&b4, "b4", false, "b4")
 
-	fla9.CommandLine.Parse([]string{"-v", "-pp"})
+	fla9.CommandLine.Parse([]string{"-v", "-pp", "-b1", "false", "-b2", "true", "-b3", "-b4=true"})
 
 	fmt.Println("connections:", connections)
 	fmt.Println("length:", length)
@@ -45,6 +53,7 @@ func ExampleFlag() {
 	fmt.Println("v:", v)
 	fmt.Println("p:", p)
 	fmt.Println("q:", 0)
+	fmt.Println("b:", b1, b2, b3, b4)
 
 	// Output:
 	// connections: 12345
@@ -55,6 +64,7 @@ func ExampleFlag() {
 	// v: 1
 	// p: 2
 	// q: 0
+	// b: false true true true
 }
 
 /*

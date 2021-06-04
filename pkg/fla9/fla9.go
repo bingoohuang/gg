@@ -63,6 +63,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"io/ioutil"
 	"os"
@@ -887,18 +888,17 @@ func (f *FlagSet) parseOne() (bool, error) {
 			f.usage()
 			return false, ErrHelp
 		}
-
 		return false, f.failf("flag provided but not defined: -%s", name)
 	}
 	if fv, ok := flag.Value.(boolFlag); ok && fv.IsBoolFlag() { // special case: doesn't need an arg
-		if hasValue {
-			if err := fv.Set(value); err != nil {
-				return false, f.failf("invalid boolean value %q for -%s: %v", value, name, err)
+		if !hasValue {
+			value = "true"
+			if len(f.args) > 0 && ss.AnyOf(f.args[0], "true", "false") {
+				value, f.args = f.args[0], f.args[1:]
 			}
-		} else {
-			if err := fv.Set("true"); err != nil {
-				return false, f.failf("invalid boolean flag %s: %v", name, err)
-			}
+		}
+		if err := fv.Set(value); err != nil {
+			return false, f.failf("invalid boolean value %q for -%s: %v", value, name, err)
 		}
 	} else {
 		if !hasValue {
