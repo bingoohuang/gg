@@ -16,6 +16,7 @@ import (
 // bufWriter is a Writer interface that also has a Flush method.
 type bufWriter interface {
 	io.Writer
+	io.Closer
 	Flush() error
 }
 
@@ -74,13 +75,24 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 }
 
 type gzipWriter struct {
-	Under *bufio.Writer
+	Buf *bufio.Writer
 	*gzip.Writer
 }
 
-func (w *gzipWriter) Flush() error {
-	return w.Under.Flush()
+func (w *gzipWriter) Close() error {
+	return w.Writer.Close()
 }
+
+func (w *gzipWriter) Flush() error {
+	return w.Buf.Flush()
+}
+
+type bufioWriter struct {
+	*bufio.Writer
+}
+
+func (b *bufioWriter) Close() error { return b.Writer.Flush() }
+func (b *bufioWriter) Flush() error { return b.Writer.Flush() }
 
 func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 	_ = w.Close()
@@ -100,14 +112,16 @@ func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 
 	w.curFn = fn
 
-	buf := bufio.NewWriter(w.file)
 	if w.UseGz {
+		gw := gzip.NewWriter(w.file)
 		w.writer = &gzipWriter{
-			Under:  buf,
-			Writer: gzip.NewWriter(buf),
+			Buf:    bufio.NewWriter(gw),
+			Writer: gw,
 		}
 	} else {
-		w.writer = buf
+		w.writer = &bufioWriter{
+			Writer: bufio.NewWriter(w.file),
+		}
 	}
 
 	ok = true
@@ -135,7 +149,7 @@ func (w *FileWriter) Flush() error {
 
 func (w *FileWriter) Close() error {
 	if w.writer != nil && w.file != nil {
-		_ = w.writer.Flush()
+		_ = w.writer.Close()
 		_ = w.file.Close()
 		w.writer = nil
 		w.file = nil
