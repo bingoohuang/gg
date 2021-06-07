@@ -2,21 +2,26 @@ package timex
 
 import "regexp"
 
-var timeFormatConvert = map[*regexp.Regexp]string{
-	regexp.MustCompile(`(?i)yyyy`): "2006",
-	regexp.MustCompile(`(?i)yy`):   "06",
-	regexp.MustCompile(`MM`):       "01",
-	regexp.MustCompile(`(?i)dd`):   "02",
-	regexp.MustCompile(`(?i)hh`):   "15",
-	regexp.MustCompile(`mm`):       "04",
-	regexp.MustCompile(`(?i)sss`):  "000",
-	regexp.MustCompile(`(?i)ss`):   "05",
+type javaFmtGoLayout struct {
+	JavaRegex *regexp.Regexp
+	GoLayout  string
+}
+
+var timeFormatConvert = []javaFmtGoLayout{
+	{JavaRegex: regexp.MustCompile(`(?i)yyyy`), GoLayout: "2006"},
+	{JavaRegex: regexp.MustCompile(`(?i)yy`), GoLayout: "06"},
+	{JavaRegex: regexp.MustCompile(`MM`), GoLayout: "01"},
+	{JavaRegex: regexp.MustCompile(`(?i)dd`), GoLayout: "02"},
+	{JavaRegex: regexp.MustCompile(`(?i)hh`), GoLayout: "15"},
+	{JavaRegex: regexp.MustCompile(`mm`), GoLayout: "04"},
+	{JavaRegex: regexp.MustCompile(`(?i)sss`), GoLayout: "000"},
+	{JavaRegex: regexp.MustCompile(`(?i)ss`), GoLayout: "05"},
 }
 
 // ConvertLayout converts Java style layout to golang.
 func ConvertLayout(s string) string {
-	for r, f := range timeFormatConvert {
-		s = r.ReplaceAllString(s, f)
+	for _, f := range timeFormatConvert {
+		s = f.JavaRegex.ReplaceAllString(s, f.GoLayout)
 	}
 
 	return s
