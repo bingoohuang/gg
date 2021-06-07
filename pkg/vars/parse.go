@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 type Valuer interface {
@@ -112,21 +113,19 @@ func ParseExpr(src string) Subs {
 	return subs
 }
 
-func parseName(s *string, left *string) (subLiteral, subVar Sub) {
+func parseName(s, left *string) (subLiteral, subVar Sub) {
 	name := ""
 	offset := 0
 	for i, r := range *s {
-		offset = i
 		if !(unicode.IsLetter(r) || unicode.Is(unicode.Han, r) || unicode.IsDigit(r) || r == '_' || r == '-') {
 			name = (*s)[:i]
 			break
 		}
+		offset += utf8.RuneLen(r)
 	}
 
-	nonParam := false
-	if name == "" && offset == len(*s)-1 {
-		nonParam = true
-		offset++
+	nonParam := name == "" && offset == len(*s)
+	if nonParam {
 		name = *s
 	}
 
