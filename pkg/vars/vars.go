@@ -24,6 +24,10 @@ func NewMapGenValue(m map[string]func() GenFn) *MapGenValue {
 	}
 }
 
+func (m *MapGenValue) Value(name, params string) interface{} {
+	return m.GetValue(name)
+}
+
 func (m *MapGenValue) GetValue(name string) interface{} {
 	if fn, ok := m.Map[name]; ok {
 		return fn()
