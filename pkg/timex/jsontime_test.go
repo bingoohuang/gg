@@ -1,4 +1,4 @@
-package timee_test
+package timex_test
 
 import (
 	"encoding/json"
@@ -31,26 +31,26 @@ func TestUnmashalMsg(t *testing.T) {
 
 	err := json.Unmarshal([]byte(j), &msg)
 
-	assert.True(t, errors.Is(err, timee.ErrUnknownTimeFormat))
+	assert.True(t, errors.Is(err, timex.ErrUnknownTimeFormat))
 
-	assert.Equal(t, timee.JSONTime(time.Unix(0, 123*1000000)), msg.A)
-	assert.Equal(t, timee.JSONTime(time.Unix(0, 123*1000000)), msg.F)
+	assert.Equal(t, timex.JSONTime(time.Unix(0, 123*1000000)), msg.A)
+	assert.Equal(t, timex.JSONTime(time.Unix(0, 123*1000000)), msg.F)
 
-	assert.Equal(t, timee.JSONTime(zero), msg.O)
-	assert.Equal(t, timee.JSONTime(p), msg.B)
-	assert.Equal(t, timee.JSONTime(p), msg.C)
-	assert.Equal(t, timee.JSONTime(p), msg.D)
-	assert.Equal(t, timee.JSONTime(p), msg.E)
+	assert.Equal(t, timex.JSONTime(zero), msg.O)
+	assert.Equal(t, timex.JSONTime(p), msg.B)
+	assert.Equal(t, timex.JSONTime(p), msg.C)
+	assert.Equal(t, timex.JSONTime(p), msg.D)
+	assert.Equal(t, timex.JSONTime(p), msg.E)
 	assert.Equal(t, time.Time(msg.D).Format("20060102150405"), "20200318105154")
 }
 
 type Msg struct {
-	O timee.JSONTime
-	A timee.JSONTime
-	B timee.JSONTime
-	C timee.JSONTime
-	E timee.JSONTime
-	F timee.JSONTime
-	D timee.JSONTime `json:"d"`
-	G timee.JSONTime
+	O timex.JSONTime
+	A timex.JSONTime
+	B timex.JSONTime
+	C timex.JSONTime
+	E timex.JSONTime
+	F timex.JSONTime
+	D timex.JSONTime `json:"d"`
+	G timex.JSONTime
 }

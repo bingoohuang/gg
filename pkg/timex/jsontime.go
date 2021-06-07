@@ -1,4 +1,4 @@
-package timee
+package timex
 
 import (
 	"errors"
