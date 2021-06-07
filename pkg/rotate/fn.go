@@ -97,7 +97,11 @@ func (b *bufioWriter) Flush() error { return b.Writer.Flush() }
 func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 	_ = w.Close()
 	if index == 2 { // rename bbb-2021-05-27-18-26.http to bbb-2021-05-27-18-26_00001.http
-		_ = os.Rename(w.curFn, SetFileIndex(w.curFn, 1))
+		if w.UseGz {
+			_ = os.Rename(w.curFn+".gz", SetFileIndex(w.curFn, 1)+".gz")
+		} else {
+			_ = os.Rename(w.curFn, SetFileIndex(w.curFn, 1))
+		}
 	}
 
 	filename := fn
