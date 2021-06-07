@@ -2,14 +2,22 @@ package rotate
 
 import (
 	"bufio"
+	"compress/gzip"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/timex"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
+
+// bufWriter is a Writer interface that also has a Flush method.
+type bufWriter interface {
+	io.Writer
+	Flush() error
+}
 
 type FileWriter struct {
 	FnTemplate string
@@ -20,12 +28,18 @@ type FileWriter struct {
 	curFn      string
 	curSize    uint64
 	rotateFunc func() bool
-	writer     *bufio.Writer
+	writer     bufWriter
+	UseGz      bool
 }
 
 func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
+	hasGz := strings.HasSuffix(fnTemplate, ".gz")
+	if hasGz {
+		fnTemplate = strings.TrimSuffix(fnTemplate, ".gz")
+	}
 	r := &FileWriter{
 		FnTemplate: fnTemplate,
+		UseGz:      hasGz,
 		MaxSize:    maxSize,
 		Append:     append,
 		rotateFunc: func() bool { return false },
@@ -59,19 +73,43 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
+type gzipWriter struct {
+	Under *bufio.Writer
+	*gzip.Writer
+}
+
+func (w *gzipWriter) Flush() error {
+	return w.Under.Flush()
+}
+
 func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 	_ = w.Close()
 	if index == 2 { // rename bbb-2021-05-27-18-26.http to bbb-2021-05-27-18-26_00001.http
 		_ = os.Rename(w.curFn, SetFileIndex(w.curFn, 1))
 	}
 
-	w.file, err = os.OpenFile(fn, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o660)
+	filename := fn
+	if w.UseGz {
+		filename += ".gz"
+	}
+
+	w.file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o660)
 	if err != nil {
 		return false, err
 	}
 
 	w.curFn = fn
-	w.writer = bufio.NewWriter(w.file)
+
+	buf := bufio.NewWriter(w.file)
+	if w.UseGz {
+		w.writer = &gzipWriter{
+			Under:  buf,
+			Writer: gzip.NewWriter(buf),
+		}
+	} else {
+		w.writer = buf
+	}
+
 	ok = true
 
 	if stat, _ := w.file.Stat(); stat != nil {
@@ -132,7 +170,8 @@ func GetFileIndex(path string) int {
 		return -1
 	}
 
-	return ss.ParseInt(index)
+	v, _ := strconv.Atoi(index)
+	return v
 }
 
 func SetFileIndex(path string, index int) string {
