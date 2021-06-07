@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // bufWriter is a Writer interface that also has a Flush method.
@@ -162,7 +163,7 @@ func (w *FileWriter) Close() error {
 }
 
 func NewFilename(template string) string {
-	fn := timex.ConvertLayout(template)
+	fn := time.Now().Format(timex.ConvertLayout(template))
 	fn = filepath.Clean(fn)
 	_, fn = FindMaxFileIndex(fn)
 	return fn
