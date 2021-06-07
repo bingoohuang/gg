@@ -31,17 +31,19 @@ type FileWriter struct {
 	curSize    uint64
 	rotateFunc func() bool
 	writer     bufWriter
-	UseGz      bool
+	DotGz      string
 }
 
 func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 	hasGz := strings.HasSuffix(fnTemplate, ".gz")
+	dotGz := ""
 	if hasGz {
+		dotGz = ".gz"
 		fnTemplate = strings.TrimSuffix(fnTemplate, ".gz")
 	}
 	r := &FileWriter{
 		FnTemplate: fnTemplate,
-		UseGz:      hasGz,
+		DotGz:      dotGz,
 		MaxSize:    maxSize,
 		Append:     append,
 		rotateFunc: func() bool { return false },
@@ -58,7 +60,7 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 	newFn := NewFilename(w.FnTemplate)
 
 	for {
-		fn, index := Filename(newFn, w.rotateFunc())
+		fn, index := Filename(newFn, w.rotateFunc(), w.DotGz)
 		if fn == w.curFn {
 			break
 		}
@@ -98,26 +100,17 @@ func (b *bufioWriter) Flush() error { return b.Writer.Flush() }
 func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 	_ = w.Close()
 	if index == 2 { // rename bbb-2021-05-27-18-26.http to bbb-2021-05-27-18-26_00001.http
-		if w.UseGz {
-			_ = os.Rename(w.curFn+".gz", SetFileIndex(w.curFn, 1)+".gz")
-		} else {
-			_ = os.Rename(w.curFn, SetFileIndex(w.curFn, 1))
-		}
+		_ = os.Rename(w.curFn+w.DotGz, SetFileIndex(w.curFn, 1)+w.DotGz)
 	}
 
-	filename := fn
-	if w.UseGz {
-		filename += ".gz"
-	}
-
-	w.file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o660)
+	w.file, err = os.OpenFile(fn+w.DotGz, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o660)
 	if err != nil {
 		return false, err
 	}
 
 	w.curFn = fn
 
-	if w.UseGz {
+	if w.DotGz != "" {
 		gw := gzip.NewWriter(w.file)
 		w.writer = &gzipWriter{
 			Buf:    bufio.NewWriter(gw),
@@ -165,16 +158,16 @@ func (w *FileWriter) Close() error {
 func NewFilename(template string) string {
 	fn := time.Now().Format(timex.ConvertLayout(template))
 	fn = filepath.Clean(fn)
-	_, fn = FindMaxFileIndex(fn)
+	_, fn = FindMaxFileIndex(fn, "")
 	return fn
 }
 
-func Filename(fn string, rotate bool) (string, int) {
+func Filename(fn string, rotate bool, dotGz string) (string, int) {
 	if !rotate {
 		return fn, 0
 	}
 
-	max, _ := FindMaxFileIndex(fn)
+	max, _ := FindMaxFileIndex(fn, dotGz)
 	if max <= 0 {
 		return fn, 0
 	}
@@ -201,9 +194,9 @@ func SetFileIndex(path string, index int) string {
 // FindMaxFileIndex finds the max index of a file like log-2021-05-27_00001.log.
 // return maxIndex = 0 there is no file matches log-2021-05-27*.log.
 // return maxIndex >= 1 tell the max index in matches.
-func FindMaxFileIndex(path string) (int, string) {
+func FindMaxFileIndex(path string, dotGz string) (int, string) {
 	base, _, ext := SplitBaseIndexExt(path)
-	matches, _ := filepath.Glob(base + "*" + ext)
+	matches, _ := filepath.Glob(base + "*" + ext + dotGz)
 	if len(matches) == 0 {
 		return 0, path
 	}
@@ -211,6 +204,7 @@ func FindMaxFileIndex(path string) (int, string) {
 	maxIndex := 1
 	maxFn := path
 	for _, fn := range matches {
+		fn = strings.TrimSuffix(fn, dotGz)
 		if index := GetFileIndex(fn); index > maxIndex {
 			maxIndex = index
 			maxFn = fn
