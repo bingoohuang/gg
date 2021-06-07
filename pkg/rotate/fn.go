@@ -57,7 +57,7 @@ func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 }
 
 func (w *FileWriter) Write(p []byte) (int, error) {
-	newFn := NewFilename(w.FnTemplate)
+	newFn := NewFilename(w.FnTemplate, w.DotGz)
 
 	for {
 		fn, index := Filename(newFn, w.rotateFunc(), w.DotGz)
@@ -155,10 +155,10 @@ func (w *FileWriter) Close() error {
 	return nil
 }
 
-func NewFilename(template string) string {
+func NewFilename(template, dotGz string) string {
 	fn := time.Now().Format(timex.ConvertLayout(template))
 	fn = filepath.Clean(fn)
-	_, fn = FindMaxFileIndex(fn, "")
+	_, fn = FindMaxFileIndex(fn, dotGz)
 	return fn
 }
 
