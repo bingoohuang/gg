@@ -62,21 +62,33 @@ func TimeBetween(min, max time.Time) time.Time {
 
 func Bool() bool { return Int64Between(0, 1) == 0 }
 
-func Int64Between(min, max int64) (v int64) {
-	n, _ := rand.Int(rander, big.NewInt(max-min+1))
-	return n.Int64() + min
+func Int64() int64 { return Int64N(math.MaxInt64) }
+
+func Int64N(n int64) int64 {
+	v, _ := rand.Int(rander, big.NewInt(n))
+	return v.Int64()
 }
 
-func IntBetween(min, max int) int {
-	n, _ := rand.Int(rander, big.NewInt(int64(max-min+1)))
-	return int(n.Int64())
-}
+func Int64Between(min, max int64) (v int64) { return Int64N(max-min+1) + min }
 
+func IntN(n int) int {
+	v, _ := rand.Int(rander, big.NewInt(int64(n)))
+	return int(v.Int64())
+}
 func Int() int { return int(Int32()) }
 
-func Int32() int32 {
-	n, _ := rand.Int(rander, big.NewInt(math.MaxInt32))
-	return int32(n.Int64())
+func IntBetween(min, max int) int { return IntN(max-min+1) + min }
+
+func Int32N(n int) int32 {
+	v, _ := rand.Int(rander, big.NewInt(int64(n)))
+	return int32(v.Int64())
+}
+
+func Int32() int32 { return Int32N(math.MaxInt32) }
+
+func Uint64N(n int64) uint64 {
+	v, _ := rand.Int(rander, big.NewInt(n))
+	return v.Uint64()
 }
 
 func Uint64() (v uint64) {
@@ -86,7 +98,3 @@ func Uint64() (v uint64) {
 	}
 	return v
 }
-
-func Int64() int64 { return int64(Uint64()) }
-
-func Int63() int64 { return int64(Uint64() & ^uint64(1<<63)) }
