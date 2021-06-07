@@ -51,8 +51,8 @@ type VarValue interface {
 	GetValue(name string) interface{}
 }
 
-func Eval(s string, varValue VarValue) string {
-	return Parse(s).Eval(varValue)
+func EvalSubstitute(s string, varValue VarValue) string {
+	return ParseSubstitute(s).Eval(varValue)
 }
 
 type Part interface {
@@ -80,7 +80,7 @@ type Parts []Part
 
 var varRe = regexp.MustCompile(`\$?\{[^{}]+?\}|\{\{[^{}]+?\}\}`)
 
-func Parse(s string) (parts Parts) {
+func ParseSubstitute(s string) (parts Parts) {
 	locs := varRe.FindAllStringSubmatchIndex(s, -1)
 	start := 0
 

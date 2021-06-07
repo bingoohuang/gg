@@ -2,7 +2,6 @@ package vars
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"unicode"
 )
@@ -23,7 +22,8 @@ func (s Subs) Eval(valuer Valuer) interface{} {
 		case *SubTxt:
 			value += v.Val
 		case *SubVar:
-			value += convertValue(valuer, v, false)
+			vv := valuer.Value(v.Name, v.Params)
+			value += ToString(vv)
 		}
 	}
 
@@ -155,8 +155,7 @@ func parseName(s *string, left *string) (subLiteral, subVar Sub) {
 	return
 }
 
-func convertValue(valuer Valuer, v *SubVar, quote bool) string {
-	value := valuer.Value(v.Name, v.Params)
+func ToString(value interface{}) string {
 	switch vv := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("%d", vv)
@@ -165,17 +164,9 @@ func convertValue(valuer Valuer, v *SubVar, quote bool) string {
 	case bool:
 		return fmt.Sprintf("%t", vv)
 	case string:
-		if quote {
-			return strconv.Quote(vv)
-		} else {
-			return vv
-		}
+		return vv
 	default:
 		vvv := fmt.Sprintf("%v", value)
-		if quote {
-			return strconv.Quote(vvv)
-		} else {
-			return vvv
-		}
+		return vvv
 	}
 }

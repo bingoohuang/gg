@@ -9,7 +9,7 @@ func subTxt(n string) *SubTxt     { return &SubTxt{Val: n} }
 func subVar(n string) *SubVar     { return &SubVar{Name: n} }
 func subVarP(n, p string) *SubVar { return &SubVar{Name: n, Params: p} }
 
-func TestParseSubstitutes(t *testing.T) {
+func TestParseExpr(t *testing.T) {
 	assert.Equal(t, Subs{subVar("fn")}, ParseExpr("@fn"))
 	assert.Equal(t, Subs{subVar("fn"), subTxt("@")}, ParseExpr("@fn@"))
 	assert.Equal(t, Subs{subTxt("abc"), subVar("fn")}, ParseExpr("abc@{fn}"))
