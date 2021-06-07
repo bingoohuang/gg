@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+func RemoveAll(s, old string) string { return strings.ReplaceAll(s, old, "") }
+
 func Or(a, b string) string {
 	if a == "" {
 		return b
