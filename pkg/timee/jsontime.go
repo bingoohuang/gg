@@ -1,4 +1,4 @@
-package jsontime
+package timee
 
 import (
 	"errors"
@@ -12,11 +12,11 @@ import (
 // ErrUnknownTimeFormat defines the error type for unknown time format.
 var ErrUnknownTimeFormat = errors.New("unknown errors time format")
 
-// Time defines a time.Time that can be used in struct tag for JSON unmarshalling.
-type Time time.Time
+// JSONTime defines a time.Time that can be used in struct tag for JSON unmarshalling.
+type JSONTime time.Time
 
-// UnmarshalJSON unmarshals bytes to Time.
-func (t *Time) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON unmarshals bytes to JSONTime.
+func (t *JSONTime) UnmarshalJSON(b []byte) error {
 	v, _ := TryUnQuoted(string(b))
 	if v == "" {
 		return nil
@@ -24,7 +24,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 
 	// 首先看是否是数字，表示毫秒数或者纳秒数
 	if p, err := strconv.ParseInt(v, 10, 64); err == nil {
-		*t = Time(time.Unix(0, p*1000000)) // milliseconds range, 1 millis = 1000,000 nanos)
+		*t = JSONTime(time.Unix(0, p*1000000)) // milliseconds range, 1 millis = 1000,000 nanos)
 		return nil
 	}
 
@@ -36,7 +36,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 
 	for _, f := range []string{"20060102 150405.000000", "20060102 150405.000"} {
 		if tt, err := time.ParseInLocation(f, v, time.Local); err == nil {
-			*t = Time(tt)
+			*t = JSONTime(tt)
 			return nil
 		}
 	}

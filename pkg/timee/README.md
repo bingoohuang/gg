@@ -5,7 +5,7 @@ Parsing time in JSON compatible with some common format.
 ```go
 import (
 	"encoding/json"
-	"github.com/bingoohuang/jsontime"
+	"github.com/bingoohuang/gg/pkg/timee"
 )
 
 type Msg struct {
