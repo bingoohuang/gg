@@ -12,11 +12,11 @@ func init() {
 	Home, _ = os.UserHomeDir()
 }
 
-func ExpandHome(s string) bool {
+func CanExpandHome(s string) bool {
 	return strings.HasPrefix(s, "~")
 }
-func Expand(s string) string {
-	if ExpandHome(s) {
+func ExpandHome(s string) string {
+	if CanExpandHome(s) {
 		return filepath.Join(Home, s[1:])
 	}
 
