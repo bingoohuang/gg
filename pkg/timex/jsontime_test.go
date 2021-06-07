@@ -3,7 +3,7 @@ package timex_test
 import (
 	"encoding/json"
 	"errors"
-	"github.com/bingoohuang/gg/pkg/timee"
+	"github.com/bingoohuang/gg/pkg/timex"
 	"testing"
 	"time"
 
