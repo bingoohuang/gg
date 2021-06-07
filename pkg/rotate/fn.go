@@ -28,7 +28,7 @@ func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 		FnTemplate: fnTemplate,
 		MaxSize:    maxSize,
 		Append:     append,
-		rotateFunc: func() bool { return true },
+		rotateFunc: func() bool { return false },
 	}
 
 	if r.MaxSize > 0 {
