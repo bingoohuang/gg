@@ -30,7 +30,9 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
-			c.consume()
+			if !c.consume() {
+				return
+			}
 		case <-ctx.Done():
 			c.consume()
 			return
@@ -39,21 +41,34 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 }
 
 func (c *DelayChan) Close() error {
+	c.Map.Range(func(_, value interface{}) bool {
+		close(value.(chan interface{}))
+		return true
+	})
 	c.wg.Wait()
 	return nil
 }
 
-func (c *DelayChan) consume() {
-	c.Map.Range(func(_, value interface{}) bool {
+func (c *DelayChan) consume() bool {
+	closeCount := 0
+	count := 0
+	c.Map.Range(func(k, value interface{}) bool {
+		count++
 		select {
-		case v := <-value.(chan interface{}):
-			c.fn(v)
+		case v, ok := <-value.(chan interface{}):
+			if ok {
+				c.fn(v)
+			} else {
+				closeCount++
+				c.Map.Delete(k)
+			}
 		default:
 		}
 
 		return true
 	})
 
+	return closeCount < count
 }
 
 func (c *DelayChan) PutKey(k string, v interface{}) {
