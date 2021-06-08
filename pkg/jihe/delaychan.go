@@ -9,7 +9,7 @@ import (
 const defaultKey = "_default"
 
 func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration) *DelayChan {
-	d := &DelayChan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}}
+	d := &DelayChan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}, stop: make(chan struct{}, 1)}
 	d.Map.Store(defaultKey, make(chan interface{}, 1))
 	d.wg.Add(1)
 	go d.run(ctx, delay)
@@ -17,58 +17,45 @@ func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration
 }
 
 type DelayChan struct {
-	fn  func(interface{})
-	Map *sync.Map
-	wg  *sync.WaitGroup
+	fn   func(interface{})
+	Map  *sync.Map
+	wg   *sync.WaitGroup
+	stop chan struct{}
 }
 
 func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 	defer c.wg.Done()
 	ticker := time.NewTicker(delay)
 	defer ticker.Stop()
+	defer c.consume()
 
 	for {
 		select {
 		case <-ticker.C:
-			if !c.consume() {
-				return
-			}
-		case <-ctx.Done():
 			c.consume()
+		case <-c.stop:
+			return
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
 func (c *DelayChan) Close() error {
-	c.Map.Range(func(_, value interface{}) bool {
-		close(value.(chan interface{}))
-		return true
-	})
+	c.stop <- struct{}{}
 	c.wg.Wait()
 	return nil
 }
 
-func (c *DelayChan) consume() bool {
-	closeCount := 0
-	count := 0
+func (c *DelayChan) consume() {
 	c.Map.Range(func(k, value interface{}) bool {
-		count++
 		select {
-		case v, ok := <-value.(chan interface{}):
-			if ok {
-				c.fn(v)
-			} else {
-				closeCount++
-				c.Map.Delete(k)
-			}
+		case v := <-value.(chan interface{}):
+			c.fn(v)
 		default:
 		}
-
 		return true
 	})
-
-	return closeCount < count
 }
 
 func (c *DelayChan) PutKey(k string, v interface{}) {
