@@ -117,18 +117,33 @@ func (p *QueueWriter) printBackground(ctx context.Context) {
 	defer ticker.Stop()
 
 	for {
+		if !p.tryConsumeMessages() {
+			return
+		}
+
 		select {
-		case msg, ok := <-p.queue:
-			if !ok {
-				return
-			}
-			_, _ = p.writer.Write([]byte(msg))
 		case <-ticker.C:
 			if f, ok := p.writer.(Flusher); ok {
 				_ = f.Flush()
 			}
 		case <-ctx.Done():
 			return
+		default:
+		}
+	}
+}
+
+func (p *QueueWriter) tryConsumeMessages() bool {
+	// try to write all available messages.
+	for {
+		select {
+		case msg, ok := <-p.queue:
+			if !ok {
+				return false
+			}
+			_, _ = p.writer.Write([]byte(msg))
+		default:
+			return true
 		}
 	}
 }
