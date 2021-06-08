@@ -9,8 +9,9 @@ import (
 const defaultKey = "_default"
 
 func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration) *DelayChan {
-	d := &DelayChan{fn: fn, Map: &sync.Map{}}
+	d := &DelayChan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}}
 	d.Map.Store(defaultKey, make(chan interface{}, 1))
+	d.wg.Add(1)
 	go d.run(ctx, delay)
 	return d
 }
@@ -18,9 +19,11 @@ func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration
 type DelayChan struct {
 	fn  func(interface{})
 	Map *sync.Map
+	wg  *sync.WaitGroup
 }
 
 func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
+	defer c.wg.Done()
 	ticker := time.NewTicker(delay)
 	defer ticker.Stop()
 
@@ -33,6 +36,11 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 			return
 		}
 	}
+}
+
+func (c *DelayChan) Close() error {
+	c.wg.Wait()
+	return nil
 }
 
 func (c *DelayChan) consume() {
