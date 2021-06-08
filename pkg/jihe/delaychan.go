@@ -2,18 +2,22 @@ package jihe
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
+const defaultKey = "_default"
+
 func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration) *DelayChan {
-	d := &DelayChan{C: make(chan interface{}, 1), fn: fn}
+	d := &DelayChan{fn: fn, Map: &sync.Map{}}
+	d.Map.Store(defaultKey, make(chan interface{}, 1))
 	go d.run(ctx, delay)
 	return d
 }
 
 type DelayChan struct {
-	C  chan interface{}
-	fn func(interface{})
+	fn  func(interface{})
+	Map *sync.Map
 }
 
 func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
@@ -23,31 +27,48 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
-			c.tryPutIdleConn()
+			c.consume()
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (c *DelayChan) tryPutIdleConn() {
-	select {
-	case v := <-c.C:
-		c.fn(v)
-	default:
-	}
+func (c *DelayChan) consume() {
+	c.Map.Range(func(_, value interface{}) bool {
+		select {
+		case v := <-value.(chan interface{}):
+			c.fn(v)
+		default:
+		}
+
+		return true
+	})
+
 }
 
-func (c *DelayChan) Put(v interface{}) {
+func (c *DelayChan) PutKey(k string, v interface{}) {
+	if ch, ok := c.Map.Load(k); ok {
+		replace(ch.(chan interface{}), v)
+		return
+	}
+
+	ch, _ := c.Map.LoadOrStore(k, make(chan interface{}, 1))
+	replace(ch.(chan interface{}), v)
+}
+
+func (c *DelayChan) Put(v interface{}) { c.PutKey(defaultKey, v) }
+
+func replace(ch chan interface{}, v interface{}) {
 	// try to remove old one.
 	select {
-	case <-c.C:
+	case <-ch:
 	default:
 	}
 
-	// try to put the new one.
+	// try to replace the new one.
 	select {
-	case c.C <- v:
+	case ch <- v:
 	default:
 	}
 }
