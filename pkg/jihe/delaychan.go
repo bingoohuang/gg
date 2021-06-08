@@ -29,6 +29,7 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 		case <-ticker.C:
 			c.consume()
 		case <-ctx.Done():
+			c.consume()
 			return
 		}
 	}
