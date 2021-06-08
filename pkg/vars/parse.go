@@ -117,7 +117,7 @@ func parseName(s, left *string) (subLiteral, subVar Sub) {
 	name := ""
 	offset := 0
 	for i, r := range *s {
-		if !(unicode.IsLetter(r) || unicode.Is(unicode.Han, r) || unicode.IsDigit(r) || r == '_' || r == '-') {
+		if !validNameRune(r) {
 			name = (*s)[:i]
 			break
 		}
@@ -152,6 +152,11 @@ func parseName(s, left *string) (subLiteral, subVar Sub) {
 	*s = (*s)[offset:]
 
 	return
+}
+
+func validNameRune(r int32) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.Is(unicode.Han, r) ||
+		r == '_' || r == '-' || r == '.'
 }
 
 func ToString(value interface{}) string {
