@@ -8,6 +8,6 @@ import (
 )
 
 func TestFormat(t *testing.T) {
-	s := Format("06yyyy-MM-dd", time.Now())
+	s := FormatTime(time.Now(), "06yyyy-MM-dd")
 	assert.True(t, strings.HasPrefix(s, "06"))
 }

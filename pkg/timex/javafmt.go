@@ -21,12 +21,21 @@ var timeFormatConvert = []javaFmtGoLayout{
 	{JavaRegex: regexp.MustCompile(`(?i)ss`), GoLayout: "05"},
 }
 
-// Format converts Java style layout to golang.
-func Format(s string, t time.Time) string {
+// FormatTime format time with Java style layout.
+func FormatTime(t time.Time, s string) string {
 	for _, f := range timeFormatConvert {
 		s = f.JavaRegex.ReplaceAllStringFunc(s, func(layout string) string {
 			return t.Format(f.GoLayout)
 		})
+	}
+
+	return s
+}
+
+// ConvertFormat converts Java style layout to golang.
+func ConvertFormat(s string) string {
+	for _, f := range timeFormatConvert {
+		s = f.JavaRegex.ReplaceAllString(s, f.GoLayout)
 	}
 
 	return s
