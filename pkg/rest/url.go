@@ -65,7 +65,7 @@ func MaybeURL(out string) (string, bool) {
 		return out, false
 	}
 
-	if fn := timex.Format(out, time.Now()); fn != out {
+	if fn := timex.FormatTime(time.Now(), out); fn != out {
 		return "", false
 	}
 

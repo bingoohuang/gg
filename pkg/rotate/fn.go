@@ -156,7 +156,7 @@ func (w *FileWriter) Close() error {
 }
 
 func NewFilename(template, dotGz string) string {
-	fn := timex.Format(template, time.Now())
+	fn := timex.FormatTime(time.Now(), template)
 	fn = filepath.Clean(fn)
 	_, fn = FindMaxFileIndex(fn, dotGz)
 	return fn
