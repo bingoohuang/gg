@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var reScheme = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+-.]*://`)
@@ -51,7 +52,7 @@ func MaybeURL(out string) (string, bool) {
 		return out, true
 	}
 
-	if ss.HasPrefix(out, ":") {
+	if ss.HasPrefix(out, ":", "/", ".") {
 		uri, err := FixURI(out)
 		return uri, err == nil
 	}
@@ -64,7 +65,7 @@ func MaybeURL(out string) (string, bool) {
 		return out, false
 	}
 
-	if fn := timex.ConvertLayout(out); fn != out {
+	if fn := timex.Format(out, time.Now()); fn != out {
 		return "", false
 	}
 

@@ -1,6 +1,9 @@
 package timex
 
-import "regexp"
+import (
+	"regexp"
+	"time"
+)
 
 type javaFmtGoLayout struct {
 	JavaRegex *regexp.Regexp
@@ -18,10 +21,12 @@ var timeFormatConvert = []javaFmtGoLayout{
 	{JavaRegex: regexp.MustCompile(`(?i)ss`), GoLayout: "05"},
 }
 
-// ConvertLayout converts Java style layout to golang.
-func ConvertLayout(s string) string {
+// Format converts Java style layout to golang.
+func Format(s string, t time.Time) string {
 	for _, f := range timeFormatConvert {
-		s = f.JavaRegex.ReplaceAllString(s, f.GoLayout)
+		s = f.JavaRegex.ReplaceAllStringFunc(s, func(layout string) string {
+			return t.Format(f.GoLayout)
+		})
 	}
 
 	return s
