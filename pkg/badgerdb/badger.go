@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/dgraph-io/badger/v3"
 	"io/ioutil"
+	"log"
 	"time"
 )
 
@@ -101,6 +102,7 @@ func (o OpenOptions) Apply() badger.Options {
 			panic(err)
 		}
 		path = dir
+		log.Printf("badgerdb created at %s", path)
 	}
 
 	options := badger.DefaultOptions(path)
@@ -116,7 +118,6 @@ func (fns OpenOptionsFns) Create() *OpenOptions {
 	for _, f := range fns {
 		f(o)
 	}
-
 	return o
 }
 
