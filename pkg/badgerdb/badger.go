@@ -27,35 +27,24 @@ func Open(fns ...OpenOptionsFn) (*Badger, error) {
 
 func (b *Badger) Close() error { return b.DB.Close() }
 
-func WithWalkStart(v []byte) WalkOptionsFn { return func(o *WalkOptions) { o.Start = v } }
-func WithMax(v int) WalkOptionsFn          { return func(o *WalkOptions) { o.Max = v } }
-func WithPrefix(v []byte) WalkOptionsFn    { return func(o *WalkOptions) { o.Prefix = v } }
-func WithReverse(v bool) WalkOptionsFn     { return func(o *WalkOptions) { o.Reverse = v } }
-func WithOnlyKeys(v bool) WalkOptionsFn    { return func(o *WalkOptions) { o.OnlyKeys = v } }
+func WithStart(v []byte) WalkOptionsFn  { return func(o *WalkOptions) { o.Start = v } }
+func WithMax(v int) WalkOptionsFn       { return func(o *WalkOptions) { o.Max = v } }
+func WithPrefix(v []byte) WalkOptionsFn { return func(o *WalkOptions) { o.Prefix = v } }
+func WithReverse(v bool) WalkOptionsFn  { return func(o *WalkOptions) { o.Reverse = v } }
+func WithOnlyKeys(v bool) WalkOptionsFn { return func(o *WalkOptions) { o.OnlyKeys = v } }
 
 func (b *Badger) Walk(f func(k, v []byte) error, fns ...WalkOptionsFn) error {
 	wo := WalkOptionsFns(fns).Create()
-	return b.DB.View(func(txn *badger.Txn) (err error) {
+	return b.DB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(wo.NewIteratorOptions())
 		defer it.Close()
 
-		num := 0
-
-		for it.Seek(wo.Start); it.ValidForPrefix(wo.Prefix) && (wo.Max <= 0 || num < wo.Max); it.Next() {
-			item := it.Item()
-			var v []byte
-
-			if !wo.OnlyKeys {
-				v, err = item.ValueCopy(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			if err := f(item.Key(), v); err != nil {
+		for wo.Seek(it); wo.Valid(it); it.Next() {
+			if k, v, err := wo.ParseKv(it.Item()); err != nil {
+				return err
+			} else if err = f(k, v); err != nil {
 				return err
 			}
-			num++
 		}
 		return nil
 	})
@@ -154,9 +143,11 @@ type WalkOptions struct {
 	OnlyKeys bool
 	Reverse  bool
 	Prefix   []byte
+
+	Num int
 }
 
-func (o WalkOptions) NewIteratorOptions() badger.IteratorOptions {
+func (o *WalkOptions) NewIteratorOptions() badger.IteratorOptions {
 	opts := badger.DefaultIteratorOptions
 	opts.PrefetchSize = 10
 	opts.PrefetchValues = !o.OnlyKeys
@@ -164,6 +155,33 @@ func (o WalkOptions) NewIteratorOptions() badger.IteratorOptions {
 	opts.Prefix = o.Prefix
 
 	return opts
+}
+
+func (o *WalkOptions) Seek(it *badger.Iterator) {
+	if len(o.Prefix) > 0 {
+		it.Seek(o.Prefix)
+		return
+	}
+
+	it.Seek(o.Start)
+}
+
+func (o *WalkOptions) Valid(it *badger.Iterator) bool {
+	b := it.ValidForPrefix(o.Prefix) && (o.Max <= 0 || o.Num < o.Max)
+	if b {
+		o.Num++
+	}
+
+	return b
+}
+
+func (o *WalkOptions) ParseKv(item *badger.Item) (k, v []byte, err error) {
+	if o.OnlyKeys {
+		return item.Key(), nil, nil
+	}
+
+	v, err = item.ValueCopy(nil)
+	return item.Key(), v, err
 }
 
 type WalkOptionsFn func(*WalkOptions)
