@@ -1,9 +1,9 @@
 package badgerdb
 
 import (
-	"encoding/binary"
 	"errors"
 	"github.com/dgraph-io/badger/v3"
+	"io/ioutil"
 	"time"
 )
 
@@ -11,13 +11,11 @@ type Badger struct {
 	DB *badger.DB
 }
 
-func New(path string, inMemory bool) (*Badger, error) {
-	if inMemory {
-		path = ""
-	}
-	options := badger.DefaultOptions(path).WithInMemory(inMemory)
-	options.Logger = nil
-	db, err := badger.Open(options)
+func WithInMemory(v bool) OpenOptionsFn { return func(o *OpenOptions) { o.InMemory = v } }
+func WithPath(v string) OpenOptionsFn   { return func(o *OpenOptions) { o.Path = v } }
+
+func Open(fns ...OpenOptionsFn) (*Badger, error) {
+	db, err := badger.Open(OpenOptionsFns(fns).Create().Apply())
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +33,8 @@ func WithOnlyKeys(v bool) WalkOptionsFn    { return func(o *WalkOptions) { o.Onl
 
 func (b *Badger) Walk(f func(k, v []byte) error, fns ...WalkOptionsFn) error {
 	wo := WalkOptionsFns(fns).Create()
-	opts := wo.NewIteratorOptions()
 	return b.DB.View(func(txn *badger.Txn) (err error) {
-		it := txn.NewIterator(opts)
+		it := txn.NewIterator(wo.NewIteratorOptions())
 		defer it.Close()
 
 		num := 0
@@ -80,10 +77,47 @@ func WithTTL(v time.Duration) SetOptionsFn { return func(o *SetOptions) { o.TTL 
 func WithMeta(v byte) SetOptionsFn         { return func(o *SetOptions) { o.Meta = v } }
 
 func (b *Badger) Set(k, v []byte, fns ...SetOptionsFn) error {
-	so := SetOptionsFns(fns).Create()
 	e := badger.NewEntry(k, v)
-	so.Apply(e)
+	SetOptionsFns(fns).Create().Apply(e)
 	return b.DB.Update(func(txn *badger.Txn) error { return txn.SetEntry(e) })
+}
+
+type OpenOptions struct {
+	InMemory bool
+	Path     string
+}
+
+func (o OpenOptions) Apply() badger.Options {
+	if o.InMemory {
+		options := badger.DefaultOptions("").WithInMemory(true)
+		options.Logger = nil
+		return options
+	}
+
+	path := o.Path
+	if path == "" {
+		dir, err := ioutil.TempDir("", "badgerdb")
+		if err != nil {
+			panic(err)
+		}
+		path = dir
+	}
+
+	options := badger.DefaultOptions(path)
+	options.Logger = nil
+	return options
+}
+
+type OpenOptionsFn func(*OpenOptions)
+type OpenOptionsFns []OpenOptionsFn
+
+func (fns OpenOptionsFns) Create() *OpenOptions {
+	o := &OpenOptions{}
+	for _, f := range fns {
+		f(o)
+	}
+
+	return o
 }
 
 type SetOptions struct {
@@ -139,14 +173,4 @@ func (fns WalkOptionsFns) Create() *WalkOptions {
 	}
 
 	return o
-}
-
-func Uint64ToBytes(i uint64) []byte {
-	var buf [8]byte
-	binary.BigEndian.PutUint64(buf[:], i)
-	return buf[:]
-}
-
-func BytesToUint64(b []byte) uint64 {
-	return binary.BigEndian.Uint64(b)
 }
