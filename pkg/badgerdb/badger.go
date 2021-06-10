@@ -2,6 +2,7 @@ package badgerdb
 
 import (
 	"errors"
+	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/dgraph-io/badger/v3"
 	"io/ioutil"
 	"log"
@@ -103,6 +104,8 @@ func (o OpenOptions) Apply() badger.Options {
 		}
 		path = dir
 		log.Printf("badgerdb created at %s", path)
+	} else {
+		path = osx.ExpandHome(path)
 	}
 
 	options := badger.DefaultOptions(path)
