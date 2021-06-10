@@ -55,6 +55,10 @@ type VarValue interface {
 	GetValue(name string) interface{}
 }
 
+type VarValueHandler func(name string) interface{}
+
+func (v VarValueHandler) GetValue(name string) interface{} { return v(name) }
+
 func EvalSubstitute(s string, varValue VarValue) string {
 	return ParseSubstitute(s).Eval(varValue)
 }

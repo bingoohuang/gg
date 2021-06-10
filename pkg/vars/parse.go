@@ -11,6 +11,10 @@ type Valuer interface {
 	Value(name, params string) interface{}
 }
 
+type ValuerHandler func(name, params string) interface{}
+
+func (f ValuerHandler) Value(name, params string) interface{} { return f(name, params) }
+
 func (s Subs) Eval(valuer Valuer) interface{} {
 	if len(s) == 1 && s.CountVars() == len(s) {
 		v := s[0].(*SubVar)
