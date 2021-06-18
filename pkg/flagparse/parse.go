@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/cast"
 	flag "github.com/bingoohuang/gg/pkg/fla9"
+	"log"
+	"net/http"
+	_ "net/http/pprof" // Comment this line to disable pprof endpoint.
 	"os"
 	"reflect"
 	"strings"
@@ -36,6 +39,8 @@ func ParseArgs(a interface{}, args []string) {
 	f := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var checkVersionShow func()
 	requiredVars := make([]requiredVar, 0)
+
+	var pprof *string
 
 	ra := reflect.ValueOf(a).Elem()
 	rt := ra.Type()
@@ -82,6 +87,11 @@ func ParseArgs(a interface{}, args []string) {
 			if required == "true" {
 				requiredVars = append(requiredVars, requiredVar{name: name, p: pp})
 			}
+
+			switch name {
+			case "pprof":
+				pprof = pp
+			}
 		case reflect.Int:
 			if count := t("count"); count == "true" {
 				f.CountVar(p.(*int), name, cast.ToInt(val), usage)
@@ -115,6 +125,10 @@ func ParseArgs(a interface{}, args []string) {
 
 	if v, ok := a.(PostProcessor); ok {
 		v.PostProcess()
+	}
+
+	if pprof != nil && *pprof != "" {
+		go startPprof(*pprof)
 	}
 }
 
@@ -185,4 +199,17 @@ func toFlagName(name string) string {
 	}
 
 	return sb.String()
+}
+
+func startPprof(pprofAddr string) {
+	pprofHostPort := pprofAddr
+	parts := strings.Split(pprofHostPort, ":")
+	if len(parts) == 2 && parts[0] == "" {
+		pprofHostPort = fmt.Sprintf("localhost:%s", parts[1])
+	}
+
+	log.Printf("I! Starting pprof HTTP server at: http://%s/debug/pprof", pprofHostPort)
+	if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+		log.Fatal("E! " + err.Error())
+	}
 }
