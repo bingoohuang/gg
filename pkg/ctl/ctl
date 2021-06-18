@@ -15,9 +15,9 @@ function check_pid() {
   if [[ -f ${pidFile} ]]; then
     local pid=$(cat ${pidFile})
     # 如果pid存在，并且是数字的话，检查改pid的进程是否存在
-    if [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(ps -p "${pid}"| grep -v "PID TTY" | wc -l) -gt 0 ]]; then
-        echo "${pid}"
-        return 1
+    if [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(ps -p "${pid}" | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
+      echo "${pid}"
+      return 1
     fi
   fi
 
@@ -42,25 +42,39 @@ function start() {
     return 1
   fi
 
-  nohup ${app} {{.BinArgs}} ${moreArgs} > /dev/null 2>&1 &
+  nohup ${app} {{.BinArgs}} ${moreArgs} >/dev/null 2>&1 &
   sleep 1
   if [[ $(ps -p $! | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
     local pid=$!
     echo $pid >${pidFile}
     echo "$app started..., pid=$pid"
 
-    # 以下代码需要root权限
-    if [[ ! -z "$LIMIT_MEMORY" ]]; then
-        # 限制最大使用内存
-        local pureAppName=${app#"./"}
-        # 内核要考虑页对齐, 所以生效的数量不一定完全等于设置的数量
-        mkdir -p /sys/fs/cgroup/memory/${pureAppName}
-        echo $LIMIT_MEMORY > /sys/fs/cgroup/memory/${pureAppName}/memory.limit_in_bytes
-        cat /sys/fs/cgroup/memory/${pureAppName}/memory.limit_in_bytes
-        echo $pid > /sys/fs/cgroup/memory/${pureAppName}/tasks
-        cat /sys/fs/cgroup/memory/${pureAppName}/tasks
-    fi
+    local pureAppName=${app#"./"}
 
+    # 以下代码需要root权限
+    if [[ -n "$LIMIT_MEMORY" ]]; then
+      # 限制最大使用内存
+      # 内核要考虑页对齐, 所以生效的数量不一定完全等于设置的数量
+      local cgMemDir=/sys/fs/cgroup/memory/${pureAppName}
+      mkdir -p $cgMemDir
+      echo $LIMIT_MEMORY >$cgMemDir/memory.limit_in_bytes
+      echo "memory.limit_in_bytes=$LIMIT_MEMORY"
+      echo $pid >$cgMemDir/tasks
+    fi
+    # export LIMIT_CPU=20
+    if [[ -n "$LIMIT_CPU" ]]; then
+      local perc=$LIMIT_CPU
+      local period=1000000
+      local quota=$((period * perc / 100))
+
+      local cgCpuDir=/sys/fs/cgroup/cpu/${pureAppName}
+      mkdir -p $cgCpuDir
+      echo $pid >$cgCpuDir/tasks
+      echo $period >$cgCpuDir/cpu.cfs_period_us
+      echo "cpu.cfs_period_us=$period"
+      echo $quota >$cgCpuDir/cpu.cfs_quota_us
+      echo "cpu.cfs_quota_us=$quota"
+    fi
     return 0
   else
     echo "$app failed to start."
