@@ -2,7 +2,7 @@ package flagparse
 
 import (
 	"fmt"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v2"
 	"os"
 )
 
