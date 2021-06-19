@@ -64,8 +64,9 @@ function start() {
     # export LIMIT_CPU=20
     if [[ -n "$LIMIT_CPU" ]]; then
       local perc=$LIMIT_CPU
+      local cores=$(nproc)
       local period=1000000
-      local quota=$((period * perc / 100))
+      local quota=$((period * cores * perc / 100))
 
       local cgCpuDir=/sys/fs/cgroup/cpu/${pureAppName}
       mkdir -p $cgCpuDir
