@@ -31,11 +31,27 @@ type requiredVar struct {
 	pp   *[]string
 }
 
-func Parse(a interface{}) {
-	ParseArgs(a, os.Args)
+type Options struct {
+	flagName, defaultCnf string
+	cnf                  *string
 }
 
-func ParseArgs(a interface{}, args []string) {
+type OptionsFn func(*Options)
+
+func AutoLoadYaml(flagName, defaultCnf string) OptionsFn {
+	return func(o *Options) {
+		o.flagName = flagName
+		o.defaultCnf = defaultCnf
+	}
+}
+
+func Parse(a interface{}, optionFns ...OptionsFn) {
+	ParseArgs(a, os.Args, optionFns...)
+}
+
+func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
+	options := createOptions(optionFns)
+
 	f := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var checkVersionShow func()
 	requiredVars := make([]requiredVar, 0)
@@ -91,7 +107,10 @@ func ParseArgs(a interface{}, args []string) {
 			switch name {
 			case "pprof":
 				pprof = pp
+			case options.flagName:
+				options.cnf = pp
 			}
+
 		case reflect.Int:
 			if count := t("count"); count == "true" {
 				f.CountVar(p.(*int), name, cast.ToInt(val), usage)
@@ -121,6 +140,14 @@ func ParseArgs(a interface{}, args []string) {
 	if checkVersionShow != nil {
 		checkVersionShow()
 	}
+
+	if options.cnf != nil {
+		if err := LoadConfFile(*options.cnf, options.defaultCnf, a); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(0)
+		}
+	}
+
 	checkRequired(requiredVars, f)
 
 	if v, ok := a.(PostProcessor); ok {
@@ -130,6 +157,16 @@ func ParseArgs(a interface{}, args []string) {
 	if pprof != nil && *pprof != "" {
 		go startPprof(*pprof)
 	}
+
+}
+
+func createOptions(fns []OptionsFn) *Options {
+	options := &Options{}
+	for _, f := range fns {
+		f(options)
+	}
+
+	return options
 }
 
 var (
