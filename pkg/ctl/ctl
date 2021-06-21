@@ -52,21 +52,29 @@ function start() {
     local pureAppName=${app#"./"}
 
     # 以下代码需要root权限
-    if [[ -n "$LIMIT_MEMORY" ]]; then
+    # LIMIT_MEM=3G
+    # LIMIT_MEM=256M
+    # k or K for kilobytes, m or M for megabytes, and g or G for gigabytes.
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory
+    if [[ -n "$LIMIT_MEM" ]]; then
       # 限制最大使用内存
       # 内核要考虑页对齐, 所以生效的数量不一定完全等于设置的数量
       local cgMemDir=/sys/fs/cgroup/memory/${pureAppName}
       mkdir -p $cgMemDir
-      echo $LIMIT_MEMORY >$cgMemDir/memory.limit_in_bytes
-      echo "memory.limit_in_bytes=$LIMIT_MEMORY"
+
+      local mem=$LIMIT_MEM
+      echo "$mem" >$cgMemDir/memory.limit_in_bytes
+      echo "memory.limit_in_bytes=$mem"
       echo $pid >$cgMemDir/tasks
     fi
-    # export LIMIT_CPU=20
+    # LIMIT_CPU=30 LIMIT_CORES=2 ./ctl start
     if [[ -n "$LIMIT_CPU" ]]; then
-      local perc=$LIMIT_CPU
-      local cores=$(nproc)
+      local percentage=$LIMIT_CPU
+      local cores=${LIMIT_CORES:-$(nproc)}
+      echo "cpu percentage=$percentage"
+      echo "cpu cores=$cores"
       local period=1000000
-      local quota=$((period * cores * perc / 100))
+      local quota=$((period * cores * percentage / 100))
 
       local cgCpuDir=/sys/fs/cgroup/cpu/${pureAppName}
       mkdir -p $cgCpuDir
@@ -113,7 +121,12 @@ function status() {
 
 function tailLog() {
   local ba=$(basename ${app})
-  tail -F ~/logs/${ba}/${ba}.log
+
+  if [[ $(id -u) == 0 ]]; then
+    tail -F /var/logs/${ba}/${ba}.log
+  else
+    tail -F ~/logs/${ba}/${ba}.log
+  fi
 }
 
 if [[ "$1" == "stop" ]]; then
@@ -132,4 +145,7 @@ elif [[ "$1" == "tail" ]]; then
   tailLog
 else
   echo "$0 start|stop|restart|reload|status|tail"
+  echo "root# LIMIT_MEM=1G $0 start"
+  echo "root# LIMIT_CPU=20 $0 start to limit 20% for all cores"
+  echo "root# LIMIT_CPU=20 LIMIT_CORES=2 $0 start to limit 20% for only 2 cores"
 fi
