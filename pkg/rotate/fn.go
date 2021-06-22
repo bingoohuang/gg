@@ -56,6 +56,23 @@ func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 	return r
 }
 
+func (w *FileWriter) daysKeeping(days int) {
+	expired := time.Now().Add(time.Duration(days) * -24 * time.Hour)
+	matches, _ := filepath.Glob(matchExpiredFiles(w.FnTemplate, w.DotGz))
+	for _, f := range matches {
+		if stat, _ := os.Stat(f); stat != nil && stat.ModTime().Before(expired) {
+			_ = os.Remove(f)
+		}
+	}
+}
+
+func matchExpiredFiles(fnTemplate, dotGz string) string {
+	fn := timex.GlobName(fnTemplate)
+	fn = filepath.Clean(fn)
+	base, _, ext := SplitBaseIndexExt(fn)
+	return base + "*" + ext + dotGz
+}
+
 func (w *FileWriter) Write(p []byte) (int, error) {
 	newFn := NewFilename(w.FnTemplate, w.DotGz)
 

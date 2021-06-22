@@ -2,6 +2,7 @@ package timex
 
 import (
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,17 @@ func FormatTime(t time.Time, s string) string {
 	for _, f := range timeFormatConvert {
 		s = f.JavaRegex.ReplaceAllStringFunc(s, func(layout string) string {
 			return t.Format(f.GoLayout)
+		})
+	}
+
+	return s
+}
+
+// GlobName format time with Java style layout.
+func GlobName(s string) string {
+	for _, f := range timeFormatConvert {
+		s = f.JavaRegex.ReplaceAllStringFunc(s, func(layout string) string {
+			return strings.Repeat("?", len(layout))
 		})
 	}
 

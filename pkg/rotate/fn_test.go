@@ -6,6 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMatchExpiredFiles(t *testing.T) {
+	assert.Equal(t, "somepath/????????*.log", matchExpiredFiles("somepath/yyyyMMdd.log", ""))
+	assert.Equal(t, "somepath/????????*.log.gz", matchExpiredFiles("somepath/yyyyMMdd.log", ".gz"))
+}
+
 func TestSetFileIndex(t *testing.T) {
 	assert.Equal(t, "abc_00002.txt", SetFileIndex("abc_00001.txt", 2))
 	assert.Equal(t, "abc_00002.txt", SetFileIndex("abc.txt", 2))

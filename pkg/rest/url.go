@@ -75,7 +75,8 @@ func MaybeURL(out string) (string, bool) {
 		return uri, err == nil
 	}
 
-	if _, appendMode, maxSize := rotate.ParseOutputPath(out); appendMode || maxSize > 0 {
+	c := &rotate.Config{}
+	if rotate.ParseOutputPath(c, out); c.Append || c.MaxSize > 0 {
 		return "", false
 	}
 
