@@ -32,6 +32,8 @@ type FileWriter struct {
 	rotateFunc func() bool
 	writer     bufWriter
 	DotGz      string
+	maxIndex   int
+	timedFn    string
 }
 
 func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
@@ -74,15 +76,15 @@ func matchExpiredFiles(fnTemplate, dotGz string) string {
 }
 
 func (w *FileWriter) Write(p []byte) (int, error) {
-	newFn := NewFilename(w.FnTemplate, w.DotGz)
+	timedFn := w.NewTimedFilename(w.FnTemplate, w.DotGz)
 
 	for {
-		fn, index := Filename(newFn, w.rotateFunc(), w.DotGz)
+		fn := w.RotateFilename(timedFn)
 		if fn == w.curFn {
 			break
 		}
 
-		if ok, err := w.openFile(fn, index); err != nil {
+		if ok, err := w.openFile(fn); err != nil {
 			return 0, err
 		} else if ok {
 			break
@@ -99,13 +101,8 @@ type gzipWriter struct {
 	*gzip.Writer
 }
 
-func (w *gzipWriter) Close() error {
-	return w.Writer.Close()
-}
-
-func (w *gzipWriter) Flush() error {
-	return w.Buf.Flush()
-}
+func (w *gzipWriter) Close() error { return w.Writer.Close() }
+func (w *gzipWriter) Flush() error { return w.Buf.Flush() }
 
 type bufioWriter struct {
 	*bufio.Writer
@@ -114,9 +111,9 @@ type bufioWriter struct {
 func (b *bufioWriter) Close() error { return b.Writer.Flush() }
 func (b *bufioWriter) Flush() error { return b.Writer.Flush() }
 
-func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
+func (w *FileWriter) openFile(fn string) (ok bool, err error) {
 	_ = w.Close()
-	if index == 2 { // rename bbb-2021-05-27-18-26.http to bbb-2021-05-27-18-26_00001.http
+	if w.maxIndex == 2 { // rename bbb-2021-05-27-18-26.http to bbb-2021-05-27-18-26_00001.http
 		_ = os.Rename(w.curFn+w.DotGz, SetFileIndex(w.curFn, 1)+w.DotGz)
 	}
 
@@ -129,14 +126,9 @@ func (w *FileWriter) openFile(fn string, index int) (ok bool, err error) {
 
 	if w.DotGz != "" {
 		gw := gzip.NewWriter(w.file)
-		w.writer = &gzipWriter{
-			Buf:    bufio.NewWriter(gw),
-			Writer: gw,
-		}
+		w.writer = &gzipWriter{Buf: bufio.NewWriter(gw), Writer: gw}
 	} else {
-		w.writer = &bufioWriter{
-			Writer: bufio.NewWriter(w.file),
-		}
+		w.writer = &bufioWriter{Writer: bufio.NewWriter(w.file)}
 	}
 
 	ok = true
@@ -172,25 +164,31 @@ func (w *FileWriter) Close() error {
 	return nil
 }
 
-func NewFilename(template, dotGz string) string {
+func (w *FileWriter) NewTimedFilename(template, dotGz string) string {
 	fn := timex.FormatTime(time.Now(), template)
 	fn = filepath.Clean(fn)
-	_, fn = FindMaxFileIndex(fn, dotGz)
+
+	if w.timedFn != fn {
+		w.maxIndex = 1
+		w.timedFn = fn
+	}
+
+	if w.curFn == "" { // 只有第一次检查最大文件索引号
+		w.maxIndex, fn = FindMaxFileIndex(fn, dotGz)
+	}
+
 	return fn
 }
 
-func Filename(fn string, rotate bool, dotGz string) (string, int) {
-	if !rotate {
-		return fn, 0
+func (w *FileWriter) RotateFilename(fn string) string {
+	if w.rotateFunc() {
+		w.maxIndex++
 	}
 
-	max, _ := FindMaxFileIndex(fn, dotGz)
-	if max <= 0 {
-		return fn, 0
+	if w.maxIndex == 1 {
+		return fn
 	}
-
-	n := max + 1
-	return SetFileIndex(fn, n), n
+	return SetFileIndex(fn, w.maxIndex)
 }
 
 func GetFileIndex(path string) int {
@@ -208,16 +206,10 @@ func SetFileIndex(path string, index int) string {
 	return fmt.Sprintf("%s_%05d%s", base, index, ext)
 }
 
-// FindMaxFileIndex finds the max index of a file like log-2021-05-27_00001.log.
-// return maxIndex = 0 there is no file matches log-2021-05-27*.log.
-// return maxIndex >= 1 tell the max index in matches.
+// FindMaxFileIndex finds the maxIndex index of a file like log-2021-05-27_00001.log.
 func FindMaxFileIndex(path string, dotGz string) (int, string) {
 	base, _, ext := SplitBaseIndexExt(path)
 	matches, _ := filepath.Glob(base + "*" + ext + dotGz)
-	if len(matches) == 0 {
-		return 0, path
-	}
-
 	maxIndex := 1
 	maxFn := path
 	for _, fn := range matches {
