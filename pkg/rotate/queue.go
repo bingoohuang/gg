@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/iox"
 	"github.com/bingoohuang/gg/pkg/jihe"
 	"github.com/bingoohuang/gg/pkg/man"
 	"github.com/bingoohuang/gg/pkg/ss"
@@ -31,22 +32,24 @@ type QueueWriter struct {
 
 type Config struct {
 	context.Context
-	OutChanSize    int    // 通道大小
-	AllowDiscarded bool   // 是否允许放弃（来不及写入）
-	Append         bool   // 追加模式
-	MaxSize        uint64 // 单个文件最大大小
-	KeepDays       int    // 保留多少天的日志，过期删除， 0全部, 默认10天
+	OutChanSize    int           // 通道大小
+	AllowDiscarded bool          // 是否允许放弃（来不及写入）
+	Append         bool          // 追加模式
+	MaxSize        uint64        // 单个文件最大大小
+	KeepDays       int           // 保留多少天的日志，过期删除， 0全部, 默认10天
+	FlushLatency   time.Duration // 刷新延迟
 }
 
 type Option func(*Config)
 
-func WithContext(v context.Context) Option { return func(c *Config) { c.Context = v } }
-func WithConfig(v *Config) Option          { return func(c *Config) { *c = *v } }
-func WithAllowDiscard(v bool) Option       { return func(c *Config) { c.AllowDiscarded = v } }
-func WithAppend(v bool) Option             { return func(c *Config) { c.Append = v } }
-func WithOutChanSize(v int) Option         { return func(c *Config) { c.OutChanSize = v } }
-func WithMaxSize(v uint64) Option          { return func(c *Config) { c.MaxSize = v } }
-func WithKeepDays(v int) Option            { return func(c *Config) { c.KeepDays = v } }
+func WithContext(v context.Context) Option    { return func(c *Config) { c.Context = v } }
+func WithConfig(v *Config) Option             { return func(c *Config) { *c = *v } }
+func WithAllowDiscard(v bool) Option          { return func(c *Config) { c.AllowDiscarded = v } }
+func WithAppend(v bool) Option                { return func(c *Config) { c.Append = v } }
+func WithOutChanSize(v int) Option            { return func(c *Config) { c.OutChanSize = v } }
+func WithMaxSize(v uint64) Option             { return func(c *Config) { c.MaxSize = v } }
+func WithKeepDays(v int) Option               { return func(c *Config) { c.KeepDays = v } }
+func WithFlushLatency(v time.Duration) Option { return func(c *Config) { c.FlushLatency = v } }
 
 // NewQueueWriter creates a new QueueWriter.
 // outputPath:
@@ -61,14 +64,14 @@ func NewQueueWriter(outputPath string, options ...Option) *QueueWriter {
 	w := createWriter(s, c)
 	p := &QueueWriter{
 		queue:  make(chan string, c.OutChanSize),
-		writer: w,
+		writer: &iox.MaxLatencyWriter{Dst: w, Latency: c.FlushLatency},
 		config: c,
 	}
 
 	if c.AllowDiscarded {
 		p.delayDiscarded = jihe.NewDelayChan(c.Context, func(v interface{}) {
 			p.Send(fmt.Sprintf("\n discarded: %d\n", v.(uint32)), false)
-		}, 10*time.Second)
+		}, c.FlushLatency)
 	}
 	p.wg.Add(1)
 	go p.flushing()
@@ -77,7 +80,7 @@ func NewQueueWriter(outputPath string, options ...Option) *QueueWriter {
 }
 
 func createConfig(options []Option) *Config {
-	c := &Config{KeepDays: 10}
+	c := &Config{KeepDays: 10, FlushLatency: 10 * time.Second}
 	for _, option := range options {
 		option(c)
 	}
@@ -115,11 +118,13 @@ func ParseOutputPath(c *Config, outputPath string) string {
 
 type LfStdout struct{}
 
+func (l LfStdout) Flush() error { return nil }
+
 func (l LfStdout) Write(p []byte) (n int, err error) {
 	return fmt.Fprintf(os.Stdout, "%s\n", bytes.TrimSpace(p))
 }
 
-func createWriter(outputPath string, c *Config) io.Writer {
+func createWriter(outputPath string, c *Config) iox.WriteFlusher {
 	if outputPath == "stdout" {
 		return &LfStdout{}
 	}
@@ -162,11 +167,6 @@ func (p *QueueWriter) flushing() {
 	if c, ok := p.writer.(io.Closer); ok {
 		defer c.Close()
 	}
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
-	count := 0
-	f, ok := p.writer.(Flusher)
 
 	ctx := p.config.Context
 	for {
@@ -176,14 +176,6 @@ func (p *QueueWriter) flushing() {
 				return
 			}
 			_, _ = p.writer.Write([]byte(msg))
-			count++
-		case <-ticker.C:
-			if count > 0 {
-				if ok {
-					_ = f.Flush()
-				}
-				count = 0
-			}
 		case <-ctx.Done():
 			return
 		}
