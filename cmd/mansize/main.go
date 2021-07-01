@@ -16,7 +16,7 @@ func main() {
 
 	for _, arg := range args {
 		if regexp.MustCompile(`^\d+$`).MatchString(arg) {
-			v, _ := strconv.ParseUint(os.Args[1], 10, 64)
+			v, _ := strconv.ParseUint(arg, 10, 64)
 			fmt.Println(arg, "=>", man.IBytes(v), "/", man.Bytes(v))
 		} else {
 			bytes, err := man.ParseBytes(arg)
