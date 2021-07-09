@@ -70,6 +70,15 @@ func HasPrefix(s string, ss ...string) bool {
 	return false
 }
 
+func HasSuffix(s string, ss ...string) bool {
+	for _, one := range ss {
+		if strings.HasSuffix(s, one) {
+			return true
+		}
+	}
+	return false
+}
+
 func Jsonify(v interface{}) string {
 	b := &bytes.Buffer{}
 	encoder := json.NewEncoder(b)
