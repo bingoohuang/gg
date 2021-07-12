@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -20,6 +21,7 @@ type Rest struct {
 	DisableKeepAlive bool
 	Context          context.Context
 	Timeout          time.Duration
+	BasicAuth        string
 }
 
 // Post execute HTTP POST request.
@@ -88,6 +90,10 @@ func (r Rest) do(method string) (*Rsp, error) {
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", If(IsJSONBytes(r.Body),
 			"application/json; charset=utf-8", "text/plain; charset=utf-8"))
+	}
+
+	if r.BasicAuth != "" {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.BasicAuth)))
 	}
 
 	for k, v := range r.Headers {
