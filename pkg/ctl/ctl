@@ -23,13 +23,15 @@ function check_pid() {
 
   # remove prefix ./
   local pureAppName=${app#"./"}
-  local pid=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | awk '{print $2}')
-  # make sure that pid is a number.
-  if [[ ${pid} =~ ^[0-9]+$ ]]; then
-    echo "${pid}" >${pidFile}
-    echo "${pid}"
-    return 1
-  fi
+  local pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | awk '{print $2}')
+  for pid in $pids; do
+    # make sure that pid is a number, and have the same current working directory.
+    if [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(pwdx "$pid" | awk '{print $2}') == "$PWD" ]]; then
+      echo "${pid}" >${pidFile}
+      echo "${pid}"
+      return 1
+    fi
+  done
 
   echo "0"
   return 0
@@ -121,11 +123,11 @@ function status() {
 
 function tailLog() {
   local ba=$(basename ${app})
-
+  local dirname=$(basename "$PWD")
   if [[ $(id -u) == 0 ]]; then
-    tail -F /var/log/${ba}/${ba}.log
+    tail -F /var/log/${dirname}/${ba}.log
   else
-    tail -F ~/logs/${ba}/${ba}.log
+    tail -F ~/logs/${dirname}/${ba}.log
   fi
 }
 
