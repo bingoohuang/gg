@@ -18,6 +18,7 @@ type Arg struct {
 	Other    string `flag:"-"`
 	V        int    `flag:"v" count:"true"`
 	Size     uint64 `size:"true" val:"10MiB"`
+	Pmem     float32
 }
 
 type myFlag struct {
@@ -33,7 +34,7 @@ func (i *myFlag) Set(value string) error {
 
 func TestParse(t *testing.T) {
 	arg := &Arg{}
-	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv", "-size", "2KiB"})
+	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv", "-size", "2KiB", "-pmem", "0.618"})
 	assert.Equal(t, 10*time.Second, arg.Duration)
 	assert.Equal(t, myFlag{Value: "mymy"}, arg.MyFlag)
 	assert.Equal(t, []string{"a", "b"}, arg.Out)
@@ -41,6 +42,7 @@ func TestParse(t *testing.T) {
 	assert.Equal(t, "5003", arg.Input)
 	assert.Equal(t, 3, arg.V)
 	assert.Equal(t, uint64(2*1024), arg.Size)
+	assert.Equal(t, float32(0.618), arg.Pmem)
 	// ... use arg
 }
 
