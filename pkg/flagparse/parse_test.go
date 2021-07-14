@@ -7,6 +7,19 @@ import (
 	"time"
 )
 
+// Arg is the application's argument options.
+type Arg struct {
+	Duration time.Duration `flag:"d"`
+	MyFlag   myFlag        `flag:"my"`
+	Out      []string
+	Port     int    `flag:"p" val:"1234"`
+	Input    string `flag:"i" val:"" required:"true"`
+	Version  bool   `val:"false" usage:"Show version"`
+	Other    string `flag:"-"`
+	V        int    `flag:"v" count:"true"`
+	Size     uint64 `size:"true" val:"10MiB"`
+}
+
 type myFlag struct {
 	Value string
 }
@@ -20,26 +33,15 @@ func (i *myFlag) Set(value string) error {
 
 func TestParse(t *testing.T) {
 	arg := &Arg{}
-	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv"})
+	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv", "-size", "2KiB"})
 	assert.Equal(t, 10*time.Second, arg.Duration)
 	assert.Equal(t, myFlag{Value: "mymy"}, arg.MyFlag)
 	assert.Equal(t, []string{"a", "b"}, arg.Out)
 	assert.Equal(t, 1234, arg.Port)
 	assert.Equal(t, "5003", arg.Input)
 	assert.Equal(t, 3, arg.V)
+	assert.Equal(t, uint64(2*1024), arg.Size)
 	// ... use arg
-}
-
-// Arg is the application's argument options.
-type Arg struct {
-	Duration time.Duration `flag:"d"`
-	MyFlag   myFlag        `flag:"my"`
-	Out      []string
-	Port     int    `flag:"p" val:"1234"`
-	Input    string `flag:"i" val:"" required:"true"`
-	Version  bool   `val:"false" usage:"Show version"`
-	Other    string `flag:"-"`
-	V        int    `flag:"v" count:"true"`
 }
 
 // Usage is optional for customized show.

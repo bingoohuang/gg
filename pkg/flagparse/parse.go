@@ -76,7 +76,7 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			name = toFlagName(fi.Name)
 		}
 
-		val, usage, required := t("val"), t("usage"), t("required")
+		val, usage, required, size := t("val"), t("usage"), t("required"), t("size")
 		p := fv.Addr().Interface()
 		ft := fi.Type
 		if reflect.PtrTo(ft).Implements(flagValueType) {
@@ -123,6 +123,10 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			f.BoolVar(pp, name, cast.ToBool(val), usage)
 		case reflect.Float64:
 			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
+		case reflect.Uint64:
+			if size == "true" {
+				f.Var(newSizeFlag(p.(*uint64), val), name, usage)
+			}
 		case reflect.Int64:
 			f.Int64Var(p.(*int64), name, cast.ToInt64(val), usage)
 		case reflect.Uint:
