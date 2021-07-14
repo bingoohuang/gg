@@ -32,7 +32,7 @@ func If(b bool, s1, s2 string) string {
 	return s2
 }
 
-func ContainsAnyFold(s string, ss ...string) bool {
+func ContainsFold(s string, ss ...string) bool {
 	s = strings.ToLower(s)
 	for _, of := range ss {
 		of = strings.ToLower(of)
@@ -43,7 +43,7 @@ func ContainsAnyFold(s string, ss ...string) bool {
 	return false
 }
 
-func ContainsAny(s string, ss ...string) bool {
+func Contains(s string, ss ...string) bool {
 	for _, of := range ss {
 		if strings.Contains(s, of) {
 			return true
