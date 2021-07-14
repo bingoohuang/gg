@@ -16,7 +16,12 @@ type sizeFlag struct {
 	up *uint64
 }
 
-func (i *sizeFlag) String() string { return man.Bytes(*i.up) }
+func (i *sizeFlag) String() string {
+	if i.up == nil {
+		return "0"
+	}
+	return man.Bytes(*i.up)
+}
 
 func (i *sizeFlag) Set(value string) (err error) {
 	*i.up, err = man.ParseBytes(value)
