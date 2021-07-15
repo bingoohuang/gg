@@ -89,3 +89,76 @@ func Jsonify(v interface{}) string {
 
 	return b.String()
 }
+
+func ToMap(v []string) map[string]bool {
+	m := make(map[string]bool)
+	for _, s := range v {
+		m[s] = true
+	}
+	return m
+}
+
+type Case int
+
+const (
+	CaseUnchanged Case = iota
+	CaseLower
+	CaseUpper
+)
+
+type SplitConfig struct {
+	Separators  string
+	IgnoreEmpty bool
+	TrimSpace   bool
+	Case        Case
+}
+
+type SplitOption func(*SplitConfig)
+
+func WithConfig(v SplitConfig) SplitOption { return func(c *SplitConfig) { *c = v } }
+func WithSeparators(v string) SplitOption  { return func(c *SplitConfig) { c.Separators = v } }
+func WithIgnoreEmpty() SplitOption         { return func(c *SplitConfig) { c.IgnoreEmpty = true } }
+func WithTrimSpace() SplitOption           { return func(c *SplitConfig) { c.TrimSpace = true } }
+func WithUpper() SplitOption               { return func(c *SplitConfig) { c.Case = CaseUpper } }
+func WithLower() SplitOption               { return func(c *SplitConfig) { c.Case = CaseLower } }
+
+func Split(s string, options ...SplitOption) []string {
+	v := make([]string, 0)
+	c := createConfig(options)
+
+	ff := strings.FieldsFunc(s, func(r rune) bool {
+		return strings.ContainsRune(c.Separators, r)
+	})
+
+	for _, f := range ff {
+		if c.TrimSpace {
+			f = strings.TrimSpace(f)
+		}
+		if c.IgnoreEmpty && f == "" {
+			continue
+		}
+		switch c.Case {
+		case CaseLower:
+			f = strings.ToLower(f)
+		case CaseUpper:
+			f = strings.ToUpper(f)
+		}
+
+		v = append(v, f)
+	}
+
+	return v
+}
+
+func createConfig(options []SplitOption) *SplitConfig {
+	c := &SplitConfig{}
+	for _, o := range options {
+		o(c)
+	}
+
+	if c.Separators == "" {
+		c.Separators = ", "
+	}
+
+	return c
+}
