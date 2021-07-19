@@ -159,7 +159,7 @@ func NewPattern(sample, pattern string, options ...OptionFn) (*Pattern, error) {
 		typ := String
 
 		dotSample := strings.Trim(leftSample, " ")
-		if ss.ContainsAny(name, "time", "date") {
+		if ss.Contains(name, "time", "date") {
 			converters = append(converters, TimeValue(dotSample))
 			typ = DateTime
 		} else if digitsRegexp.MatchString(dotSample) {

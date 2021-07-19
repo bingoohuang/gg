@@ -61,7 +61,7 @@ func MaybeURL(out string) (string, bool) {
 		return osx.ExpandHome(out), false
 	}
 
-	if ss.ContainsAnyFold(out, ".txt", ".log", ".gz", ".out", ".http", ".json") {
+	if ss.Contains(out, ".txt", ".log", ".gz", ".out", ".http", ".json") {
 		return out, false
 	}
 
