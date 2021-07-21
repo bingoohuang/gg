@@ -121,13 +121,23 @@ function status() {
   fi
 }
 
-function tailLog() {
+function tailfLog() {
   local ba=$(basename ${app})
   local dirname=$(basename "$PWD")
   if [[ $(id -u) == 0 ]]; then
     tail -F /var/log/${dirname}/${ba}.log
   else
     tail -F ~/logs/${dirname}/${ba}.log
+  fi
+}
+
+function tailLog() {
+  local ba=$(basename ${app})
+  local dirname=$(basename "$PWD")
+  if [[ $(id -u) == 0 ]]; then
+    tail /var/log/${dirname}/${ba}.log
+  else
+    tail ~/logs/${dirname}/${ba}.log
   fi
 }
 
@@ -144,9 +154,11 @@ elif [[ "$1" == "reload" ]]; then
 elif [[ "$1" == "status" ]]; then
   status
 elif [[ "$1" == "tail" ]]; then
+  tailfLog
+elif [[ "$1" == "log" ]]; then
   tailLog
 else
-  echo "$0 start|stop|restart|reload|status|tail"
+  echo "$0 start|stop|restart|reload|status|tail|log"
   echo "root# LIMIT_MEM=1G $0 start"
   echo "root# LIMIT_CPU=20 $0 start to limit 20% for all cores"
   echo "root# LIMIT_CPU=20 LIMIT_CORES=2 $0 start to limit 20% for only 2 cores"
