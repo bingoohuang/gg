@@ -1,11 +1,13 @@
 #!/bin/bash
 
 export GIN_MODE=release
-export PID_FILE=var/pid
-mkdir -p var
+
+# 取脚本所在绝对目录为基准目录，直接dirname可能是相对目录
+baseDir=$(cd $(dirname $0) && pwd)
+mkdir -p $baseDir/var
 
 #set -x #echo on
-pidFile=${PID_FILE}
+pidFile=$baseDir/var/pid
 app={{.BinName}}
 
 moreArgs="${*:2}"
@@ -123,21 +125,21 @@ function status() {
 
 function tailfLog() {
   local ba=$(basename ${app})
-  local dirname=$(basename "$PWD")
+  local dirName=$(basename "$baseDir")
   if [[ $(id -u) == 0 ]]; then
-    tail -F /var/log/${dirname}/${ba}.log
+    tail -F /var/log/${dirName}/${ba}.log
   else
-    tail -F ~/logs/${dirname}/${ba}.log
+    tail -F ~/logs/${dirName}/${ba}.log
   fi
 }
 
 function tailLog() {
   local ba=$(basename ${app})
-  local dirname=$(basename "$PWD")
+  local dirName=$(basename "$baseDir")
   if [[ $(id -u) == 0 ]]; then
-    tail /var/log/${dirname}/${ba}.log
+    tail /var/log/${dirName}/${ba}.log
   else
-    tail ~/logs/${dirname}/${ba}.log
+    tail ~/logs/${dirName}/${ba}.log
   fi
 }
 
