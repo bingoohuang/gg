@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/cast"
 	flag "github.com/bingoohuang/gg/pkg/fla9"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // Comment this line to disable pprof endpoint.
@@ -73,7 +74,9 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 		}
 
 		if name == "" {
-			name = toFlagName(fi.Name)
+			name = ss.ToLowerKebab(fi.Name)
+		} else if strings.HasPrefix(name, ",") { // for shortName
+			name = ss.ToLowerKebab(fi.Name) + name
 		}
 
 		val, usage, required, size := t("val"), t("usage"), t("required"), t("size")
@@ -220,28 +223,6 @@ func (i *arrayFlags) String() string { return i.Value }
 func (i *arrayFlags) Set(value string) error {
 	*i.pp = append(*i.pp, value)
 	return nil
-}
-
-func toFlagName(name string) string {
-	var sb strings.Builder
-
-	isUpper := func(c uint8) bool { return 'A' <= c && c <= 'Z' }
-
-	for i := 0; i < len(name); i++ {
-		c := name[i]
-		if isUpper(c) {
-			if sb.Len() > 0 {
-				if i+1 < len(name) && (!(i-1 >= 0 && isUpper(name[i-1])) || !isUpper(name[i+1])) {
-					sb.WriteByte('-')
-				}
-			}
-			sb.WriteByte(c - 'A' + 'a')
-		} else {
-			sb.WriteByte(c)
-		}
-	}
-
-	return sb.String()
 }
 
 func startPprof(pprofAddr string) {

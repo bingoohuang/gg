@@ -162,3 +162,25 @@ func createConfig(options []SplitOption) *SplitConfig {
 
 	return c
 }
+
+func ToLowerKebab(name string) string {
+	var sb strings.Builder
+
+	isUpper := func(c uint8) bool { return 'A' <= c && c <= 'Z' }
+
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if isUpper(c) {
+			if sb.Len() > 0 {
+				if i+1 < len(name) && (!(i-1 >= 0 && isUpper(name[i-1])) || !isUpper(name[i+1])) {
+					sb.WriteByte('-')
+				}
+			}
+			sb.WriteByte(c - 'A' + 'a')
+		} else {
+			sb.WriteByte(c)
+		}
+	}
+
+	return sb.String()
+}

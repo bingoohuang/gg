@@ -17,7 +17,7 @@ type Arg struct {
 	Version  bool   `val:"false" usage:"Show version"`
 	Other    string `flag:"-"`
 	V        int    `flag:"v" count:"true"`
-	Size     uint64 `size:"true" val:"10MiB"`
+	Size     uint64 `flag:",s" size:"true" val:"10MiB"`
 	Pmem     float32
 }
 
@@ -34,7 +34,7 @@ func (i *myFlag) Set(value string) error {
 
 func TestParse(t *testing.T) {
 	arg := &Arg{}
-	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv", "-size", "2KiB", "-pmem", "0.618"})
+	ParseArgs(arg, []string{"app", "-i", "5003", "-out", "a", "-out", "b", "-my", "mymy", "-d", "10s", "-vvv", "-s", "2KiB", "-pmem", "0.618"})
 	assert.Equal(t, 10*time.Second, arg.Duration)
 	assert.Equal(t, myFlag{Value: "mymy"}, arg.MyFlag)
 	assert.Equal(t, []string{"a", "b"}, arg.Out)
@@ -57,10 +57,3 @@ Usage of pcap (%s):
 
 // VersionInfo is optional for customized version.
 func (a Arg) VersionInfo() string { return "v0.0.2 2021-05-19 08:33:18" }
-
-func TestTagName(t *testing.T) {
-	assert.Equal(t, "abc", toFlagName("ABC"))
-	assert.Equal(t, "hello-world", toFlagName("HelloWorld"))
-	assert.Equal(t, "hello-url", toFlagName("HelloURL"))
-	assert.Equal(t, "hello-url-addr", toFlagName("HelloURLAddr"))
-}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"sort"
 	"strings"
@@ -30,8 +31,8 @@ func ExampleFlag() {
 	)
 
 	fla9.String("conf", "testdata/test.conf", "help message")
-	fla9.StringVar(&name, "name", "", "help message")
-	fla9.IntVar(&age, "age", 0, "help message")
+	fla9.StringVar(&name, "name,n", "", "help message")
+	fla9.IntVar(&age, "age,a", 0, "help message")
 	fla9.IntVar(&connections, "c", 0, "help message")
 	fla9.Float64Var(&length, "length", 0, "help message")
 	fla9.BoolVar(&female, "female", false, "help message")
@@ -566,9 +567,7 @@ func TestPrintDefaults(t *testing.T) {
 	fs.Duration("maxT", 0, "set `timeout` for dial")
 	fs.PrintDefaults()
 	got := buf.String()
-	if got != defaultOutput {
-		t.Errorf("got %q want %q\n", got, defaultOutput)
-	}
+	assert.Equal(t, defaultOutput, got)
 }
 
 // Test parsing a environment variables

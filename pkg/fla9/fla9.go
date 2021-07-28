@@ -305,19 +305,21 @@ type FlagSet struct {
 
 // A Flag represents the state of a flag.
 type Flag struct {
-	Name     string // name as it appears on command line
-	Usage    string // help message
-	Value    Value  // value as set
-	DefValue string // default value (as text); for usage message
+	Name      string // name as it appears on command line
+	ShortName string // name as it appears on command line
+	Usage     string // help message
+	Value     Value  // value as set
+	DefValue  string // default value (as text); for usage message
+	Alias     bool
 }
 
 // sortFlags returns the flags as a slice in lexicographical sorted order.
 func sortFlags(flags map[string]*Flag) []*Flag {
-	list := make(sort.StringSlice, len(flags))
-	i := 0
+	list := make(sort.StringSlice, 0, len(flags))
 	for _, f := range flags {
-		list[i] = f.Name
-		i++
+		if !f.Alias {
+			list = append(list, f.Name)
+		}
 	}
 	list.Sort()
 	result := make([]*Flag, len(list))
@@ -458,6 +460,9 @@ func UnquoteUsage(flag *Flag) (name string, usage string) {
 func (f *FlagSet) PrintDefaults() {
 	f.VisitAll(func(flag *Flag) {
 		s := fmt.Sprintf("  -%s", flag.Name) // Two spaces before -; see next two comments.
+		if flag.ShortName != "" {
+			s += fmt.Sprintf(" (-%s)", flag.ShortName)
+		}
 		name, usage := UnquoteUsage(flag)
 		if len(name) > 0 {
 			s += " " + name
@@ -817,10 +822,36 @@ func Duration(name string, value time.Duration, usage string) *time.Duration {
 // of strings by giving the slice the methods of Value; in particular, Set would
 // decompose the comma-separated string into the slice.
 func (f *FlagSet) Var(value Value, name string, usage string) {
+	shortName := ""
+	if p := strings.IndexByte(name, ','); p > 0 {
+		shortName = name[p+1:]
+		name = name[:p]
+	}
 	// Remember the default value as a string; it won't change.
-	flag := &Flag{name, usage, value, value.String()}
-	_, alreadythere := f.formal[name]
-	if alreadythere {
+	flag := &Flag{Name: name, ShortName: shortName, Usage: usage, Value: value, DefValue: value.String()}
+	f.checkRedefined(name)
+	if shortName != "" {
+		f.checkRedefined(shortName)
+	}
+	if f.formal == nil {
+		f.formal = make(map[string]*Flag)
+	}
+
+	f.formal[name] = flag
+	if shortName != "" {
+		f.formal[shortName] = flag
+	}
+
+	kebab := ss.ToLowerKebab(name)
+	if _, exists := f.formal[kebab]; !exists {
+		kebabFlag := *flag
+		kebabFlag.Alias = true
+		f.formal[kebab] = &kebabFlag
+	}
+}
+
+func (f *FlagSet) checkRedefined(name string) {
+	if _, alreadythere := f.formal[name]; alreadythere {
 		var msg string
 		if f.name == "" {
 			msg = fmt.Sprintf("flag redefined: %s", name)
@@ -830,10 +861,6 @@ func (f *FlagSet) Var(value Value, name string, usage string) {
 		fmt.Fprintln(f.out(), msg)
 		panic(msg) // Happens only if flags are declared with identical names
 	}
-	if f.formal == nil {
-		f.formal = make(map[string]*Flag)
-	}
-	f.formal[name] = flag
 }
 
 // Var defines a flag with the specified name and usage string. The type and
@@ -906,6 +933,9 @@ func (f *FlagSet) parseOne() (bool, error) {
 	}
 	flag := f.formal[name] // BUG
 	if flag == nil {
+		flag = f.formal[ss.ToLowerKebab(name)]
+	}
+	if flag == nil {
 		if flag, value = checkCombine(f.formal, name); flag != nil {
 			name = flag.Name
 			hasValue = true
@@ -957,7 +987,7 @@ func (f *FlagSet) parseOne() (bool, error) {
 
 func checkCombine(m map[string]*Flag, name string) (*Flag, string) {
 	for i := len(name) - 1; i > 0; i-- {
-		if flag, ok := m[name[:i]]; ok {
+		if flag, ok := m[name[:i]]; ok && flag.ShortName == "" {
 			return flag, name[i:]
 		}
 	}
@@ -977,11 +1007,9 @@ func (f *FlagSet) Parse(arguments []string) error {
 	if err := f.parseArgs(arguments); err != nil {
 		return err
 	}
-
 	if err := f.parseEnv(); err != nil {
 		return err
 	}
-
 	if err := f.parseConfigFile(); err != nil {
 		return err
 	}
