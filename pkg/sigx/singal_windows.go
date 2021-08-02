@@ -1,3 +1,8 @@
 package sigx
 
-var defaultSigals = []os.Signal{syscall.SIGALRM}
+import (
+	"os"
+	"syscall"
+)
+
+var defaultSignals = []os.Signal{syscall.SIGALRM}
