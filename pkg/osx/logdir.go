@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 // GetGroupID the current user's group ID.
@@ -50,7 +49,6 @@ func CreateLogDir(logDir, appName string) string {
 		return logDir
 	}
 
-	syscall.Umask(0)
 	if err := os.MkdirAll(logDir, os.ModeSticky|os.ModePerm); err != nil {
 		panic(err)
 	}

@@ -44,7 +44,7 @@ func RegisterSignalCallback(c context.Context, f func(), signals ...os.Signal) {
 
 func RegisterSignalProfile(c context.Context, signals ...os.Signal) {
 	if len(signals) == 0 {
-		signals = []os.Signal{syscall.SIGUSR1}
+		signals = defaultSignals
 	}
 
 	RegisterSignalCallback(c, func() {
