@@ -9,5 +9,9 @@
 ## mem.profile
 
 1. collect mem.profile `touch jj.mem; kill -USR1 6911`
-1. `go tool pprof -http :9402 mem.profile` to view 
+1. `go tool pprof -http :9402 mem.profile` to view
 
+## jj.profile
+
+1. collect specified `echo "cpu,heap,allocs,mutex,block,trace,threadcreate,goroutine,d:5m,rate:4096" > jj.profile`
+2. `go tool pprof -http :9402 xx.pprof` or `go tool trace trace.out` to view
