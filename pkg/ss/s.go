@@ -117,10 +117,10 @@ type SplitOption func(*SplitConfig)
 
 func WithConfig(v SplitConfig) SplitOption { return func(c *SplitConfig) { *c = v } }
 func WithSeparators(v string) SplitOption  { return func(c *SplitConfig) { c.Separators = v } }
-func WithIgnoreEmpty() SplitOption         { return func(c *SplitConfig) { c.IgnoreEmpty = true } }
-func WithTrimSpace() SplitOption           { return func(c *SplitConfig) { c.TrimSpace = true } }
-func WithUpper() SplitOption               { return func(c *SplitConfig) { c.Case = CaseUpper } }
-func WithLower() SplitOption               { return func(c *SplitConfig) { c.Case = CaseLower } }
+func WithIgnoreEmpty(c *SplitConfig)       { c.IgnoreEmpty = true }
+func WithTrimSpace(c *SplitConfig)         { c.TrimSpace = true }
+func WithUpper(c *SplitConfig)             { c.Case = CaseUpper }
+func WithLower(c *SplitConfig)             { c.Case = CaseLower }
 
 func Split(s string, options ...SplitOption) []string {
 	v := make([]string, 0)

@@ -2,6 +2,8 @@ package sigx
 
 import (
 	"context"
+	"github.com/bingoohuang/gg/pkg/profile"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -58,6 +60,9 @@ func RegisterSignalProfile(c context.Context, signals ...os.Signal) {
 				log.Printf("failed to collect profile: %v", err)
 			}
 		}
+		if v := ReadCmd("jj.profile"); len(v) > 0 {
+			go profile.Start(profile.Specs(string(v)))
+		}
 	}, signals...)
 }
 
@@ -71,6 +76,17 @@ func HasCmd(f string) bool {
 	}
 
 	return false
+}
+
+func ReadCmd(f string) []byte {
+	s, err := os.Stat(f)
+	if err == nil && !s.IsDir() {
+		data, _ := ioutil.ReadFile(f)
+		os.Remove(f)
+		return data
+	}
+
+	return nil
 }
 
 func CollectCpuProfile(cpuProfile string) error {
