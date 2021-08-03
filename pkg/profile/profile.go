@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	cpuMode = iota << 1
+	cpuMode = 1 << iota
 	heapMode
 	allocsMode
 	mutexMode
