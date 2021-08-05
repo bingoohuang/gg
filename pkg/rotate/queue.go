@@ -129,12 +129,7 @@ func createWriter(outputPath string, c *Config) iox.WriteFlusher {
 		return &LfStdout{}
 	}
 
-	w := NewFileWriter(outputPath, c.MaxSize, c.Append)
-	if c.KeepDays > 0 {
-		go w.daysKeeping(c.KeepDays)
-	}
-
-	return w
+	return NewFileWriter(outputPath, c.MaxSize, c.Append, c.KeepDays)
 }
 
 func (p *QueueWriter) Send(msg string, countDiscards bool) {

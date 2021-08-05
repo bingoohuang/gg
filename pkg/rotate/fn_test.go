@@ -23,7 +23,7 @@ func TestGetFileIndex(t *testing.T) {
 }
 
 func TestGzip(t *testing.T) {
-	writer := NewFileWriter("/tmp/xx.log.gz", 0, true)
+	writer := NewFileWriter("/tmp/xx-yyyyMMdd.log.gz", 0, true, 1)
 	writer.Write([]byte("hello world!"))
 	writer.Close()
 }

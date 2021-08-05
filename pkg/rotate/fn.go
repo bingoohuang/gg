@@ -26,17 +26,18 @@ type FileWriter struct {
 	MaxSize    uint64
 	Append     bool
 
-	file       *os.File
-	curFn      string
-	curSize    uint64
-	rotateFunc func() bool
-	writer     bufWriter
-	DotGz      string
-	maxIndex   int
-	timedFn    string
+	file        *os.File
+	curFn       string
+	curSize     uint64
+	rotateFunc  func() bool
+	writer      bufWriter
+	DotGz       string
+	maxIndex    int
+	timedFn     string
+	MaxKeepDays int
 }
 
-func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
+func NewFileWriter(fnTemplate string, maxSize uint64, append bool, maxKeepDays int) *FileWriter {
 	hasGz := strings.HasSuffix(fnTemplate, ".gz")
 	dotGz := ""
 	if hasGz {
@@ -44,11 +45,12 @@ func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 		fnTemplate = strings.TrimSuffix(fnTemplate, ".gz")
 	}
 	r := &FileWriter{
-		FnTemplate: fnTemplate,
-		DotGz:      dotGz,
-		MaxSize:    maxSize,
-		Append:     append,
-		rotateFunc: func() bool { return false },
+		FnTemplate:  fnTemplate,
+		DotGz:       dotGz,
+		MaxSize:     maxSize,
+		Append:      append,
+		rotateFunc:  func() bool { return false },
+		MaxKeepDays: maxKeepDays,
 	}
 
 	if r.MaxSize > 0 {
@@ -58,8 +60,8 @@ func NewFileWriter(fnTemplate string, maxSize uint64, append bool) *FileWriter {
 	return r
 }
 
-func (w *FileWriter) daysKeeping(days int) {
-	expired := time.Now().Add(time.Duration(days) * -24 * time.Hour)
+func (w *FileWriter) daysKeeping() {
+	expired := time.Now().Add(time.Duration(w.MaxKeepDays) * -24 * time.Hour)
 	matches, _ := filepath.Glob(matchExpiredFiles(w.FnTemplate, w.DotGz))
 	for _, f := range matches {
 		if stat, _ := os.Stat(f); stat != nil && stat.ModTime().Before(expired) {
@@ -160,6 +162,10 @@ func (w *FileWriter) Close() error {
 		_ = w.file.Close()
 		w.writer = nil
 		w.file = nil
+
+		if w.MaxKeepDays > 0 {
+			go w.daysKeeping()
+		}
 	}
 	return nil
 }
