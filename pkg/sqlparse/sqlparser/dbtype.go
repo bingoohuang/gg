@@ -58,8 +58,8 @@ func (p *Paging) SetRowsCount(total int) {
 	}
 }
 
-// CreatePagingClause SQL statement for wrapping paging.
-func (t DBType) CreatePagingClause(p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
+// createPagingClause SQL statement for wrapping paging.
+func (t DBType) createPagingClause(p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
 	var s strings.Builder
 	start := p.PageSize * (p.PageSeq - 1)
 	switch t {
@@ -104,7 +104,7 @@ func (MySQLIdQuoter) Quote(s string) string {
 	for _, c := range s {
 		b.WriteRune(c)
 		if c == '`' {
-			b.WriteByte('`')
+			b.WriteRune('`')
 		}
 	}
 	b.WriteByte('`')
@@ -117,31 +117,34 @@ func (DoubleQuoteIdQuoter) Quote(s string) string { return strconv.Quote(s) }
 
 type PlaceholderFormatter interface {
 	FormatPlaceholder() string
+	ResetPlaceholder()
 }
 
 type QuestionPlaceholderFormatter struct{}
 
 func (QuestionPlaceholderFormatter) FormatPlaceholder() string { return "?" }
+func (QuestionPlaceholderFormatter) ResetPlaceholder()         {}
 
 type PrefixPlaceholderFormatter struct {
 	Prefix string
 	Pos    int // 1-based
 }
 
-func (p PrefixPlaceholderFormatter) FormatPlaceholder() string {
+func (p *PrefixPlaceholderFormatter) ResetPlaceholder() { p.Pos = 0 }
+func (p *PrefixPlaceholderFormatter) FormatPlaceholder() string {
 	return fmt.Sprintf("%s%d", p.Prefix, p.Pos)
 }
 
 type ConvertConfig struct {
-	Paging          *Paging
-	AutoIncrementPK string
+	Paging             *Paging
+	AutoIncrementField string
 }
 
 type ConvertOption func(*ConvertConfig)
 
 func WithPaging(v *Paging) ConvertOption { return func(c *ConvertConfig) { c.Paging = v } }
-func WithAutoIncrementPK(v string) ConvertOption {
-	return func(c *ConvertConfig) { c.AutoIncrementPK = v }
+func WithAutoIncrement(v string) ConvertOption {
+	return func(c *ConvertConfig) { c.AutoIncrementField = v }
 }
 
 type ConvertResult struct {
@@ -158,11 +161,6 @@ const CreateCountingQuery = -1
 // 1. adjust the SQL variable symbols by different type, such as ?,? $1,$2.
 // 1. quote table name, field names.
 func (t DBType) Convert(query string, options ...ConvertOption) (string, *ConvertResult, error) {
-	config := &ConvertConfig{}
-	for _, f := range options {
-		f(config)
-	}
-
 	stmt, err := Parse(query)
 	if err != nil {
 		return "", nil, err
@@ -202,9 +200,13 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	q := buf.String()
 	buf.Reset()
 
-	p := config.Paging
-	if p != nil {
-		pagingClause, bindArgs := t.CreatePagingClause(p, hasPlaceholder)
+	config := &ConvertConfig{}
+	for _, f := range options {
+		f(config)
+	}
+
+	if p := config.Paging; p != nil {
+		pagingClause, bindArgs := t.createPagingClause(p, hasPlaceholder)
 		cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
 		if p.RowsCount == CreateCountingQuery {
 			cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
@@ -212,14 +214,16 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		q += " " + pagingClause
 	}
 
-	if config.AutoIncrementPK != "" {
-		q += " " + t.createAutoIncrementPK(cr, config.AutoIncrementPK)
+	if f := config.AutoIncrementField; f != "" {
+		q += " " + t.createAutoIncrementPK(cr, f)
 	}
 
 	return q, cr, nil
 }
 
 func (t DBType) createCountingQuery(stmt Statement, buf *TrackedBuffer, q string) string {
+	buf.PlaceholderFormatter.ResetPlaceholder()
+
 	countWrapRequired := func() bool {
 		if _, ok := stmt.(*Union); ok {
 			return true
@@ -228,17 +232,17 @@ func (t DBType) createCountingQuery(stmt Statement, buf *TrackedBuffer, q string
 			v.OrderBy = nil
 			return true
 		}
-
 		return false
 	}
 
 	if countWrapRequired() {
-		query := "select count(*) cnt from (" + q + ") t"
+		query := "select count(*) cnt from (" + q + ") t_gg_cnt"
 		countStmt, _, err := t.Convert(query)
 		if err != nil {
 			log.Printf("failed to convert query %s, err: %v", query, err)
 			return ""
 		}
+
 		buf.Myprintf("%v", countStmt)
 		return buf.String()
 	}
@@ -251,21 +255,20 @@ func (t DBType) createCountingQuery(stmt Statement, buf *TrackedBuffer, q string
 	s.OrderBy = nil
 	p, _ := Parse(`select count(*) cnt`)
 	s.SelectExprs = p.(*Select).SelectExprs
-
-	buf.Myprintf("%v", stmt)
+	buf.Myprintf("%v", s)
 	return buf.String()
 }
 
-func (t DBType) createAutoIncrementPK(cr *ConvertResult, pk string) string {
+func (t DBType) createAutoIncrementPK(cr *ConvertResult, autoIncrementField string) string {
 	switch t {
 	case Postgresql, Kingbase:
 		// https://gist.github.com/miguelmota/d54814683346c4c98cec432cf99506c0
-		return "returning " + pk
+		return "returning " + autoIncrementField
 	case Oracle, Shentong:
 		// https://forum.golangbridge.org/t/returning-values-with-insert-query-using-oracle-database-in-golang/13099/5
 		var p int64 = 0
-		cr.ScanValues = append(cr.ScanValues, sql.Named("ggReturningID", sql.Out{Dest: &p}))
-		return "returning " + pk + " into :ggReturningID "
+		cr.ScanValues = append(cr.ScanValues, sql.Named(autoIncrementField, sql.Out{Dest: &p}))
+		return "returning " + autoIncrementField + " into :" + autoIncrementField
 	default:
 		return ""
 	}
