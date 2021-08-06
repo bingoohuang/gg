@@ -957,7 +957,7 @@ type Constraint struct {
 }
 
 func (node Constraint) String() string {
-	keys := []string{}
+	var keys []string
 	for _, key := range node.Keys {
 		keys = append(keys, fmt.Sprintf("`%v`", key))
 	}
@@ -1037,7 +1037,7 @@ type ColumnDef struct {
 func (node ColumnDef) String() string {
 	option := ""
 	if len(node.Options) > 0 {
-		options := []string{}
+		var options []string
 		for _, option := range node.Options {
 			options = append(options, option.String())
 		}
@@ -1698,14 +1698,21 @@ func NewValArg(in []byte) *SQLVal {
 func (node *SQLVal) Format(buf *TrackedBuffer) {
 	switch node.Type {
 	case StrVal:
-		s := sqltypes.MakeString([]byte(node.Val))
+		s := sqltypes.MakeString(node.Val)
 		s.EncodeSQL(buf)
 	case IntVal, FloatVal, HexNum:
-		buf.Myprintf("%s", []byte(node.Val))
+		buf.Myprintf("%s", node.Val)
 	case HexVal:
-		buf.Myprintf("X'%s'", []byte(node.Val))
+		buf.Myprintf("X'%s'", node.Val)
 	case ValArg:
-		buf.WriteArg(string(node.Val))
+		if buf.PlaceholderFormatter == nil {
+			buf.WriteArg(string(node.Val))
+		} else {
+			if p, ok := buf.PlaceholderFormatter.(*PrefixPlaceholderFormatter); ok {
+				p.Pos++
+			}
+			buf.WriteArg(buf.PlaceholderFormatter.FormatPlaceholder())
+		}
 	default:
 		panic("unexpected")
 	}
@@ -2626,6 +2633,44 @@ func Backtick(in string) string {
 }
 
 func formatID(buf *TrackedBuffer, original, lowered string) {
+	if !shouldQuote(original) {
+		buf.Myprintf("%s", original)
+		return
+	}
+
+	if buf.IdQuoter != nil {
+		buf.Myprintf("%s", buf.IdQuoter.Quote(original))
+		return
+	}
+
+	buf.WriteByte('`')
+	for _, c := range original {
+		buf.WriteRune(c)
+		if c == '`' {
+			buf.WriteByte('`')
+		}
+	}
+	buf.WriteByte('`')
+}
+
+func shouldQuote(s string) bool {
+	isLetter := func(c rune) bool { return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' }
+	isDigit := func(c rune) bool { return '0' <= c && c <= '9' }
+	for i, c := range s {
+		if i == 0 {
+			if !isLetter(c) {
+				return true
+			}
+			continue
+		}
+		if !isLetter(c) && !isDigit(c) {
+			return false
+		}
+	}
+
+	return true
+}
+func formatID2(buf *TrackedBuffer, original, lowered string) {
 	for i, c := range original {
 		if !isLetter(uint16(c)) {
 			if i == 0 || !isDigit(uint16(c)) {

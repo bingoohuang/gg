@@ -29,6 +29,9 @@ import (
 // But you can supply a different formatting function if you
 // want to generate a query that's different from the default.
 type TrackedBuffer struct {
+	IdQuoter
+	PlaceholderFormatter
+
 	*bytes.Buffer
 	bindLocations []bindLocation
 	nodeFormatter func(buf *TrackedBuffer, node SQLNode)

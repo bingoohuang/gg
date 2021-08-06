@@ -7,9 +7,9 @@ import (
 )
 
 func convertFromCreateTableStmt(stmt *ast.CreateTableStmt, ddl *DDL) Statement {
-	columns := []*ColumnDef{}
+	var columns []*ColumnDef
 	for _, col := range stmt.Cols {
-		options := []*ColumnOption{}
+		var options []*ColumnOption
 		for _, option := range col.Options {
 			expr := ""
 			if option.Expr != nil {
@@ -29,9 +29,9 @@ func convertFromCreateTableStmt(stmt *ast.CreateTableStmt, ddl *DDL) Statement {
 			Options: options,
 		})
 	}
-	constraints := []*Constraint{}
+	var constraints []*Constraint
 	for _, constraint := range stmt.Constraints {
-		keys := []ColIdent{}
+		var keys []ColIdent
 		for _, key := range constraint.Keys {
 			keys = append(keys, NewColIdent(key.Column.Name.String()))
 		}
@@ -41,7 +41,7 @@ func convertFromCreateTableStmt(stmt *ast.CreateTableStmt, ddl *DDL) Statement {
 			Keys: keys,
 		})
 	}
-	options := []*TableOption{}
+	var options []*TableOption
 	for _, option := range stmt.Options {
 		options = append(options, &TableOption{
 			Type:      TableOptionType(option.Tp),
