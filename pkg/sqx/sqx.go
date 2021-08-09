@@ -42,16 +42,11 @@ func (s *SQL) Append(sub string, args ...interface{}) *SQL {
 
 // NewSQL create s SQL object.
 func NewSQL(query string, vars ...interface{}) *SQL {
-	return &SQL{
-		Query: query,
-		Vars:  vars,
-	}
+	return &SQL{Query: query, Vars: vars}
 }
 
 // WithVars replace vars.
-func WithVars(vars ...interface{}) []interface{} {
-	return vars
-}
+func WithVars(vars ...interface{}) []interface{} { return vars }
 
 // WithVars replace vars.
 func (s *SQL) WithVars(vars ...interface{}) *SQL {
