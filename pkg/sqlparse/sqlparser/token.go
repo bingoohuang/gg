@@ -553,7 +553,7 @@ func (tkn *Tokenizer) scanBindVar() (int, []byte) {
 	//if !isLetter(tkn.lastChar) {
 	//	return LEX_ERROR, buffer.Bytes()
 	//}
-	for isLetter(tkn.lastChar) || isDigit(tkn.lastChar) || tkn.lastChar == '.' {
+	for isLetter(tkn.lastChar) || isDigit(tkn.lastChar) || tkn.lastChar == '?' || tkn.lastChar == '.' {
 		buffer.WriteByte(byte(tkn.lastChar))
 		tkn.next()
 	}

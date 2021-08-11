@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+// FirstWord returns the first word of the SQL statement s.
+func FirstWord(s string) string {
+	if v := strings.Fields(strings.TrimSpace(s)); len(v) > 0 {
+		return v[0]
+	}
+
+	return ""
+}
+
 func RemoveAll(s, old string) string { return strings.ReplaceAll(s, old, "") }
 
 func Or(a, b string) string {
@@ -55,6 +64,16 @@ func Contains(s string, ss ...string) bool {
 func AnyOf(s string, ss ...string) bool {
 	for _, of := range ss {
 		if s == of {
+			return true
+		}
+	}
+	return false
+}
+
+func AnyOfFold(s string, ss ...string) bool {
+	s = strings.ToLower(s)
+	for _, of := range ss {
+		if s == strings.ToLower(of) {
 			return true
 		}
 	}
@@ -111,22 +130,23 @@ type SplitConfig struct {
 	IgnoreEmpty bool
 	TrimSpace   bool
 	Case        Case
+	N           int
 }
 
 type SplitOption func(*SplitConfig)
 
 func WithConfig(v SplitConfig) SplitOption { return func(c *SplitConfig) { *c = v } }
-func WithSeparators(v string) SplitOption  { return func(c *SplitConfig) { c.Separators = v } }
-func WithIgnoreEmpty(c *SplitConfig)       { c.IgnoreEmpty = true }
-func WithTrimSpace(c *SplitConfig)         { c.TrimSpace = true }
-func WithUpper(c *SplitConfig)             { c.Case = CaseUpper }
-func WithLower(c *SplitConfig)             { c.Case = CaseLower }
+func WithSeps(v string) SplitOption        { return func(c *SplitConfig) { c.Separators = v } }
+func WithN(v int) SplitOption              { return func(c *SplitConfig) { c.N = v } }
+func WithIgnoreEmpty(v bool) SplitOption   { return func(c *SplitConfig) { c.IgnoreEmpty = v } }
+func WithTrimSpace(v bool) SplitOption     { return func(c *SplitConfig) { c.TrimSpace = v } }
+func WithCase(v Case) SplitOption          { return func(c *SplitConfig) { c.Case = v } }
 
 func Split(s string, options ...SplitOption) []string {
 	v := make([]string, 0)
 	c := createConfig(options)
 
-	ff := strings.FieldsFunc(s, func(r rune) bool {
+	ff := FieldsFuncN(s, c.N, func(r rune) bool {
 		return strings.ContainsRune(c.Separators, r)
 	})
 
@@ -151,7 +171,7 @@ func Split(s string, options ...SplitOption) []string {
 }
 
 func createConfig(options []SplitOption) *SplitConfig {
-	c := &SplitConfig{}
+	c := &SplitConfig{TrimSpace: true, IgnoreEmpty: true}
 	for _, o := range options {
 		o(c)
 	}

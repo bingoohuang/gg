@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/bingoohuang/gg/pkg/sqx"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,8 +55,18 @@ func ExampleExec() {
 	// 嫦娥
 }
 
+func TestDriverName(t *testing.T) {
+	pg := "postgres://SYSTEM:111111@192.168.126.245:54322/METRICS_UMP?sslmode=disable"
+	// 创建数据库连接池
+	db, err := sql.Open("pgx", pg)
+	assert.Nil(t, err)
+	assert.Equal(t, "pgx", sqx.DriverName(db))
+}
+
 func TestQuery(t *testing.T) {
-	db := openDB()
+	db := openDB(t)
+	assert.Equal(t, "sqlite3", sqx.DriverName(db))
+
 	_, err := sqx.SQL{Query: "create table person(id varchar(100), age int)"}.Update(db)
 	assert.Nil(t, err)
 	s := sqx.SQL{Query: "insert into person(id, age) values(?, ?)"}
@@ -93,14 +105,4 @@ func TestQuery(t *testing.T) {
 	}))
 	assert.Nil(t, err)
 	assert.Equal(t, 1000, ageValue)
-}
-
-func openDB() *sql.DB {
-	// 创建数据库连接池
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		panic(err)
-	}
-
-	return db
 }

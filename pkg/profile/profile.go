@@ -45,7 +45,7 @@ type Profile struct {
 // like cpu,heap,allocs,mutex,block,trace,threadcreate,goroutine,d:5m,rate:4096.
 func Specs(specs string) func(*Profile) {
 	return func(p *Profile) {
-		for _, spec := range ss.Split(specs, ss.WithIgnoreEmpty, ss.WithLower, ss.WithSeparators(", ")) {
+		for _, spec := range ss.Split(specs, ss.WithIgnoreEmpty(true), ss.WithCase(ss.CaseLower), ss.WithSeps(", ")) {
 			switch spec {
 			case "cpu":
 				p.mode |= cpuMode

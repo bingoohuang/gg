@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/reflector"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"log"
+	"math/bits"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,7 +19,7 @@ type DBType string
 
 const (
 	Mysql      DBType = "mysql"
-	Sqlite     DBType = "sqlite"
+	Sqlite3    DBType = "sqlite3"
 	Dm         DBType = "dm"    // dm数据库
 	Gbase      DBType = "gbase" // 南大通用
 	Clickhouse DBType = "clickhouse"
@@ -25,6 +29,16 @@ const (
 	Mssql      DBType = "mssql"    // sqlserver 2012+
 	Oracle     DBType = "oracle"   // oracle 12c+
 )
+
+// ToDBType converts driverName to different DBType.
+func ToDBType(driverName string) DBType {
+	switch strings.ToLower(driverName) {
+	case "pgx":
+		return Postgresql
+	default:
+		return DBType(driverName)
+	}
+}
 
 var ErrUnsupportedDBType = errors.New("unsupported database type")
 
@@ -60,27 +74,28 @@ func (p *Paging) SetRowsCount(total int) {
 }
 
 // createPagingClause SQL statement for wrapping paging.
-func (t DBType) createPagingClause(p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
+func (t DBType) createPagingClause(plFormatter PlaceholderFormatter, p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
 	var s strings.Builder
 	start := p.PageSize * (p.PageSeq - 1)
+	plf := plFormatter.FormatPlaceholder
 	switch t {
-	case Mysql, Sqlite, Dm, Gbase, Clickhouse:
+	case Mysql, Sqlite3, Dm, Gbase, Clickhouse:
 		if placeholder {
-			s.WriteString("limit ?,?")
+			s.WriteString(fmt.Sprintf("limit %s,%s", plf(), plf()))
 			bindArgs = []interface{}{start, p.PageSize}
 		} else {
 			s.WriteString(fmt.Sprintf("limit %d,%d", start, p.PageSize))
 		}
 	case Postgresql, Kingbase, Shentong:
 		if placeholder {
-			s.WriteString("limit ? offset ?")
+			s.WriteString(fmt.Sprintf("limit %s offset %s", plf(), plf()))
 			bindArgs = []interface{}{p.PageSize, start}
 		} else {
 			s.WriteString(fmt.Sprintf("limit %d offset %d", p.PageSize, start))
 		}
 	case Mssql, Oracle:
 		if placeholder {
-			s.WriteString("offset ? rows fetch next ? rows only")
+			s.WriteString(fmt.Sprintf("offset %s rows fetch next %s rows only", plf(), plf()))
 			bindArgs = []interface{}{start, p.PageSize}
 		} else {
 			s.WriteString(fmt.Sprintf("offset %d rows fetch next %d rows only", start, p.PageSize))
@@ -133,6 +148,7 @@ type PrefixPlaceholderFormatter struct {
 
 func (p *PrefixPlaceholderFormatter) ResetPlaceholder() { p.Pos = 0 }
 func (p *PrefixPlaceholderFormatter) FormatPlaceholder() string {
+	p.Pos++
 	return fmt.Sprintf("%s%d", p.Prefix, p.Pos)
 }
 
@@ -143,6 +159,9 @@ type ConvertConfig struct {
 
 type ConvertOption func(*ConvertConfig)
 
+func WithLimit(v int) ConvertOption {
+	return func(c *ConvertConfig) { c.Paging = &Paging{PageSeq: 1, PageSize: 1} }
+}
 func WithPaging(v *Paging) ConvertOption { return func(c *ConvertConfig) { c.Paging = v } }
 func WithAutoIncrement(v string) ConvertOption {
 	return func(c *ConvertConfig) { c.AutoIncrementField = v }
@@ -152,9 +171,88 @@ type ConvertResult struct {
 	ExtraArgs     []interface{}
 	CountingQuery string
 	ScanValues    []interface{}
-	VarPosMap     map[string]int
-	PosVarMap     map[int]string
-	PosPosMap     map[int]int // real pos -> special pos
+	VarPoses      []int // []var pos)
+	BindMode      BindMode
+	VarNames      []string
+}
+type BindMode uint
+
+const (
+	ByPlaceholder BindMode = 1 << iota
+	BySeq
+	ByName
+)
+
+func (r ConvertResult) PickArgs(args []interface{}) (bindArgs []interface{}) {
+	switch r.BindMode {
+	case ByName:
+		arg := args[0]
+		if IsStructOrPtrToStruct(arg) {
+			obj := reflector.New(arg)
+			for _, name := range r.VarNames {
+				name = strings.ToLower(ss.Strip(name, func(r rune) bool { return r == '-' || r == '_' }))
+				if v, err := obj.Field(name).Get(); err != nil {
+					panic(err)
+				} else {
+					bindArgs = append(bindArgs, v)
+				}
+			}
+
+		} else if IsMap(arg) {
+			f := func(s string) string {
+				return strings.ToLower(ss.Strip(s, func(r rune) bool { return r == '-' || r == '_' }))
+			}
+			vmap := reflect.ValueOf(arg)
+			for _, name := range r.VarNames {
+				if v := vmap.MapIndex(reflect.ValueOf(name)); v.IsValid() {
+					bindArgs = append(bindArgs, v.Interface())
+				} else {
+					bindArg, _ := findInMap(vmap, name, f)
+					bindArgs = append(bindArgs, bindArg)
+				}
+			}
+		}
+
+	case BySeq:
+		for _, p := range r.VarPoses {
+			bindArgs = append(bindArgs, args[p-1])
+		}
+	default:
+		bindArgs = append(bindArgs, args...)
+	}
+
+	return append(bindArgs, r.ExtraArgs...)
+}
+
+func findInMap(vmap reflect.Value, name string, f func(s string) string) (interface{}, bool) {
+	name = f(name)
+
+	for iter := vmap.MapRange(); iter.Next(); {
+		k := iter.Key().Interface()
+		if kk, ok := k.(string); ok {
+			if f(kk) == name {
+				return iter.Value().Interface(), true
+			}
+		}
+	}
+
+	return nil, false
+}
+
+func IsMap(arg interface{}) bool {
+	t := reflect.TypeOf(arg)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.Map
+}
+
+func IsStructOrPtrToStruct(arg interface{}) bool {
+	t := reflect.TypeOf(arg)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.Struct
 }
 
 var errFound = errors.New("found")
@@ -180,35 +278,42 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	}
 
 	fixPlaceholders(insertStmt)
-	cr := &ConvertResult{VarPosMap: make(map[string]int), PosVarMap: make(map[int]string), PosPosMap: make(map[int]int)}
-	posIncr := 0
+	cr := &ConvertResult{}
 	purePlaceholders := 0
 
+	insertPos := -1
+	lastColName := ""
+
 	_ = stmt.WalkSubtree(func(node SQLNode) (kontinue bool, err error) {
-		if v, ok := (node).(*SQLVal); ok {
+		if cn, cnOk := node.(*ColName); cnOk {
+			lastColName = cn.Name.Lowered()
+			return true, nil
+		}
+
+		if v, ok := node.(*SQLVal); ok {
 			switch v.Type {
 			case ValArg, StrVal: // 转换 :a :b :c 或者 :1 :2 :3的占位符形式
 				if string(v.Val) == "?" {
 					purePlaceholders++
 				} else {
-					convertCustomBinding(v, &posIncr, cr)
+					convertCustomBinding(insertStmt, &insertPos, &lastColName, v, cr)
 				}
 			}
 		}
+
 		return true, nil
 	})
 
-	modeUsed := 0
-	if len(cr.PosPosMap) > 0 {
-		modeUsed++
+	if len(cr.VarPoses) > 0 {
+		cr.BindMode |= BySeq
 	}
-	if len(cr.PosVarMap) > 0 {
-		modeUsed++
+	if len(cr.VarNames) > 0 {
+		cr.BindMode |= ByName
 	}
 	if purePlaceholders > 0 {
-		modeUsed++
+		cr.BindMode |= ByPlaceholder
 	}
-	if modeUsed > 1 {
+	if bits.OnesCount(uint(cr.BindMode)) > 1 {
 		return "", nil, ErrSyntax
 	}
 
@@ -226,7 +331,8 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	}
 
 	switch t {
-	case Mysql, Sqlite, Dm, Gbase, Clickhouse:
+	case Mysql, Sqlite3, Dm, Gbase, Clickhouse:
+		// https://www.sqlite.org/lang_keywords.html
 		buf.IdQuoter = &MySQLIdQuoter{}
 	default:
 		buf.IdQuoter = &DoubleQuoteIdQuoter{}
@@ -242,8 +348,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	}
 
 	if p := config.Paging; p != nil {
-		hasPlaceholder := modeUsed > 0
-		pagingClause, bindArgs := t.createPagingClause(p, hasPlaceholder)
+		pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
 		cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
 		if p.RowsCount == CreateCountingQuery {
 			cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
@@ -258,7 +363,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	return q, cr, nil
 }
 
-func convertCustomBinding(v *SQLVal, posIncr *int, cr *ConvertResult) {
+func convertCustomBinding(insert *Insert, insertPos *int, lastColName *string, v *SQLVal, cr *ConvertResult) {
 	if len(v.Val) == 0 || !bytes.HasPrefix(v.Val, []byte(":")) {
 		return
 	}
@@ -267,17 +372,21 @@ func convertCustomBinding(v *SQLVal, posIncr *int, cr *ConvertResult) {
 		return
 	}
 
-	*posIncr++
 	if numReg.MatchString(name) {
 		num, _ := strconv.Atoi(name)
-		cr.PosPosMap[*posIncr] = num
+		cr.VarPoses = append(cr.VarPoses, num)
 	} else {
-		pos, exists := cr.VarPosMap[name]
-		if exists {
-			cr.PosVarMap[pos] = name
-		} else {
-			cr.VarPosMap[name] = *posIncr
+		if name == "?" { // 从上下文推断变量名称
+			if insert != nil {
+				*insertPos++
+				col := insert.Columns[*insertPos]
+				name = col.Lowered()
+			} else if *lastColName != "" {
+				name = *lastColName
+				*lastColName = ""
+			}
 		}
+		cr.VarNames = append(cr.VarNames, name)
 	}
 
 	v.Type = ValArg

@@ -12,7 +12,7 @@ import (
 )
 
 // QueryAsNumber executes a query which only returns number like count(*) sql.
-func (s SQL) QueryAsNumber(db *sql.DB) (int64, error) {
+func (s SQL) QueryAsNumber(db SqxDB) (int64, error) {
 	str, err := s.QueryAsString(db)
 	if err != nil {
 		return 0, err
@@ -22,7 +22,7 @@ func (s SQL) QueryAsNumber(db *sql.DB) (int64, error) {
 }
 
 // QueryAsString executes a query which only returns number like count(*) sql.
-func (s SQL) QueryAsString(db *sql.DB) (string, error) {
+func (s SQL) QueryAsString(db SqxDB) (string, error) {
 	row, err := s.QueryAsRow(db)
 	if err != nil {
 		return "", err
@@ -36,7 +36,7 @@ func (s SQL) QueryAsString(db *sql.DB) (string, error) {
 }
 
 // Update executes an update/delete query and returns rows affected.
-func (s SQL) Update(db *sql.DB) (int64, error) {
+func (s SQL) Update(db SqxDB) (int64, error) {
 	if s.Log {
 		log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
 	}
@@ -131,7 +131,7 @@ func (o QueryOption) allowRowNum(rowNum int) bool {
 }
 
 // QueryAsBeans query return with result.
-func (s SQL) QueryAsBeans(db *sql.DB, result interface{}, optionFns ...QueryOptionFn) error {
+func (s SQL) QueryAsBeans(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
 	resultValue := reflect.ValueOf(result)
 	if resultValue.Kind() != reflect.Ptr {
 		return fmt.Errorf("result must be a pointer")
@@ -152,6 +152,9 @@ func (s SQL) QueryAsBeans(db *sql.DB, result interface{}, optionFns ...QueryOpti
 
 	if resultValue.Elem().Kind() == reflect.Struct {
 		input, err = s.QueryAsMap(db, WithOptions(option))
+		if err == nil && input == nil {
+			return sql.ErrNoRows
+		}
 	} else {
 		input, err = s.QueryAsMaps(db, WithOptions(option))
 	}
@@ -191,14 +194,14 @@ func (m *MapScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
 }
 
 // QueryAsMaps query rows as map slice.
-func (s SQL) QueryAsMaps(db *sql.DB, optionFns ...QueryOptionFn) ([]map[string]string, error) {
+func (s SQL) QueryAsMaps(db SqxDB, optionFns ...QueryOptionFn) ([]map[string]string, error) {
 	scanner := &MapScanner{Data: make([]map[string]string, 0)}
 	err := s.QueryRaw(db, append(optionFns, WithRowScanner(scanner))...)
 	return scanner.Data, err
 }
 
 // QueryAsMap query a single row as a map return.
-func (s SQL) QueryAsMap(db *sql.DB, optionFns ...QueryOptionFn) (map[string]string, error) {
+func (s SQL) QueryAsMap(db SqxDB, optionFns ...QueryOptionFn) (map[string]string, error) {
 	scanner := &MapScanner{Data: make([]map[string]string, 0), MaxRows: 1}
 	err := s.QueryRaw(db, append(optionFns, WithRowScanner(scanner))...)
 	return scanner.Data0(), err
@@ -246,7 +249,7 @@ func (r *StringRowScanner) Data0() []string {
 }
 
 // QueryAsRow query a single row as a string slice return.
-func (s SQL) QueryAsRow(db *sql.DB, optionFns ...QueryOptionFn) ([]string, error) {
+func (s SQL) QueryAsRow(db SqxDB, optionFns ...QueryOptionFn) ([]string, error) {
 	f := &StringRowScanner{MaxRows: 1}
 	if err := s.QueryRaw(db, append(optionFns, WithRowScanner(f))...); err != nil {
 		return nil, err
@@ -256,7 +259,7 @@ func (s SQL) QueryAsRow(db *sql.DB, optionFns ...QueryOptionFn) ([]string, error
 }
 
 // QueryAsRows query rows as [][]string.
-func (s SQL) QueryAsRows(db *sql.DB, optionFns ...QueryOptionFn) ([][]string, error) {
+func (s SQL) QueryAsRows(db SqxDB, optionFns ...QueryOptionFn) ([][]string, error) {
 	f := &StringRowScanner{}
 	if err := s.QueryRaw(db, append(optionFns, WithRowScanner(f))...); err != nil {
 		return nil, err
@@ -279,7 +282,7 @@ func ScanStringRow(rows *sql.Rows, columns []string) ([]string, error) {
 }
 
 // QueryRaw query rows for customized row scanner.
-func (s SQL) QueryRaw(db *sql.DB, optionFns ...QueryOptionFn) error {
+func (s SQL) QueryRaw(db SqxDB, optionFns ...QueryOptionFn) error {
 	option, r, columns, err := s.prepareQuery(db, optionFns...)
 	if err != nil {
 		return err
@@ -316,7 +319,7 @@ func ScanRow(columnSize int, r *sql.Rows) ([]sql.NullString, error) {
 	return holders, nil
 }
 
-func (s SQL) prepareQuery(db *sql.DB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
+func (s SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
 	option := QueryOptionFns(optionFns).Options()
 
 	if s.Log {

@@ -1708,9 +1708,6 @@ func (node *SQLVal) Format(buf *TrackedBuffer) {
 		if buf.PlaceholderFormatter == nil {
 			buf.WriteArg(string(node.Val))
 		} else {
-			if p, ok := buf.PlaceholderFormatter.(*PrefixPlaceholderFormatter); ok {
-				p.Pos++
-			}
 			buf.WriteArg(buf.PlaceholderFormatter.FormatPlaceholder())
 		}
 	default:
@@ -2643,14 +2640,8 @@ func formatID(buf *TrackedBuffer, original, lowered string) {
 		return
 	}
 
-	buf.WriteByte('`')
-	for _, c := range original {
-		buf.WriteRune(c)
-		if c == '`' {
-			buf.WriteByte('`')
-		}
-	}
-	buf.WriteByte('`')
+	buf.Myprintf("%s", original)
+	return
 }
 
 func shouldQuote(s string) bool {
