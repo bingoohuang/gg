@@ -73,7 +73,6 @@ func (p *Paging) SetRowsCount(total int) {
 	}
 }
 
-// createPagingClause SQL statement for wrapping paging.
 func (t DBType) createPagingClause(plFormatter PlaceholderFormatter, p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
 	var s strings.Builder
 	start := p.PageSize * (p.PageSeq - 1)
@@ -274,7 +273,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 
 	insertStmt, _ := stmt.(*Insert)
 	if err := t.checkMySQLOnDuplicateKey(insertStmt); err != nil {
-		return "", nil, err
+		return "", nil, fmt.Errorf("on duplicate key is not supported directly in SQL, error %w", ErrSyntax)
 	}
 
 	fixPlaceholders(insertStmt)
@@ -288,6 +287,9 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		if cn, cnOk := node.(*ColName); cnOk {
 			lastColName = cn.Name.Lowered()
 			return true, nil
+		}
+		if _, ok := node.(*Limit); ok {
+			return false, err
 		}
 
 		if v, ok := node.(*SQLVal); ok {
@@ -314,7 +316,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		cr.BindMode |= ByPlaceholder
 	}
 	if bits.OnesCount(uint(cr.BindMode)) > 1 {
-		return "", nil, ErrSyntax
+		return "", nil, fmt.Errorf("mixed bind modes are not supported, error %w", ErrSyntax)
 	}
 
 	buf := &TrackedBuffer{Buffer: new(bytes.Buffer)}
@@ -338,22 +340,31 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		buf.IdQuoter = &DoubleQuoteIdQuoter{}
 	}
 
-	buf.Myprintf("%v", stmt)
-	q := buf.String()
-	buf.Reset()
-
 	config := &ConvertConfig{}
 	for _, f := range options {
 		f(config)
 	}
 
-	if p := config.Paging; p != nil {
+	selectStmt, _ := stmt.(*Select)
+	var limit *Limit
+	if selectStmt != nil {
+		limit = selectStmt.Limit
+		selectStmt.SetLimit(nil)
+	}
+
+	buf.Myprintf("%v", stmt)
+	q := buf.String()
+	buf.Reset()
+
+	if p := config.Paging; selectStmt != nil && p != nil {
 		pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
 		cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
 		if p.RowsCount == CreateCountingQuery {
 			cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
 		}
 		q += " " + pagingClause
+	} else if limit != nil {
+		return "", nil, fmt.Errorf("limit is not supported directly in SQL, error %w", ErrSyntax)
 	}
 
 	if f := config.AutoIncrementField; f != "" {
