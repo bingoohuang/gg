@@ -24,6 +24,14 @@ type SQL struct {
 	Log   bool
 }
 
+func (s *SQL) AppendIf(ok bool, sub string, args ...interface{}) *SQL {
+	if !ok {
+		return s
+	}
+
+	return s.Append(sub, args...)
+}
+
 // Append apppends sub statement to the query.
 func (s *SQL) Append(sub string, args ...interface{}) *SQL {
 	if sub == "" {
@@ -55,7 +63,15 @@ func (s *SQL) WithVars(vars ...interface{}) *SQL {
 	return s
 }
 
-func (s *SQL) AndIf(cond string, args ...interface{}) *SQL {
+func (s *SQL) AndIf(ok bool, cond string, args ...interface{}) *SQL {
+	if !ok {
+		return s
+	}
+
+	return s.And(cond, args...)
+}
+
+func (s *SQL) And(cond string, args ...interface{}) *SQL {
 	switch len(args) {
 	case 0:
 		if !ss.ContainsFold(s.Query, "where") {
