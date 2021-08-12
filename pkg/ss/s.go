@@ -6,6 +6,20 @@ import (
 	"strings"
 )
 
+// Repeat repeats s with separator seq for n times.
+func Repeat(s, sep string, n int) string {
+	result := ""
+	for i := 0; i < n; i++ {
+		if i == 0 {
+			result = s
+		} else {
+			result += sep + s
+		}
+	}
+
+	return result
+}
+
 // FirstWord returns the first word of the SQL statement s.
 func FirstWord(s string) string {
 	if v := strings.Fields(strings.TrimSpace(s)); len(v) > 0 {
