@@ -2,7 +2,7 @@
 
 helper to generate sql on various conditions.
 
-`go get github.com/bingoohuang/sqx/...`
+`go get github.com/bingoohuang/gg/pkg/sqx/...`
 
 ```go
 type Cond struct {

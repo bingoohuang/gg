@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/gg/pkg/strcase"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
-	"github.com/bingoohuang/gg/pkg/strcase"
 )
 
 // ErrConditionKind tells that the condition kind should be struct or its pointer
@@ -52,6 +53,44 @@ func WithVars(vars ...interface{}) []interface{} { return vars }
 func (s *SQL) WithVars(vars ...interface{}) *SQL {
 	s.Vars = vars
 	return s
+}
+
+func (s *SQL) AndIf(cond string, args ...interface{}) *SQL {
+	switch len(args) {
+	case 0:
+		if !ss.ContainsFold(s.Query, "where") {
+			s.Query += " where " + cond
+		} else {
+			s.Query += " and " + cond
+		}
+		return s
+	case 1:
+		arg := reflect.ValueOf(args[0])
+		if arg.IsZero() {
+			return s
+		}
+
+		isSlice := arg.Kind() == reflect.Slice
+		if isSlice && arg.Len() > 1 && strings.Count(cond, "?") == 1 {
+			cond = strings.Replace(cond, "?", ss.Repeat("?", ",", arg.Len()), 1)
+		}
+		if !ss.ContainsFold(s.Query, "where") {
+			s.Query += " where " + cond
+		} else {
+			s.Query += " and " + cond
+		}
+
+		if isSlice {
+			for i := 0; i < arg.Len(); i++ {
+				s.Vars = append(s.Vars, arg.Index(i).Interface())
+			}
+		} else {
+			s.Vars = append(s.Vars, args[0])
+		}
+		return s
+	default:
+		panic("not supported")
+	}
 }
 
 // CreateSQL creates a composite SQL on base and condition cond.
@@ -141,8 +180,8 @@ func iterateFields(vc reflect.Value) (string, []interface{}, error) {
 			continue
 		}
 
-		condTag := f.Tag.Get("cond")
-		if condTag == "-" { // ignore as a condition field
+		cond := f.Tag.Get("cond")
+		if cond == "-" { // ignore as a condition field
 			continue
 		}
 
@@ -158,25 +197,14 @@ func iterateFields(vc reflect.Value) (string, []interface{}, error) {
 			continue
 		}
 
-		zero := f.Tag.Get("zero")
-		if yes, err := isZero(v, zero); err != nil {
+		cond, fieldVars, err := processTag(f.Tag, f.Name, v)
+		if err != nil {
 			return "", nil, err
-		} else if yes { // ignore zero field
-			continue
 		}
 
-		if condTag == "" {
-			condTag = strcase.ToSnake(f.Name) + "=?"
-		}
-
-		condSql += andPrefix + condTag
-		vi := v.Interface()
-		if modifier := f.Tag.Get("modifier"); modifier != "" {
-			vi = strings.ReplaceAll(modifier, "v", fmt.Sprintf("%v", vi))
-		}
-
-		for i := 0; i < strings.Count(condTag, "?"); i++ {
-			vars = append(vars, vi)
+		if cond != "" {
+			condSql += andPrefix + cond
+			vars = append(vars, fieldVars...)
 		}
 	}
 
@@ -185,6 +213,30 @@ func iterateFields(vc reflect.Value) (string, []interface{}, error) {
 	}
 
 	return condSql, vars, nil
+}
+
+func processTag(tag reflect.StructTag, fieldName string, v reflect.Value) (cond string, vars []interface{}, err error) {
+	cond = tag.Get("cond")
+	zero := tag.Get("zero")
+	if yes, err1 := isZero(v, zero); err1 != nil {
+		return "", nil, err1
+	} else if yes { // ignore zero field
+		return "", nil, nil
+	}
+
+	if cond == "" {
+		cond = strcase.ToSnake(fieldName) + "=?"
+	}
+
+	vi := v.Interface()
+	if modifier := tag.Get("modifier"); modifier != "" {
+		vi = strings.ReplaceAll(modifier, "v", fmt.Sprintf("%v", vi))
+	}
+
+	for i := 0; i < strings.Count(cond, "?"); i++ {
+		vars = append(vars, vi)
+	}
+	return
 }
 
 func isZero(v reflect.Value, zero string) (bool, error) {

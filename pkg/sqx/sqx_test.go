@@ -68,6 +68,16 @@ func TestModifier(t *testing.T) {
 	assert.Equal(t, []interface{}{"%ee%"}, x.Vars)
 }
 
+func TestManual(t *testing.T) {
+	s := sqx.SQL{Query: `select * from warn_template_rule`}
+	s.AndIf(`source_type = ?`, "x")
+	s.AndIf(`temp_source_id = ?`, "y")
+	s.AndIf(`id in (?)`, []string{"a", "b", "c"})
+	s.Append(`order by id desc`)
+	assert.Equal(t, `select * from warn_template_rule where source_type = ? and temp_source_id = ? and id in (?,?,?) order by id desc`, s.Query)
+	assert.Equal(t, []interface{}{"x", "y", "a", "b", "c"}, s.Vars)
+}
+
 func TestCondition(t *testing.T) {
 	type cond struct {
 		B    string // will generate `b = ?` when B is not zero.
