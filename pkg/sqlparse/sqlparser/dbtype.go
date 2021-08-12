@@ -434,32 +434,40 @@ func fixPlaceholders(insertStmt *Insert) {
 	}
 
 	questionVals := 0
+	inferVals := 0
 	others := 0
 	insertRow := insertRows[0]
 	for _, node := range insertRow {
-		if v, ok := (node).(*SQLVal); ok && v.Type == ValArg && string(v.Val) == "?" {
-			questionVals++
-			continue
-		} else {
-			others++
-			break
+		if v, ok := (node).(*SQLVal); ok && v.Type == ValArg {
+			switch vs := string(v.Val); vs {
+			case "?":
+				questionVals++
+				continue
+			case ":?":
+				inferVals++
+				continue
+			}
 		}
+
+		others++
+		break
 	}
 
 	// 不全是?占位符
-	if others > 0 {
+	if others > 0 || questionVals > 0 && inferVals > 0 {
 		return
 	}
 
-	diff := len(insertStmt.Columns) - questionVals
+	diff := len(insertStmt.Columns) - ss.Ifi(questionVals > 0, questionVals, inferVals)
 	if diff == 0 {
 		return
 	}
 
 	if diff > 0 {
+		pl := []byte(ss.If(questionVals > 0, "?", ":?"))
 		var appendVarArgs = make([]Expr, 0, diff)
 		for i := 0; i < diff; i++ {
-			appendVarArgs = append(appendVarArgs, NewValArg([]byte("?")))
+			appendVarArgs = append(appendVarArgs, NewValArg(pl))
 		}
 		insertRows[0] = append(insertRows[0], appendVarArgs...)
 	} else {

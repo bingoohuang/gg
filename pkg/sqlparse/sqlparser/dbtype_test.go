@@ -46,6 +46,7 @@ func TestConvertDBType(t *testing.T) {
 
 	const q60 = `insert into t (a, b, c) values(':a', ':b', ':c')`
 	const q62 = `insert into t (a, b, c) values(:a, :b, :c)`
+	const q63 = `insert into t (a, b, c) values(:?)`
 	const q61 = `insert into "t"("a", "b", "c") values ($1, $2, $3)`
 	q, r, err = Kingbase.Convert(q60)
 	assert.Nil(t, err)
@@ -53,6 +54,12 @@ func TestConvertDBType(t *testing.T) {
 	assert.Equal(t, q61, q)
 
 	q, r, err = Kingbase.Convert(q62)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"a", "b", "c"}, r.VarNames)
+	assert.Equal(t, ByName, r.BindMode)
+	assert.Equal(t, q61, q)
+
+	q, r, err = Kingbase.Convert(q63)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"a", "b", "c"}, r.VarNames)
 	assert.Equal(t, ByName, r.BindMode)
