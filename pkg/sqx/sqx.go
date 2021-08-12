@@ -87,6 +87,9 @@ func (s *SQL) And(cond string, args ...interface{}) *SQL {
 		}
 
 		isSlice := arg.Kind() == reflect.Slice
+		if isSlice && arg.Len() == 0 {
+			return s
+		}
 		if isSlice && arg.Len() > 1 && strings.Count(cond, "?") == 1 {
 			cond = strings.Replace(cond, "?", ss.Repeat("?", ",", arg.Len()), 1)
 		}
