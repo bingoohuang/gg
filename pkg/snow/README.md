@@ -1,12 +1,5 @@
 # snowflake
 
-[![Build Status](https://travis-ci.org/bingoohuang/snow.svg?branch=master)](https://travis-ci.org/bingoohuang/snow)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bingoohuang/snow)](https://goreportcard.com/report/github.com/bingoohuang/snow)
-[![codecov](https://codecov.io/gh/bingoohuang/snow/branch/master/graph/badge.svg)](https://codecov.io/gh/bingoohuang/snow)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fvardius%2Fmessage-bus.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fvardius%2Fmessage-bus?ref=badge_shield)
-[![](https://godoc.org/github.com/bingoohuang/snow?status.svg)](http://pkg.go.dev/github.com/bingoohuang/snow)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bingoohuang/snow/blob/master/LICENSE.md)
-
 snowflake is a [Go](https://golang.org/) package that provides
 
 * A very simple Twitter snowflake generator.
