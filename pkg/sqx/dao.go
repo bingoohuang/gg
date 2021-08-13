@@ -313,7 +313,6 @@ func indexOfTypes(types []reflect.Type, typ reflect.Type) int {
 	return -1
 }
 
-// nolint:funlen
 func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
 	args []reflect.Value) ([]reflect.Value, error) {
 	var bean reflect.Value
@@ -366,6 +365,8 @@ func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
 			if err != nil {
 				return nil, fmt.Errorf("replaceQuery %s error %w", parsed.runSQL, err)
 			}
+
+			log.Printf("PrepareContext [%s]", query)
 			if pr, err = tx.PrepareContext(parsed.opt.Ctx, query); err != nil {
 				return nil, fmt.Errorf("failed to prepare sql [%s] error %w", r.RawStmt, err)
 			}
@@ -499,6 +500,8 @@ func (r *sqlRun) execBySeq(numIn int, f StructField,
 	if err != nil {
 		return nil, fmt.Errorf("replaceQuery %s error %w", parsed.runSQL, err)
 	}
+
+	log.Printf("ExecContext query [%s] with %v", query, vars)
 
 	result, err := db.ExecContext(parsed.opt.Ctx, query, vars...)
 	if err != nil {
@@ -635,6 +638,8 @@ func (p *SQLParsed) doQueryDirectVars(db *sql.DB, vars []interface{}, counting b
 	if err != nil {
 		return nil, nil, fmt.Errorf("replaceQuery %s error %w", query, err)
 	}
+
+	log.Printf("QueryContext query [%s] with %v", query, vars)
 
 	rows, err := db.QueryContext(p.opt.Ctx, query, vars...)
 	if err != nil || rows.Err() != nil {
