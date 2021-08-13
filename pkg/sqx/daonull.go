@@ -44,14 +44,19 @@ func (n *NullAny) Scan(value interface{}) error {
 		}
 
 		n.Val = reflect.ValueOf(sn.String).Convert(n.Type)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
 		sn := &sql.NullInt32{}
 		if err := sn.Scan(value); err != nil {
 			return err
 		}
-
 		n.Val = reflect.ValueOf(sn.Int32).Convert(n.Type)
+	case reflect.Int64, reflect.Uint64:
+		sn := &sql.NullInt64{}
+		if err := sn.Scan(value); err != nil {
+			return err
+		}
+		n.Val = reflect.ValueOf(sn.Int64).Convert(n.Type)
 	case reflect.Float32, reflect.Float64:
 		sn := &sql.NullFloat64{}
 		if err := sn.Scan(value); err != nil {
