@@ -299,7 +299,7 @@ func (iter *Iterator) Read() interface{} {
 		}
 		return iter.ReadFloat64()
 	case NilValue:
-		iter.skipFourBytes('n', 'u', 'l', 'l')
+		iter.skip4Bytes('n', 'u', 'l', 'l')
 		return nil
 	case BoolValue:
 		return iter.ReadBool()

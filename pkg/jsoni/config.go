@@ -97,8 +97,7 @@ func (c *frozenConfig) addEncoderToCache(cacheKey uintptr, encoder ValEncoder) {
 }
 
 func (c *frozenConfig) getDecoderFromCache(cacheKey uintptr) ValDecoder {
-	decoder, found := c.decoderCache.Load(cacheKey)
-	if found {
+	if decoder, ok := c.decoderCache.Load(cacheKey); ok {
 		return decoder.(ValDecoder)
 	}
 	return nil

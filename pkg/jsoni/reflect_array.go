@@ -65,7 +65,7 @@ func (d *arrayDecoder) doDecode(ptr unsafe.Pointer, iter *Iterator) {
 	c := iter.nextToken()
 	arrayType := d.arrayType
 	if c == 'n' {
-		iter.skipThreeBytes('u', 'l', 'l')
+		iter.skip3Bytes('u', 'l', 'l')
 		return
 	}
 	if c != '[' {

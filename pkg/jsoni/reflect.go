@@ -100,9 +100,8 @@ func (s *Stream) WriteVal(val interface{}) {
 
 func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
 	cacheKey := typ.RType()
-	decoder := c.getDecoderFromCache(cacheKey)
-	if decoder != nil {
-		return decoder
+	if d := c.getDecoderFromCache(cacheKey); d != nil {
+		return d
 	}
 	ctx := &ctx{
 		frozenConfig: c,
@@ -111,7 +110,7 @@ func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
 		encoders:     map[reflect2.Type]ValEncoder{},
 	}
 	ptrType := typ.(*reflect2.UnsafePtrType)
-	decoder = decoderOfType(ctx, ptrType.Elem())
+	decoder := decoderOfType(ctx, ptrType.Elem())
 	c.addDecoderToCache(cacheKey, decoder)
 	return decoder
 }

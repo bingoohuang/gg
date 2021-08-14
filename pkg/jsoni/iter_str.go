@@ -25,7 +25,7 @@ func (iter *Iterator) ReadString() (ret string) {
 		}
 		return iter.readStringSlowPath()
 	} else if c == 'n' {
-		iter.skipThreeBytes('u', 'l', 'l')
+		iter.skip3Bytes('u', 'l', 'l')
 		return ""
 	}
 	iter.ReportError("ReadString", `expects " or n, but found `+string([]byte{c}))

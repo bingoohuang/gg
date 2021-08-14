@@ -203,17 +203,20 @@ func RegisterExtension(extension Extension) {
 }
 
 func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
-	decoder := _getTypeDecoderFromExtension(ctx, typ)
-	if decoder != nil {
-		for _, extension := range extensions {
-			decoder = extension.DecorateDecoder(typ, decoder)
-		}
-		decoder = ctx.decoderExtension.DecorateDecoder(typ, decoder)
-		for _, extension := range ctx.extraExtensions {
-			decoder = extension.DecorateDecoder(typ, decoder)
-		}
+	d := _getTypeDecoderFromExtension(ctx, typ)
+	if d == nil {
+		return nil
 	}
-	return decoder
+
+	for _, extension := range extensions {
+		d = extension.DecorateDecoder(typ, d)
+	}
+	d = ctx.decoderExtension.DecorateDecoder(typ, d)
+	for _, extension := range ctx.extraExtensions {
+		d = extension.DecorateDecoder(typ, d)
+	}
+
+	return d
 }
 func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 	for _, extension := range extensions {
@@ -242,17 +245,20 @@ func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 }
 
 func getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
-	encoder := _getTypeEncoderFromExtension(ctx, typ)
-	if encoder != nil {
-		for _, extension := range extensions {
-			encoder = extension.DecorateEncoder(typ, encoder)
-		}
-		encoder = ctx.encoderExtension.DecorateEncoder(typ, encoder)
-		for _, extension := range ctx.extraExtensions {
-			encoder = extension.DecorateEncoder(typ, encoder)
-		}
+	e := _getTypeEncoderFromExtension(ctx, typ)
+	if e == nil {
+		return nil
 	}
-	return encoder
+
+	for _, extension := range extensions {
+		e = extension.DecorateEncoder(typ, e)
+	}
+	e = ctx.encoderExtension.DecorateEncoder(typ, e)
+	for _, extension := range ctx.extraExtensions {
+		e = extension.DecorateEncoder(typ, e)
+	}
+
+	return e
 }
 
 func _getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
@@ -273,10 +279,8 @@ func _getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 		return e
 	}
 	if typ.Kind() == reflect.Ptr {
-		typePtr := typ.(*reflect2.UnsafePtrType)
-		encoder := typeEncoders[typePtr.Elem().String()]
-		if encoder != nil {
-			return &OptionalEncoder{encoder}
+		if e := typeEncoders[typ.(*reflect2.UnsafePtrType).Elem().String()]; e != nil {
+			return &OptionalEncoder{e}
 		}
 	}
 	return nil

@@ -67,7 +67,7 @@ func (d *sliceDecoder) doDecode(ptr unsafe.Pointer, iter *Iterator) {
 	c := iter.nextToken()
 	sliceType := d.sliceType
 	if c == 'n' {
-		iter.skipThreeBytes('u', 'l', 'l')
+		iter.skip3Bytes('u', 'l', 'l')
 		sliceType.UnsafeSetNil(ptr)
 		return
 	}

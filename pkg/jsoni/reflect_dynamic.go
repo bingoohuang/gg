@@ -37,7 +37,7 @@ func (d *efaceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	ptrElemType := ptrType.Elem()
 	if iter.WhatIsNext() == NilValue {
 		if ptrElemType.Kind() != reflect.Ptr {
-			iter.skipFourBytes('n', 'u', 'l', 'l')
+			iter.skip4Bytes('n', 'u', 'l', 'l')
 			*pObj = nil
 			return
 		}
