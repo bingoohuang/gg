@@ -103,14 +103,14 @@ func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
 	if d := c.getDecoderFromCache(cacheKey); d != nil {
 		return d
 	}
-	ctx := &ctx{
+	ct := &ctx{
 		frozenConfig: c,
 		prefix:       "",
 		decoders:     map[reflect2.Type]ValDecoder{},
 		encoders:     map[reflect2.Type]ValEncoder{},
 	}
 	ptrType := typ.(*reflect2.UnsafePtrType)
-	decoder := decoderOfType(ctx, ptrType.Elem())
+	decoder := decoderOfType(ct, ptrType.Elem())
 	c.addDecoderToCache(cacheKey, decoder)
 	return decoder
 }
@@ -268,10 +268,10 @@ type lazyErrorDecoder struct {
 	err error
 }
 
-func (decoder *lazyErrorDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
+func (d *lazyErrorDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() != NilValue {
 		if iter.Error == nil {
-			iter.Error = decoder.err
+			iter.Error = d.err
 		}
 	} else {
 		iter.Skip()

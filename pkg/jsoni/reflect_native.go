@@ -413,7 +413,7 @@ func (c *base64Codec) Encode(ptr unsafe.Pointer, stream *Stream) {
 	src := *((*[]byte)(ptr))
 	encoding := base64.StdEncoding
 	stream.writeByte('"')
-	if len(src) != 0 {
+	if len(src) > 0 {
 		size := encoding.EncodedLen(len(src))
 		buf := make([]byte, size)
 		encoding.Encode(buf, src)
