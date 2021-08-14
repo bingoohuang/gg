@@ -88,11 +88,11 @@ func (e *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 }
 
 func (e *dereferenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	dePtr := *((*unsafe.Pointer)(ptr))
-	if dePtr == nil {
-		return true
+	if dePtr := *((*unsafe.Pointer)(ptr)); dePtr != nil {
+		return e.ValueEncoder.IsEmpty(dePtr)
+
 	}
-	return e.ValueEncoder.IsEmpty(dePtr)
+	return true
 }
 
 func (e *dereferenceEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
@@ -112,18 +112,18 @@ type referenceEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *referenceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	e.encoder.Encode(unsafe.Pointer(&ptr), stream)
+func (e *referenceEncoder) Encode(p unsafe.Pointer, s *Stream) {
+	e.encoder.Encode(unsafe.Pointer(&p), s)
 }
 
-func (e *referenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(unsafe.Pointer(&ptr))
+func (e *referenceEncoder) IsEmpty(p unsafe.Pointer) bool {
+	return e.encoder.IsEmpty(unsafe.Pointer(&p))
 }
 
 type referenceDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *referenceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	d.decoder.Decode(unsafe.Pointer(&ptr), iter)
+func (d *referenceDecoder) Decode(p unsafe.Pointer, i *Iterator) {
+	d.decoder.Decode(unsafe.Pointer(&p), i)
 }

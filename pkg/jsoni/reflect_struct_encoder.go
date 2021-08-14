@@ -183,16 +183,16 @@ func (e *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 func (e *stringModeNumberEncoder) IsEmpty(p unsafe.Pointer) bool { return e.elemEncoder.IsEmpty(p) }
 
 type stringModeStringEncoder struct {
-	elemEncoder ValEncoder
-	cfg         *frozenConfig
+	encoder ValEncoder
+	cfg     *frozenConfig
 }
 
 func (e *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	tempStream := e.cfg.BorrowStream(nil)
-	tempStream.Attachment = stream.Attachment
-	defer e.cfg.ReturnStream(tempStream)
-	e.elemEncoder.Encode(ptr, tempStream)
-	stream.WriteString(string(tempStream.Buffer()))
+	temp := e.cfg.BorrowStream(nil)
+	temp.Attachment = stream.Attachment
+	defer e.cfg.ReturnStream(temp)
+	e.encoder.Encode(ptr, temp)
+	stream.WriteString(string(temp.Buffer()))
 }
 
-func (e *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.elemEncoder.IsEmpty(ptr) }
+func (e *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.encoder.IsEmpty(ptr) }

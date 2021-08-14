@@ -200,13 +200,8 @@ type onePtrEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *onePtrEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(unsafe.Pointer(&ptr))
-}
-
-func (e *onePtrEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	e.encoder.Encode(unsafe.Pointer(&ptr), stream)
-}
+func (e *onePtrEncoder) IsEmpty(p unsafe.Pointer) bool      { return e.encoder.IsEmpty(unsafe.Pointer(&p)) }
+func (e *onePtrEncoder) Encode(p unsafe.Pointer, s *Stream) { e.encoder.Encode(unsafe.Pointer(&p), s) }
 
 func encoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	if encoder := getTypeEncoderFromExtension(ctx, typ); encoder != nil {
@@ -309,10 +304,5 @@ type placeholderEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *placeholderEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	e.encoder.Encode(ptr, stream)
-}
-
-func (e *placeholderEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(ptr)
-}
+func (e *placeholderEncoder) Encode(p unsafe.Pointer, s *Stream) { e.encoder.Encode(p, s) }
+func (e *placeholderEncoder) IsEmpty(p unsafe.Pointer) bool      { return e.encoder.IsEmpty(p) }
