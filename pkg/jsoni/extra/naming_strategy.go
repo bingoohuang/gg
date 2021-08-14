@@ -8,21 +8,20 @@ import (
 
 // SetNamingStrategy rename struct fields uniformly
 func SetNamingStrategy(translate func(string) string) {
-	jsoni.RegisterExtension(&namingStrategyExtension{jsoni.DummyExtension{}, translate})
+	jsoni.RegisterExtension(&NamingStrategyExtension{Translate: translate})
 }
 
-type namingStrategyExtension struct {
+type NamingStrategyExtension struct {
 	jsoni.DummyExtension
-	translate func(string) string
+	Translate func(string) string
 }
 
-func (e *namingStrategyExtension) UpdateStructDescriptor(structDescriptor *jsoni.StructDescriptor) {
-	for _, binding := range structDescriptor.Fields {
-		if unicode.IsLower(rune(binding.Field.Name()[0])) || binding.Field.Name()[0] == '_' {
+func (e *NamingStrategyExtension) UpdateStructDescriptor(sd *jsoni.StructDescriptor) {
+	for _, f := range sd.Fields {
+		if unicode.IsLower(rune(f.Field.Name()[0])) || f.Field.Name()[0] == '_' {
 			continue
 		}
-		tag, hastag := binding.Field.Tag().Lookup("json")
-		if hastag {
+		if tag, ok := f.Field.Tag().Lookup("json"); ok {
 			tagParts := strings.Split(tag, ",")
 			if tagParts[0] == "-" {
 				continue // hidden field
@@ -31,8 +30,8 @@ func (e *namingStrategyExtension) UpdateStructDescriptor(structDescriptor *jsoni
 				continue // field explicitly named
 			}
 		}
-		binding.ToNames = []string{e.translate(binding.Field.Name())}
-		binding.FromNames = []string{e.translate(binding.Field.Name())}
+		f.ToNames = []string{e.Translate(f.Field.Name())}
+		f.FromNames = []string{e.Translate(f.Field.Name())}
 	}
 }
 

@@ -211,8 +211,6 @@ func (c *frozenConfig) getTagKey() string { return ss.Or(c.configBeforeFrozen.Ta
 
 func (c *frozenConfig) RegisterExtension(extension Extension) {
 	c.extraExtensions = append(c.extraExtensions, extension)
-	copied := c.configBeforeFrozen
-	c.configBeforeFrozen = copied
 }
 
 type lossyFloat32Encoder struct{}

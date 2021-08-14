@@ -14,7 +14,47 @@ var typeDecoders = map[string]ValDecoder{}
 var fieldDecoders = map[string]ValDecoder{}
 var typeEncoders = map[string]ValEncoder{}
 var fieldEncoders = map[string]ValEncoder{}
-var extensions []Extension
+
+var extensions Extensions
+
+type Extensions []Extension
+
+func (es Extensions) UpdateStructDescriptor(structDescriptor *StructDescriptor) {
+	for _, extension := range es {
+		extension.UpdateStructDescriptor(structDescriptor)
+	}
+}
+func (es Extensions) createEncoder(typ reflect2.Type) ValEncoder {
+	for _, extension := range es {
+		if e := extension.CreateEncoder(typ); e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
+func (es Extensions) createDecoder(typ reflect2.Type) ValDecoder {
+	for _, extension := range es {
+		if d := extension.CreateDecoder(typ); d != nil {
+			return d
+		}
+	}
+	return nil
+}
+
+func (es Extensions) decorateEncoder(typ reflect2.Type, encoder ValEncoder) ValEncoder {
+	for _, extension := range es {
+		encoder = extension.DecorateEncoder(typ, encoder)
+	}
+	return encoder
+}
+
+func (es Extensions) decorateDecoder(typ reflect2.Type, decoder ValDecoder) ValDecoder {
+	for _, extension := range es {
+		decoder = extension.DecorateDecoder(typ, decoder)
+	}
+	return decoder
+}
 
 // StructDescriptor describe how should we encode/decode the struct
 type StructDescriptor struct {
@@ -208,9 +248,7 @@ func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 		return nil
 	}
 
-	for _, extension := range extensions {
-		d = extension.DecorateDecoder(typ, d)
-	}
+	d = extensions.decorateDecoder(typ, d)
 	d = ctx.decoderExtension.DecorateDecoder(typ, d)
 	for _, extension := range ctx.extraExtensions {
 		d = extension.DecorateDecoder(typ, d)
@@ -219,10 +257,8 @@ func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 	return d
 }
 func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
-	for _, extension := range extensions {
-		if d := extension.CreateDecoder(typ); d != nil {
-			return d
-		}
+	if d := extensions.createDecoder(typ); d != nil {
+		return d
 	}
 	if d := ctx.decoderExtension.CreateDecoder(typ); d != nil {
 		return d
@@ -250,9 +286,7 @@ func getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 		return nil
 	}
 
-	for _, extension := range extensions {
-		e = extension.DecorateEncoder(typ, e)
-	}
+	e = extensions.decorateEncoder(typ, e)
 	e = ctx.encoderExtension.DecorateEncoder(typ, e)
 	for _, extension := range ctx.extraExtensions {
 		e = extension.DecorateEncoder(typ, e)
@@ -262,10 +296,8 @@ func getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 }
 
 func _getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
-	for _, extension := range extensions {
-		if e := extension.CreateEncoder(typ); e != nil {
-			return e
-		}
+	if e := extensions.createEncoder(typ); e != nil {
+		return e
 	}
 	if e := ctx.encoderExtension.CreateEncoder(typ); e != nil {
 		return e
@@ -356,9 +388,7 @@ func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding, em
 		Type:   typ,
 		Fields: bindings,
 	}
-	for _, extension := range extensions {
-		extension.UpdateStructDescriptor(structDescriptor)
-	}
+	extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
 	ctx.decoderExtension.UpdateStructDescriptor(structDescriptor)
 	for _, extension := range ctx.extraExtensions {
