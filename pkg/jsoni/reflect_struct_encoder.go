@@ -14,11 +14,11 @@ func encoderOfStruct(ctx *ctx, typ reflect2.Type) ValEncoder {
 		toName  string
 		ignored bool
 	}
-	orderedBindings := []*bindingTo{}
+	var orderedBindings []*bindingTo
 	structDescriptor := describeStruct(ctx, typ)
 	for _, binding := range structDescriptor.Fields {
 		for _, toName := range binding.ToNames {
-			new := &bindingTo{
+			b := &bindingTo{
 				binding: binding,
 				toName:  toName,
 			}
@@ -26,20 +26,20 @@ func encoderOfStruct(ctx *ctx, typ reflect2.Type) ValEncoder {
 				if old.toName != toName {
 					continue
 				}
-				old.ignored, new.ignored = resolveConflictBinding(ctx.frozenConfig, old.binding, new.binding)
+				old.ignored, b.ignored = resolveConflictBinding(ctx.frozenConfig, old.binding, b.binding)
 			}
-			orderedBindings = append(orderedBindings, new)
+			orderedBindings = append(orderedBindings, b)
 		}
 	}
 	if len(orderedBindings) == 0 {
 		return &emptyStructEncoder{}
 	}
-	finalOrderedFields := []structFieldTo{}
-	for _, bindingTo := range orderedBindings {
-		if !bindingTo.ignored {
+	var finalOrderedFields []structFieldTo
+	for _, b := range orderedBindings {
+		if !b.ignored {
 			finalOrderedFields = append(finalOrderedFields, structFieldTo{
-				encoder: bindingTo.binding.Encoder.(*structFieldEncoder),
-				toName:  bindingTo.toName,
+				encoder: b.binding.Encoder.(*structFieldEncoder),
+				toName:  b.toName,
 			})
 		}
 	}
@@ -47,9 +47,8 @@ func encoderOfStruct(ctx *ctx, typ reflect2.Type) ValEncoder {
 }
 
 func createCheckIsEmpty(ctx *ctx, typ reflect2.Type) checkIsEmpty {
-	encoder := createEncoderOfNative(ctx, typ)
-	if encoder != nil {
-		return encoder
+	if e := createEncoderOfNative(ctx, typ); e != nil {
+		return e
 	}
 	kind := typ.Kind()
 	switch kind {
@@ -105,25 +104,25 @@ type structFieldEncoder struct {
 	omitempty    bool
 }
 
-func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	fieldPtr := encoder.field.UnsafeGet(ptr)
-	encoder.fieldEncoder.Encode(fieldPtr, stream)
+func (e *structFieldEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+	fieldPtr := e.field.UnsafeGet(ptr)
+	e.fieldEncoder.Encode(fieldPtr, stream)
 	if stream.Error != nil && stream.Error != io.EOF {
-		stream.Error = fmt.Errorf("%s: %s", encoder.field.Name(), stream.Error.Error())
+		stream.Error = fmt.Errorf("%s: %s", e.field.Name(), stream.Error.Error())
 	}
 }
 
-func (encoder *structFieldEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	fieldPtr := encoder.field.UnsafeGet(ptr)
-	return encoder.fieldEncoder.IsEmpty(fieldPtr)
+func (e *structFieldEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	fieldPtr := e.field.UnsafeGet(ptr)
+	return e.fieldEncoder.IsEmpty(fieldPtr)
 }
 
-func (encoder *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
-	isEmbeddedPtrNil, converted := encoder.fieldEncoder.(IsEmbeddedPtrNil)
+func (e *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
+	isEmbeddedPtrNil, converted := e.fieldEncoder.(IsEmbeddedPtrNil)
 	if !converted {
 		return false
 	}
-	fieldPtr := encoder.field.UnsafeGet(ptr)
+	fieldPtr := e.field.UnsafeGet(ptr)
 	return isEmbeddedPtrNil.IsEmbeddedPtrNil(fieldPtr)
 }
 
@@ -141,10 +140,10 @@ type structFieldTo struct {
 	toName  string
 }
 
-func (encoder *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	stream.WriteObjectStart()
 	isNotFirst := false
-	for _, field := range encoder.fields {
+	for _, field := range e.fields {
 		if field.encoder.omitempty && field.encoder.IsEmpty(ptr) {
 			continue
 		}
@@ -160,52 +159,40 @@ func (encoder *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 	stream.WriteObjectEnd()
 	if stream.Error != nil && stream.Error != io.EOF {
-		stream.Error = fmt.Errorf("%v.%s", encoder.typ, stream.Error.Error())
+		stream.Error = fmt.Errorf("%v.%s", e.typ, stream.Error.Error())
 	}
 }
 
-func (encoder *structEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return false
-}
+func (e *structEncoder) IsEmpty(unsafe.Pointer) bool { return false }
 
-type emptyStructEncoder struct {
-}
+type emptyStructEncoder struct{}
 
-func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	stream.WriteEmptyObject()
-}
-
-func (encoder *emptyStructEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return false
-}
+func (e *emptyStructEncoder) Encode(_ unsafe.Pointer, stream *Stream) { stream.WriteEmptyObject() }
+func (e *emptyStructEncoder) IsEmpty(unsafe.Pointer) bool             { return false }
 
 type stringModeNumberEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (encoder *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	stream.writeByte('"')
-	encoder.elemEncoder.Encode(ptr, stream)
+	e.elemEncoder.Encode(ptr, stream)
 	stream.writeByte('"')
 }
 
-func (encoder *stringModeNumberEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.elemEncoder.IsEmpty(ptr)
-}
+func (e *stringModeNumberEncoder) IsEmpty(p unsafe.Pointer) bool { return e.elemEncoder.IsEmpty(p) }
 
 type stringModeStringEncoder struct {
 	elemEncoder ValEncoder
 	cfg         *frozenConfig
 }
 
-func (encoder *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	tempStream := encoder.cfg.BorrowStream(nil)
+func (e *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+	tempStream := e.cfg.BorrowStream(nil)
 	tempStream.Attachment = stream.Attachment
-	defer encoder.cfg.ReturnStream(tempStream)
-	encoder.elemEncoder.Encode(ptr, tempStream)
+	defer e.cfg.ReturnStream(tempStream)
+	e.elemEncoder.Encode(ptr, tempStream)
 	stream.WriteString(string(tempStream.Buffer()))
 }
 
-func (encoder *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.elemEncoder.IsEmpty(ptr)
-}
+func (e *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.elemEncoder.IsEmpty(ptr) }

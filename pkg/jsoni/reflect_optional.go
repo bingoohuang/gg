@@ -104,7 +104,7 @@ func (e *dereferenceEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
 	if !converted {
 		return false
 	}
-	fieldPtr := unsafe.Pointer(deReferenced)
+	fieldPtr := deReferenced
 	return isEmbeddedPtrNil.IsEmbeddedPtrNil(fieldPtr)
 }
 

@@ -218,24 +218,24 @@ var safeSet = [utf8.RuneSelf]bool{
 var hex = "0123456789abcdef"
 
 // WriteStringWithHTMLEscaped write string to stream with html special characters escaped
-func (stream *Stream) WriteStringWithHTMLEscaped(s string) {
-	valLen := len(s)
-	stream.buf = append(stream.buf, '"')
+func (s *Stream) WriteStringWithHTMLEscaped(a string) {
+	valLen := len(a)
+	s.buf = append(s.buf, '"')
 	// write string, the fast path, without utf8 and escape support
 	i := 0
 	for ; i < valLen; i++ {
-		c := s[i]
+		c := a[i]
 		if c < utf8.RuneSelf && htmlSafeSet[c] {
-			stream.buf = append(stream.buf, c)
+			s.buf = append(s.buf, c)
 		} else {
 			break
 		}
 	}
 	if i == valLen {
-		stream.buf = append(stream.buf, '"')
+		s.buf = append(s.buf, '"')
 		return
 	}
-	writeStringSlowPathWithHTMLEscaped(stream, i, s, valLen)
+	writeStringSlowPathWithHTMLEscaped(s, i, a, valLen)
 }
 
 func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen int) {
@@ -252,13 +252,13 @@ func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen 
 			}
 			switch b {
 			case '\\', '"':
-				stream.writeTwoBytes('\\', b)
+				stream.write2Bytes('\\', b)
 			case '\n':
-				stream.writeTwoBytes('\\', 'n')
+				stream.write2Bytes('\\', 'n')
 			case '\r':
-				stream.writeTwoBytes('\\', 'r')
+				stream.write2Bytes('\\', 'r')
 			case '\t':
-				stream.writeTwoBytes('\\', 't')
+				stream.write2Bytes('\\', 't')
 			default:
 				// This encodes bytes < 0x20 except for \t, \n and \r.
 				// If escapeHTML is set, it also escapes <, >, and &
@@ -266,7 +266,7 @@ func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen 
 				// user-controlled strings are rendered into JSON
 				// and served to some browsers.
 				stream.WriteRaw(`\u00`)
-				stream.writeTwoBytes(hex[b>>4], hex[b&0xF])
+				stream.write2Bytes(hex[b>>4], hex[b&0xF])
 			}
 			i++
 			start = i
@@ -308,24 +308,24 @@ func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen 
 }
 
 // WriteString write string to stream without html escape
-func (stream *Stream) WriteString(s string) {
-	valLen := len(s)
-	stream.buf = append(stream.buf, '"')
+func (s *Stream) WriteString(a string) {
+	valLen := len(a)
+	s.buf = append(s.buf, '"')
 	// write string, the fast path, without utf8 and escape support
 	i := 0
 	for ; i < valLen; i++ {
-		c := s[i]
+		c := a[i]
 		if c > 31 && c != '"' && c != '\\' {
-			stream.buf = append(stream.buf, c)
+			s.buf = append(s.buf, c)
 		} else {
 			break
 		}
 	}
 	if i == valLen {
-		stream.buf = append(stream.buf, '"')
+		s.buf = append(s.buf, '"')
 		return
 	}
-	writeStringSlowPath(stream, i, s, valLen)
+	writeStringSlowPath(s, i, a, valLen)
 }
 
 func writeStringSlowPath(stream *Stream, i int, s string, valLen int) {
@@ -342,13 +342,13 @@ func writeStringSlowPath(stream *Stream, i int, s string, valLen int) {
 			}
 			switch b {
 			case '\\', '"':
-				stream.writeTwoBytes('\\', b)
+				stream.write2Bytes('\\', b)
 			case '\n':
-				stream.writeTwoBytes('\\', 'n')
+				stream.write2Bytes('\\', 'n')
 			case '\r':
-				stream.writeTwoBytes('\\', 'r')
+				stream.write2Bytes('\\', 'r')
 			case '\t':
-				stream.writeTwoBytes('\\', 't')
+				stream.write2Bytes('\\', 't')
 			default:
 				// This encodes bytes < 0x20 except for \t, \n and \r.
 				// If escapeHTML is set, it also escapes <, >, and &
@@ -356,7 +356,7 @@ func writeStringSlowPath(stream *Stream, i int, s string, valLen int) {
 				// user-controlled strings are rendered into JSON
 				// and served to some browsers.
 				stream.WriteRaw(`\u00`)
-				stream.writeTwoBytes(hex[b>>4], hex[b&0xF])
+				stream.write2Bytes(hex[b>>4], hex[b&0xF])
 			}
 			i++
 			start = i

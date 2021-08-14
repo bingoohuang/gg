@@ -84,18 +84,18 @@ func (iter *Iterator) ReadVal(obj interface{}) {
 }
 
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
-func (stream *Stream) WriteVal(val interface{}) {
+func (s *Stream) WriteVal(val interface{}) {
 	if nil == val {
-		stream.WriteNil()
+		s.WriteNil()
 		return
 	}
 	cacheKey := reflect2.RTypeOf(val)
-	encoder := stream.cfg.getEncoderFromCache(cacheKey)
+	encoder := s.cfg.getEncoderFromCache(cacheKey)
 	if encoder == nil {
 		typ := reflect2.TypeOf(val)
-		encoder = stream.cfg.EncoderOf(typ)
+		encoder = s.cfg.EncoderOf(typ)
 	}
-	encoder.Encode(reflect2.PtrOf(val), stream)
+	encoder.Encode(reflect2.PtrOf(val), s)
 }
 
 func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
@@ -274,7 +274,7 @@ type lazyErrorDecoder struct {
 	err error
 }
 
-func (decoder *lazyErrorDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (decoder *lazyErrorDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() != NilValue {
 		if iter.Error == nil {
 			iter.Error = decoder.err

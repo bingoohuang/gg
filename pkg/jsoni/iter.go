@@ -304,7 +304,7 @@ func (iter *Iterator) Read() interface{} {
 	case BoolValue:
 		return iter.ReadBool()
 	case ArrayValue:
-		arr := []interface{}{}
+		var arr []interface{}
 		iter.ReadArrayCB(func(iter *Iterator) bool {
 			var elem interface{}
 			iter.ReadVal(&elem)

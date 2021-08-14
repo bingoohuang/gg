@@ -223,9 +223,7 @@ func (u *numericMapKeyEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	stream.writeByte('"')
 }
 
-func (u *numericMapKeyEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return false
-}
+func (u *numericMapKeyEncoder) IsEmpty(unsafe.Pointer) bool { return false }
 
 type dynamicMapKeyEncoder struct {
 	ctx     *ctx
@@ -262,7 +260,7 @@ func (e *mapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		key, elem := iter.UnsafeNext()
 		e.keyEncoder.Encode(key, stream)
 		if stream.indention > 0 {
-			stream.writeTwoBytes(byte(':'), byte(' '))
+			stream.write2Bytes(byte(':'), byte(' '))
 		} else {
 			stream.writeByte(':')
 		}
@@ -304,7 +302,7 @@ func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		subIter.ResetBytes(encodedKey)
 		decodedKey := subIter.ReadString()
 		if stream.indention > 0 {
-			subStream.writeTwoBytes(byte(':'), byte(' '))
+			subStream.write2Bytes(byte(':'), byte(' '))
 		} else {
 			subStream.writeByte(':')
 		}

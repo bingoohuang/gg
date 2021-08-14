@@ -15,7 +15,7 @@ func Test_writeByte_should_grow_buffer(t *testing.T) {
 	stream.writeByte('2')
 	should.Equal("12", string(stream.Buffer()))
 	should.Equal(2, len(stream.buf))
-	stream.writeThreeBytes('3', '4', '5')
+	stream.write3Bytes('3', '4', '5')
 	should.Equal("12345", string(stream.Buffer()))
 }
 
