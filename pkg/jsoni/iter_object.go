@@ -104,7 +104,7 @@ func calcHash(str string, caseSensitive bool) int64 {
 		hash ^= int64(b)
 		hash *= 0x1000193
 	}
-	return int64(hash)
+	return hash
 }
 
 // ReadObjectCB read object with callback, the key is ascii only and field name not copied
