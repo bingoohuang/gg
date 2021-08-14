@@ -25,9 +25,13 @@ func TestInt64(t *testing.T) {
 		Foo int64
 	}{}
 
-	jsoni.Unmarshal([]byte(`{"Foo":12345}`), &f)
+	c := jsoni.Config{EscapeHTML: true, Int64AsString: true}.Froze()
+
+	c.Unmarshal([]byte(`{"Foo":"12345"}`), &f)
+	assert.Equal(t, int64(12345), f.Foo)
+	c.Unmarshal([]byte(`{"Foo":12345}`), &f)
 	assert.Equal(t, int64(12345), f.Foo)
 
-	s, _ := jsoni.MarshalToString(f)
-	assert.Equal(t, `{"Foo":12345}`, s)
+	s, _ := c.MarshalToString(f)
+	assert.Equal(t, `{"Foo":"12345"}`, s)
 }

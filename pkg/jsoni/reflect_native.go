@@ -50,6 +50,9 @@ func createEncoderOfNative(ctx *ctx, typ reflect2.Type) ValEncoder {
 		if typeName != "int64" {
 			return encoderOfType(ctx, PtrElem((*int64)(nil)))
 		}
+		if ctx.int64AsString {
+			return &stringModeNumberEncoder{&int64Codec{}}
+		}
 		return &int64Codec{}
 	case reflect.Uint:
 		if typeName != "uint" {
@@ -85,6 +88,9 @@ func createEncoderOfNative(ctx *ctx, typ reflect2.Type) ValEncoder {
 	case reflect.Uint64:
 		if typeName != "uint64" {
 			return encoderOfType(ctx, PtrElem((*uint64)(nil)))
+		}
+		if ctx.int64AsString {
+			return &stringModeNumberEncoder{&uint64Codec{}}
 		}
 		return &uint64Codec{}
 	case reflect.Float32:
@@ -144,6 +150,9 @@ func createDecoderOfNative(ctx *ctx, typ reflect2.Type) ValDecoder {
 		if typeName != "int64" {
 			return decoderOfType(ctx, PtrElem((*int64)(nil)))
 		}
+		if ctx.int64AsString {
+			return &stringModeNumberCompatibleDecoder{&int64Codec{}}
+		}
 		return &int64Codec{}
 	case reflect.Uint:
 		if typeName != "uint" {
@@ -179,6 +188,9 @@ func createDecoderOfNative(ctx *ctx, typ reflect2.Type) ValDecoder {
 	case reflect.Uint64:
 		if typeName != "uint64" {
 			return decoderOfType(ctx, PtrElem((*uint64)(nil)))
+		}
+		if ctx.int64AsString {
+			return &stringModeNumberCompatibleDecoder{&int64Codec{}}
 		}
 		return &uint64Codec{}
 	case reflect.Float32:

@@ -436,15 +436,13 @@ func (d *generalStructDecoder) decodeOneField(ptr unsafe.Pointer, iter *Iterator
 			msg := "found unknown field: " + field
 			iter.ReportError("ReadObject", msg)
 		}
-		c := iter.nextToken()
-		if c != ':' {
+		if c := iter.nextToken(); c != ':' {
 			iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
 		}
 		iter.Skip()
 		return
 	}
-	c := iter.nextToken()
-	if c != ':' {
+	if c := iter.nextToken(); c != ':' {
 		iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
 	}
 	fieldDecoder.Decode(ptr, iter)
@@ -969,27 +967,52 @@ func (d *stringModeStringDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 }
 
 type stringModeNumberDecoder struct {
-	elemDecoder ValDecoder
+	decoder ValDecoder
 }
 
 func (d *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() == NilValue {
-		d.elemDecoder.Decode(ptr, iter)
+		d.decoder.Decode(ptr, iter)
 		return
 	}
 
-	c := iter.nextToken()
-	if c != '"' {
+	if c := iter.nextToken(); c != '"' {
 		iter.ReportError("stringModeNumberDecoder", `expect ", but found `+string([]byte{c}))
 		return
 	}
-	d.elemDecoder.Decode(ptr, iter)
+	d.decoder.Decode(ptr, iter)
 	if iter.Error != nil {
 		return
 	}
-	c = iter.readByte()
-	if c != '"' {
+	if c := iter.readByte(); c != '"' {
 		iter.ReportError("stringModeNumberDecoder", `expect ", but found `+string([]byte{c}))
 		return
+	}
+}
+
+type stringModeNumberCompatibleDecoder struct {
+	decoder ValDecoder
+}
+
+func (d *stringModeNumberCompatibleDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+	if iter.WhatIsNext() == NilValue {
+		d.decoder.Decode(ptr, iter)
+		return
+	}
+
+	isString := iter.nextToken() == '"'
+	if !isString {
+		iter.unreadByte()
+	}
+	d.decoder.Decode(ptr, iter)
+	if iter.Error != nil {
+		return
+	}
+
+	if isString {
+		if c := iter.readByte(); c != '"' {
+			iter.ReportError("stringModeNumberCompatibleDecoder", `expect ", but found `+string([]byte{c}))
+			return
+		}
 	}
 }

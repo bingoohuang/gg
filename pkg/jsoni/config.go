@@ -26,6 +26,7 @@ type Config struct {
 	ValidateJsonRawMessage        bool
 	ObjectFieldMustBeSimpleString bool
 	CaseSensitive                 bool
+	Int64AsString                 bool
 }
 
 // API the public interface of this package.
@@ -81,6 +82,7 @@ type frozenConfig struct {
 	streamPool                    *sync.Pool
 	iteratorPool                  *sync.Pool
 	caseSensitive                 bool
+	int64AsString                 bool
 }
 
 func (c *frozenConfig) initCache() {
@@ -133,6 +135,7 @@ func (c Config) Froze() API {
 		onlyTaggedField:               c.OnlyTaggedField,
 		disallowUnknownFields:         c.DisallowUnknownFields,
 		caseSensitive:                 c.CaseSensitive,
+		int64AsString:                 c.Int64AsString,
 	}
 	api.streamPool = &sync.Pool{New: func() interface{} { return NewStream(api, nil, 512) }}
 	api.iteratorPool = &sync.Pool{New: func() interface{} { return NewIterator(api) }}
