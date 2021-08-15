@@ -2,7 +2,6 @@ package jsoni
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/reflector"
 	"io"
 	"strings"
 	"unsafe"
@@ -49,51 +48,28 @@ func createStructDecoder(ctx *ctx, typ reflect2.Type, fields map[string]*structF
 	if ctx.disallowUnknownFields {
 		return &generalStructDecoder{typ: typ, fields: fields, disallowUnknownFields: true}
 	}
-	switch len(fields) {
-	case 0:
-		return &skipObjectDecoder{typ: typ}
-	case 1:
-		return createDecoder(1, ctx, typ, fields, &oneFieldStructDecoder{})
-	case 2:
-		return createDecoder(2, ctx, typ, fields, &twoFieldsStructDecoder{})
-	case 3:
-		return createDecoder(3, ctx, typ, fields, &threeFieldsStructDecoder{})
-	case 4:
-		return createDecoder(4, ctx, typ, fields, &fourFieldsStructDecoder{})
-	case 5:
-		return createDecoder(5, ctx, typ, fields, &fiveFieldsStructDecoder{})
-	case 6:
-		return createDecoder(6, ctx, typ, fields, &sixFieldsStructDecoder{})
-	case 7:
-		return createDecoder(7, ctx, typ, fields, &sevenFieldsStructDecoder{})
-	case 8:
-		return createDecoder(8, ctx, typ, fields, &eightFieldsStructDecoder{})
-	case 9:
-		return createDecoder(9, ctx, typ, fields, &nineFieldsStructDecoder{})
-	case 10:
-		return createDecoder(10, ctx, typ, fields, &tenFieldsStructDecoder{})
+
+	if l := len(fields); l == 0 {
+		return &skipObjectDecoder{}
+	} else if l <= 10 {
+		return createDecoder(ctx, typ, fields)
+	} else {
+		return &generalStructDecoder{typ: typ, fields: fields}
 	}
-	return &generalStructDecoder{typ: typ, fields: fields}
 }
 
-func createDecoder(n int, ctx *ctx, typ reflect2.Type, fields map[string]*structFieldDecoder, switcher switcher) ValDecoder {
-	fieldNames := make([]int64, n)
-	obj := reflector.New(switcher)
+func createDecoder(ctx *ctx, typ reflect2.Type, fields map[string]*structFieldDecoder) ValDecoder {
 	knownHash := map[int64]struct{}{0: {}}
-	i := 0
-
+	hashDecoders := make(map[int64]*structFieldDecoder)
 	for fieldName, fieldDecoder := range fields {
 		fieldHash := calcHash(fieldName, ctx.caseSensitive())
 		if _, known := knownHash[fieldHash]; known {
 			return &generalStructDecoder{typ: typ, fields: fields}
 		}
 		knownHash[fieldHash] = struct{}{}
-		fieldNames[i] = fieldHash
-		obj.Field(fmt.Sprintf("FieldHash%d", i+1)).Set(fieldHash)
-		obj.Field(fmt.Sprintf("FieldDecoder%d", i+1)).Set(fieldDecoder)
-		i++
+		hashDecoders[fieldHash] = fieldDecoder
 	}
-	return &fieldsStructDecoder{typ: typ, switcher: switcher}
+	return &fieldsStructDecoder{typ: typ, HashDecoders: hashDecoders}
 }
 
 type generalStructDecoder struct {
@@ -103,10 +79,7 @@ type generalStructDecoder struct {
 }
 
 func (d *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	if !iter.readObjectStart() {
-		return
-	}
-	if !iter.incrementDepth() {
+	if !iter.readObjectStart() || !iter.incrementDepth() {
 		return
 	}
 	var c byte
@@ -156,9 +129,7 @@ func (d *generalStructDecoder) decodeOneField(ptr unsafe.Pointer, iter *Iterator
 	fieldDecoder.Decode(ptr, iter)
 }
 
-type skipObjectDecoder struct {
-	typ reflect2.Type
-}
+type skipObjectDecoder struct{}
 
 func (d *skipObjectDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
 	valueType := iter.WhatIsNext()
@@ -169,56 +140,19 @@ func (d *skipObjectDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
 	iter.Skip()
 }
 
-type oneFieldStructDecoder struct {
-	FieldHash1    int64
-	FieldDecoder1 *structFieldDecoder
-}
-
-func (d *oneFieldStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	default:
-		return nil
-	}
-}
-
-type twoFieldsStructDecoder struct {
-	FieldHash1, FieldHash2       int64
-	FieldDecoder1, FieldDecoder2 *structFieldDecoder
-}
-
-func (d *twoFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	default:
-		return nil
-	}
-}
-
-type switcher interface {
-	Switch(fieldHash int64) DecoderFn
-}
-
 type fieldsStructDecoder struct {
-	typ reflect2.Type
-	switcher
+	typ          reflect2.Type
+	HashDecoders map[int64]*structFieldDecoder
 }
 
 func (d *fieldsStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	if !iter.readObjectStart() {
-		return
-	}
-	if !iter.incrementDepth() {
+	if !iter.readObjectStart() || !iter.incrementDepth() {
 		return
 	}
 	for {
 		fieldHash := iter.readFieldHash()
-		if decoderFn := d.switcher.Switch(fieldHash); decoderFn != nil {
-			decoderFn(ptr, iter)
+		if decoder, ok := d.HashDecoders[fieldHash]; ok {
+			decoder.Decode(ptr, iter)
 		} else {
 			iter.Skip()
 		}
@@ -231,208 +165,6 @@ func (d *fieldsStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 		iter.Error = fmt.Errorf("%v.%s", d.typ, iter.Error.Error())
 	}
 	iter.decrementDepth()
-}
-
-type DecoderFn func(ptr unsafe.Pointer, iter *Iterator)
-
-type threeFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3          int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3 *structFieldDecoder
-}
-
-func (d *threeFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	default:
-		return nil
-	}
-}
-
-type fourFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4             int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4 *structFieldDecoder
-}
-
-func (d *fourFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	default:
-		return nil
-	}
-}
-
-type fiveFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5                int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5 *structFieldDecoder
-}
-
-func (d *fiveFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	default:
-		return nil
-	}
-}
-
-type sixFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5, FieldHash6                   int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5, FieldDecoder6 *structFieldDecoder
-}
-
-func (d *sixFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	case d.FieldHash6:
-		return d.FieldDecoder6.Decode
-	default:
-		return nil
-	}
-}
-
-type sevenFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5, FieldHash6, FieldHash7                      int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5, FieldDecoder6, FieldDecoder7 *structFieldDecoder
-}
-
-func (d *sevenFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	case d.FieldHash6:
-		return d.FieldDecoder6.Decode
-	case d.FieldHash7:
-		return d.FieldDecoder7.Decode
-	default:
-		return nil
-	}
-}
-
-type eightFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5, FieldHash6, FieldHash7, FieldHash8                         int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5, FieldDecoder6, FieldDecoder7, FieldDecoder8 *structFieldDecoder
-}
-
-func (d *eightFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	case d.FieldHash6:
-		return d.FieldDecoder6.Decode
-	case d.FieldHash7:
-		return d.FieldDecoder7.Decode
-	case d.FieldHash8:
-		return d.FieldDecoder8.Decode
-	default:
-		return nil
-	}
-}
-
-type nineFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5, FieldHash6, FieldHash7, FieldHash8, FieldHash9                            int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5, FieldDecoder6, FieldDecoder7, FieldDecoder8, FieldDecoder9 *structFieldDecoder
-}
-
-func (d *nineFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	case d.FieldHash6:
-		return d.FieldDecoder6.Decode
-	case d.FieldHash7:
-		return d.FieldDecoder7.Decode
-	case d.FieldHash8:
-		return d.FieldDecoder8.Decode
-	case d.FieldHash9:
-		return d.FieldDecoder9.Decode
-	default:
-		return nil
-	}
-}
-
-type tenFieldsStructDecoder struct {
-	FieldHash1, FieldHash2, FieldHash3, FieldHash4, FieldHash5, FieldHash6, FieldHash7, FieldHash8, FieldHash9, FieldHash10                               int64
-	FieldDecoder1, FieldDecoder2, FieldDecoder3, FieldDecoder4, FieldDecoder5, FieldDecoder6, FieldDecoder7, FieldDecoder8, FieldDecoder9, FieldDecoder10 *structFieldDecoder
-}
-
-func (d *tenFieldsStructDecoder) Switch(fieldHash int64) DecoderFn {
-	switch fieldHash {
-	case d.FieldHash1:
-		return d.FieldDecoder1.Decode
-	case d.FieldHash2:
-		return d.FieldDecoder2.Decode
-	case d.FieldHash3:
-		return d.FieldDecoder3.Decode
-	case d.FieldHash4:
-		return d.FieldDecoder4.Decode
-	case d.FieldHash5:
-		return d.FieldDecoder5.Decode
-	case d.FieldHash6:
-		return d.FieldDecoder6.Decode
-	case d.FieldHash7:
-		return d.FieldDecoder7.Decode
-	case d.FieldHash8:
-		return d.FieldDecoder8.Decode
-	case d.FieldHash9:
-		return d.FieldDecoder9.Decode
-	case d.FieldHash10:
-		return d.FieldDecoder10.Decode
-	default:
-		return nil
-	}
 }
 
 type structFieldDecoder struct {
