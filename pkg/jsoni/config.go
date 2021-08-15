@@ -78,7 +78,7 @@ type frozenConfig struct {
 	encoderCache                  *concurrent.Map
 	encoderExtension              Extension
 	decoderExtension              Extension
-	extraExtensions               []Extension
+	extraExtensions               Extensions
 	streamPool                    *sync.Pool
 	iteratorPool                  *sync.Pool
 	caseSensitive                 bool
@@ -174,7 +174,7 @@ func (c Config) frozeWithCacheReuse(extraExtensions []Extension) *frozenConfig {
 }
 
 func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
-	encoder := &funcEncoder{func(ptr unsafe.Pointer, stream *Stream) {
+	encoder := &funcEncoder{fn: func(ptr unsafe.Pointer, stream *Stream) {
 		rawMessage := *(*json.RawMessage)(ptr)
 		iter := c.BorrowIterator(rawMessage)
 		defer c.ReturnIterator(iter)
@@ -184,7 +184,7 @@ func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
 		} else {
 			stream.WriteRaw(string(rawMessage))
 		}
-	}, func(ptr unsafe.Pointer) bool {
+	}, isEmptyFn: func(ptr unsafe.Pointer) bool {
 		return len(*((*json.RawMessage)(ptr))) == 0
 	}}
 	extension[PtrElem((*json.RawMessage)(nil))] = encoder
@@ -194,7 +194,7 @@ func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
 func PtrElem(obj interface{}) reflect2.Type { return reflect2.TypeOfPtr(obj).Elem() }
 
 func (c *frozenConfig) useNumber(extension DecoderExtension) {
-	extension[PtrElem((*interface{})(nil))] = &funcDecoder{func(ptr unsafe.Pointer, iter *Iterator) {
+	extension[PtrElem((*interface{})(nil))] = &funcDecoder{fun: func(ptr unsafe.Pointer, iter *Iterator) {
 		exitingValue := *((*interface{})(ptr))
 		if exitingValue != nil && reflect.TypeOf(exitingValue).Kind() == reflect.Ptr {
 			iter.ReadVal(exitingValue)

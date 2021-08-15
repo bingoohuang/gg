@@ -24,6 +24,24 @@ func (es Extensions) UpdateStructDescriptor(structDescriptor *StructDescriptor) 
 		extension.UpdateStructDescriptor(structDescriptor)
 	}
 }
+func (es Extensions) CreateMapKeyEncoder(typ reflect2.Type) ValEncoder {
+	for _, extension := range es {
+		if v := extension.CreateMapKeyEncoder(typ); v != nil {
+			return v
+		}
+	}
+	return nil
+}
+
+func (es Extensions) CreateMapKeyDecoder(typ reflect2.Type) ValDecoder {
+	for _, extension := range es {
+		if v := extension.CreateMapKeyDecoder(typ); v != nil {
+			return v
+		}
+	}
+	return nil
+}
+
 func (es Extensions) createEncoder(typ reflect2.Type) ValEncoder {
 	for _, extension := range es {
 		if e := extension.CreateEncoder(typ); e != nil {
@@ -114,14 +132,10 @@ func (e *DummyExtension) CreateDecoder(reflect2.Type) ValDecoder { return nil }
 func (e *DummyExtension) CreateEncoder(reflect2.Type) ValEncoder { return nil }
 
 // DecorateDecoder No-op
-func (e *DummyExtension) DecorateDecoder(_ reflect2.Type, decoder ValDecoder) ValDecoder {
-	return decoder
-}
+func (e *DummyExtension) DecorateDecoder(_ reflect2.Type, v ValDecoder) ValDecoder { return v }
 
 // DecorateEncoder No-op
-func (e *DummyExtension) DecorateEncoder(_ reflect2.Type, encoder ValEncoder) ValEncoder {
-	return encoder
-}
+func (e *DummyExtension) DecorateEncoder(_ reflect2.Type, v ValEncoder) ValEncoder { return v }
 
 type EncoderExtension map[reflect2.Type]ValEncoder
 
@@ -141,14 +155,10 @@ func (e EncoderExtension) CreateMapKeyDecoder(reflect2.Type) ValDecoder { return
 func (e EncoderExtension) CreateMapKeyEncoder(reflect2.Type) ValEncoder { return nil }
 
 // DecorateDecoder No-op
-func (e EncoderExtension) DecorateDecoder(_ reflect2.Type, decoder ValDecoder) ValDecoder {
-	return decoder
-}
+func (e EncoderExtension) DecorateDecoder(_ reflect2.Type, v ValDecoder) ValDecoder { return v }
 
 // DecorateEncoder No-op
-func (e EncoderExtension) DecorateEncoder(_ reflect2.Type, encoder ValEncoder) ValEncoder {
-	return encoder
-}
+func (e EncoderExtension) DecorateEncoder(_ reflect2.Type, v ValEncoder) ValEncoder { return v }
 
 type DecoderExtension map[reflect2.Type]ValDecoder
 
@@ -168,14 +178,10 @@ func (e DecoderExtension) CreateDecoder(typ reflect2.Type) ValDecoder { return e
 func (e DecoderExtension) CreateEncoder(reflect2.Type) ValEncoder { return nil }
 
 // DecorateDecoder No-op
-func (e DecoderExtension) DecorateDecoder(_ reflect2.Type, decoder ValDecoder) ValDecoder {
-	return decoder
-}
+func (e DecoderExtension) DecorateDecoder(_ reflect2.Type, v ValDecoder) ValDecoder { return v }
 
 // DecorateEncoder No-op
-func (e DecoderExtension) DecorateEncoder(_ reflect2.Type, encoder ValEncoder) ValEncoder {
-	return encoder
-}
+func (e DecoderExtension) DecorateEncoder(_ reflect2.Type, v ValEncoder) ValEncoder { return v }
 
 type funcDecoder struct {
 	fun DecoderFunc
@@ -184,18 +190,12 @@ type funcDecoder struct {
 func (f *funcDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) { f.fun(ptr, iter) }
 
 type funcEncoder struct {
-	fun         EncoderFunc
-	isEmptyFunc func(ptr unsafe.Pointer) bool
+	fn        EncoderFunc
+	isEmptyFn func(ptr unsafe.Pointer) bool
 }
 
-func (e *funcEncoder) Encode(ptr unsafe.Pointer, stream *Stream) { e.fun(ptr, stream) }
-
-func (e *funcEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	if e.isEmptyFunc == nil {
-		return false
-	}
-	return e.isEmptyFunc(ptr)
-}
+func (e *funcEncoder) Encode(p unsafe.Pointer, stream *Stream) { e.fn(p, stream) }
+func (e *funcEncoder) IsEmpty(p unsafe.Pointer) bool           { return e.isEmptyFn != nil && e.isEmptyFn(p) }
 
 // DecoderFunc the function form of TypeDecoder
 type DecoderFunc func(ptr unsafe.Pointer, iter *Iterator)
@@ -250,9 +250,7 @@ func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 
 	d = extensions.decorateDecoder(typ, d)
 	d = ctx.decoderExtension.DecorateDecoder(typ, d)
-	for _, extension := range ctx.extraExtensions {
-		d = extension.DecorateDecoder(typ, d)
-	}
+	d = ctx.extraExtensions.decorateDecoder(typ, d)
 
 	return d
 }
@@ -263,10 +261,8 @@ func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 	if d := ctx.decoderExtension.CreateDecoder(typ); d != nil {
 		return d
 	}
-	for _, e := range ctx.extraExtensions {
-		if d := e.CreateDecoder(typ); d != nil {
-			return d
-		}
+	if d := ctx.extraExtensions.createDecoder(typ); d != nil {
+		return d
 	}
 	if d := typeDecoders[typ.String()]; d != nil {
 		return d
@@ -288,9 +284,7 @@ func getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 
 	e = extensions.decorateEncoder(typ, e)
 	e = ctx.encoderExtension.DecorateEncoder(typ, e)
-	for _, extension := range ctx.extraExtensions {
-		e = extension.DecorateEncoder(typ, e)
-	}
+	e = ctx.extraExtensions.decorateEncoder(typ, e)
 
 	return e
 }
@@ -302,10 +296,8 @@ func _getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 	if e := ctx.encoderExtension.CreateEncoder(typ); e != nil {
 		return e
 	}
-	for _, extension := range ctx.extraExtensions {
-		if e := extension.CreateEncoder(typ); e != nil {
-			return e
-		}
+	if e := ctx.extraExtensions.createEncoder(typ); e != nil {
+		return e
 	}
 	if e := typeEncoders[typ.String()]; e != nil {
 		return e
@@ -382,9 +374,7 @@ func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding, em
 	extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
 	ctx.decoderExtension.UpdateStructDescriptor(structDescriptor)
-	for _, extension := range ctx.extraExtensions {
-		extension.UpdateStructDescriptor(structDescriptor)
-	}
+	ctx.extraExtensions.UpdateStructDescriptor(structDescriptor)
 	processTags(structDescriptor, ctx.frozenConfig)
 	// merge normal & embedded bindings & sort with original order
 	allBindings := sortableBindings(append(embeddedBindings, structDescriptor.Fields...))
