@@ -304,8 +304,7 @@ func (c *frozenConfig) UnmarshalFromString(str string, v interface{}) error {
 	iter := c.BorrowIterator(data)
 	defer c.ReturnIterator(iter)
 	iter.ReadVal(v)
-	t := iter.nextToken()
-	if t == 0 {
+	if t := iter.nextToken(); t == 0 {
 		if iter.Error == io.EOF {
 			return nil
 		}

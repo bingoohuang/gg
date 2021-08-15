@@ -33,14 +33,14 @@ func CastJsonNumber(val interface{}) (string, bool) {
 }
 
 var jsonNumberType = PtrElem((*json.Number)(nil))
-var jsoniterNumberType = PtrElem((*Number)(nil))
+var jsoniNumberType = PtrElem((*Number)(nil))
 
 func createDecoderOfJsonNumber(_ *ctx, typ reflect2.Type) ValDecoder {
 	if typ.AssignableTo(jsonNumberType) {
 		return &jsonNumberCodec{}
 	}
-	if typ.AssignableTo(jsoniterNumberType) {
-		return &jsoniterNumberCodec{}
+	if typ.AssignableTo(jsoniNumberType) {
+		return &jsoniNumberCodec{}
 	}
 	return nil
 }
@@ -49,8 +49,8 @@ func createEncoderOfJsonNumber(_ *ctx, typ reflect2.Type) ValEncoder {
 	if typ.AssignableTo(jsonNumberType) {
 		return &jsonNumberCodec{}
 	}
-	if typ.AssignableTo(jsoniterNumberType) {
-		return &jsoniterNumberCodec{}
+	if typ.AssignableTo(jsoniNumberType) {
+		return &jsoniNumberCodec{}
 	}
 	return nil
 }
@@ -70,41 +70,35 @@ func (c *jsonNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
 }
 
 func (c *jsonNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
-	number := *((*json.Number)(ptr))
-	if len(number) == 0 {
+	if n := *((*json.Number)(ptr)); len(n) == 0 {
 		stream.writeByte('0')
 	} else {
-		stream.WriteRaw(string(number))
+		stream.WriteRaw(string(n))
 	}
 }
 
-func (c *jsonNumberCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	return len(*((*json.Number)(ptr))) == 0
-}
+func (c *jsonNumberCodec) IsEmpty(p unsafe.Pointer) bool { return len(*((*json.Number)(p))) == 0 }
 
-type jsoniterNumberCodec struct{}
+type jsoniNumberCodec struct{}
 
-func (c *jsoniterNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	switch iter.WhatIsNext() {
+func (c *jsoniNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
+	switch r := (*Number)(ptr); iter.WhatIsNext() {
 	case StringValue:
-		*((*Number)(ptr)) = Number(iter.ReadString())
+		*r = Number(iter.ReadString())
 	case NilValue:
 		iter.skip4Bytes('n', 'u', 'l', 'l')
-		*((*Number)(ptr)) = ""
+		*r = ""
 	default:
-		*((*Number)(ptr)) = Number([]byte(iter.readNumberAsString()))
+		*r = Number(iter.readNumberAsString())
 	}
 }
 
-func (c *jsoniterNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
-	number := *((*Number)(ptr))
-	if len(number) == 0 {
+func (c *jsoniNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+	if n := *((*Number)(ptr)); len(n) == 0 {
 		stream.writeByte('0')
 	} else {
-		stream.WriteRaw(string(number))
+		stream.WriteRaw(string(n))
 	}
 }
 
-func (c *jsoniterNumberCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	return len(*((*Number)(ptr))) == 0
-}
+func (c *jsoniNumberCodec) IsEmpty(p unsafe.Pointer) bool { return len(*((*Number)(p))) == 0 }

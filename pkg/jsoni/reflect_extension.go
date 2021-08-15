@@ -371,23 +371,14 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 		if encoder == nil {
 			encoder = encoderOfType(ctx.append(field.Name()), field.Type())
 		}
-		binding := &Binding{
-			Field:     field,
-			FromNames: fieldNames,
-			ToNames:   fieldNames,
-			Decoder:   decoder,
-			Encoder:   encoder,
-		}
+		binding := &Binding{Field: field, FromNames: fieldNames, ToNames: fieldNames, Decoder: decoder, Encoder: encoder}
 		binding.levels = []int{i}
 		bindings = append(bindings, binding)
 	}
 	return createStructDescriptor(ctx, typ, bindings, embeddedBindings)
 }
 func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
-	structDescriptor := &StructDescriptor{
-		Type:   typ,
-		Fields: bindings,
-	}
+	structDescriptor := &StructDescriptor{Type: typ, Fields: bindings}
 	extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
 	ctx.decoderExtension.UpdateStructDescriptor(structDescriptor)

@@ -7,68 +7,68 @@ import (
 )
 
 var jsonRawMessageType = PtrElem((*json.RawMessage)(nil))
-var jsoniterRawMessageType = PtrElem((*RawMessage)(nil))
+var jsoniRawMessageType = PtrElem((*RawMessage)(nil))
 
 func createEncoderOfJsonRawMessage(_ *ctx, typ reflect2.Type) ValEncoder {
-	if typ == jsonRawMessageType {
+	switch typ {
+	case jsonRawMessageType:
 		return &jsonRawMessageCodec{}
+	case jsoniRawMessageType:
+		return &jsoniRawMessageCodec{}
+	default:
+		return nil
 	}
-	if typ == jsoniterRawMessageType {
-		return &jsoniterRawMessageCodec{}
-	}
-	return nil
 }
 
 func createDecoderOfJsonRawMessage(_ *ctx, typ reflect2.Type) ValDecoder {
-	if typ == jsonRawMessageType {
+	switch typ {
+	case jsonRawMessageType:
 		return &jsonRawMessageCodec{}
+	case jsoniRawMessageType:
+		return &jsoniRawMessageCodec{}
+	default:
+		return nil
 	}
-	if typ == jsoniterRawMessageType {
-		return &jsoniterRawMessageCodec{}
-	}
-	return nil
 }
 
 type jsonRawMessageCodec struct{}
 
 func (c *jsonRawMessageCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	if iter.ReadNil() {
-		*((*json.RawMessage)(ptr)) = nil
+	if r := (*json.RawMessage)(ptr); iter.ReadNil() {
+		*r = nil
 	} else {
-		*((*json.RawMessage)(ptr)) = iter.SkipAndReturnBytes()
+		*r = iter.SkipAndReturnBytes()
 	}
 }
 
 func (c *jsonRawMessageCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
-	if *((*json.RawMessage)(ptr)) == nil {
+	if r := *((*json.RawMessage)(ptr)); r == nil {
 		stream.WriteNil()
 	} else {
-		stream.WriteRaw(string(*((*json.RawMessage)(ptr))))
+		stream.WriteRaw(string(r))
 	}
 }
 
-func (c *jsonRawMessageCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	return len(*((*json.RawMessage)(ptr))) == 0
+func (c *jsonRawMessageCodec) IsEmpty(p unsafe.Pointer) bool {
+	return len(*((*json.RawMessage)(p))) == 0
 }
 
-type jsoniterRawMessageCodec struct{}
+type jsoniRawMessageCodec struct{}
 
-func (c *jsoniterRawMessageCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	if iter.ReadNil() {
-		*((*RawMessage)(ptr)) = nil
+func (c *jsoniRawMessageCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
+	if r := (*RawMessage)(ptr); iter.ReadNil() {
+		*r = nil
 	} else {
-		*((*RawMessage)(ptr)) = iter.SkipAndReturnBytes()
+		*r = iter.SkipAndReturnBytes()
 	}
 }
 
-func (c *jsoniterRawMessageCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
-	if *((*RawMessage)(ptr)) == nil {
+func (c *jsoniRawMessageCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+	if r := *((*RawMessage)(ptr)); r == nil {
 		stream.WriteNil()
 	} else {
-		stream.WriteRaw(string(*((*RawMessage)(ptr))))
+		stream.WriteRaw(string(r))
 	}
 }
 
-func (c *jsoniterRawMessageCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	return len(*((*RawMessage)(ptr))) == 0
-}
+func (c *jsoniRawMessageCodec) IsEmpty(p unsafe.Pointer) bool { return len(*((*RawMessage)(p))) == 0 }

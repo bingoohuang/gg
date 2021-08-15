@@ -29,40 +29,23 @@ func createEncoderOfMarshaler(ctx *ctx, typ reflect2.Type) ValEncoder {
 		return &directMarshalerEncoder{checkIsEmpty: createCheckIsEmpty(ctx, typ)}
 	}
 	if typ.Implements(marshalerType) {
-		return &marshalerEncoder{
-			valType:      typ,
-			checkIsEmpty: createCheckIsEmpty(ctx, typ),
-		}
+		return &marshalerEncoder{valType: typ, checkIsEmpty: createCheckIsEmpty(ctx, typ)}
 	}
 	ptrType := reflect2.PtrTo(typ)
 	if ctx.prefix != "" && ptrType.Implements(marshalerType) {
-		encoder := &marshalerEncoder{
-			valType:      ptrType,
-			checkIsEmpty: createCheckIsEmpty(ctx, ptrType),
-		}
-		return &referenceEncoder{encoder}
+		encoder := &marshalerEncoder{valType: ptrType, checkIsEmpty: createCheckIsEmpty(ctx, ptrType)}
+		return &referenceEncoder{encoder: encoder}
 	}
 	if typ == textMarshalerType {
-		return &directTextMarshalerEncoder{
-			checkIsEmpty:  createCheckIsEmpty(ctx, typ),
-			stringEncoder: ctx.EncoderOf(reflect2.TypeOf("")),
-		}
+		return &directTextMarshalerEncoder{checkIsEmpty: createCheckIsEmpty(ctx, typ), stringEncoder: ctx.EncoderOf(reflect2.TypeOf(""))}
 	}
 	if typ.Implements(textMarshalerType) {
-		return &textMarshalerEncoder{
-			valType:       typ,
-			stringEncoder: ctx.EncoderOf(reflect2.TypeOf("")),
-			checkIsEmpty:  createCheckIsEmpty(ctx, typ),
-		}
+		return &textMarshalerEncoder{valType: typ, stringEncoder: ctx.EncoderOf(reflect2.TypeOf("")), checkIsEmpty: createCheckIsEmpty(ctx, typ)}
 	}
 	// if prefix is empty, the type is the root type
 	if ctx.prefix != "" && ptrType.Implements(textMarshalerType) {
-		var encoder ValEncoder = &textMarshalerEncoder{
-			valType:       ptrType,
-			stringEncoder: ctx.EncoderOf(reflect2.TypeOf("")),
-			checkIsEmpty:  createCheckIsEmpty(ctx, ptrType),
-		}
-		return &referenceEncoder{encoder}
+		encoder := &textMarshalerEncoder{valType: ptrType, stringEncoder: ctx.EncoderOf(reflect2.TypeOf("")), checkIsEmpty: createCheckIsEmpty(ctx, ptrType)}
+		return &referenceEncoder{encoder: encoder}
 	}
 	return nil
 }
@@ -111,9 +94,7 @@ func (e *directMarshalerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (e *directMarshalerEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ptr)
-}
+func (e *directMarshalerEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.checkIsEmpty.IsEmpty(ptr) }
 
 type textMarshalerEncoder struct {
 	valType       reflect2.Type
@@ -136,9 +117,7 @@ func (e *textMarshalerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (e *textMarshalerEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ptr)
-}
+func (e *textMarshalerEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.checkIsEmpty.IsEmpty(ptr) }
 
 type directTextMarshalerEncoder struct {
 	stringEncoder ValEncoder
@@ -159,9 +138,7 @@ func (e *directTextMarshalerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) 
 	}
 }
 
-func (e *directTextMarshalerEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ptr)
-}
+func (e *directTextMarshalerEncoder) IsEmpty(p unsafe.Pointer) bool { return e.checkIsEmpty.IsEmpty(p) }
 
 type unmarshalerDecoder struct {
 	valType reflect2.Type

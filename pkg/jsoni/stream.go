@@ -65,19 +65,11 @@ func (s *Stream) Write(p []byte) (nn int, err error) {
 }
 
 // WriteByte writes a single byte.
-func (s *Stream) writeByte(c byte) { s.buf = append(s.buf, c) }
-
-func (s *Stream) write2Bytes(c1 byte, c2 byte) { s.buf = append(s.buf, c1, c2) }
-
-func (s *Stream) write3Bytes(c1 byte, c2 byte, c3 byte) { s.buf = append(s.buf, c1, c2, c3) }
-
-func (s *Stream) write4Bytes(c1 byte, c2 byte, c3 byte, c4 byte) {
-	s.buf = append(s.buf, c1, c2, c3, c4)
-}
-
-func (s *Stream) write5Bytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
-	s.buf = append(s.buf, c1, c2, c3, c4, c5)
-}
+func (s *Stream) writeByte(c byte)                    { s.buf = append(s.buf, c) }
+func (s *Stream) write2Bytes(c1, c2 byte)             { s.buf = append(s.buf, c1, c2) }
+func (s *Stream) write3Bytes(c1, c2, c3 byte)         { s.buf = append(s.buf, c1, c2, c3) }
+func (s *Stream) write4Bytes(c1, c2, c3, c4 byte)     { s.buf = append(s.buf, c1, c2, c3, c4) }
+func (s *Stream) write5Bytes(c1, c2, c3, c4, c5 byte) { s.buf = append(s.buf, c1, c2, c3, c4, c5) }
 
 // Flush writes any buffered data to the underlying io.Writer.
 func (s *Stream) Flush() error {

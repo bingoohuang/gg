@@ -18,10 +18,7 @@ func encoderOfStruct(ctx *ctx, typ reflect2.Type) ValEncoder {
 	structDescriptor := describeStruct(ctx, typ)
 	for _, binding := range structDescriptor.Fields {
 		for _, toName := range binding.ToNames {
-			b := &bindingTo{
-				binding: binding,
-				toName:  toName,
-			}
+			b := &bindingTo{binding: binding, toName: toName}
 			for _, old := range orderedBindings {
 				if old.toName != toName {
 					continue
@@ -50,8 +47,8 @@ func createCheckIsEmpty(ctx *ctx, typ reflect2.Type) checkIsEmpty {
 	if e := createEncoderOfNative(ctx, typ); e != nil {
 		return e
 	}
-	kind := typ.Kind()
-	switch kind {
+
+	switch kind := typ.Kind(); kind {
 	case reflect.Interface:
 		return &dynamicEncoder{typ}
 	case reflect.Struct:

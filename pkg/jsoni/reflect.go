@@ -244,7 +244,7 @@ func _createEncoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 
 	switch kind := typ.Kind(); kind {
 	case reflect.Interface:
-		return &dynamicEncoder{typ}
+		return &dynamicEncoder{valType: typ}
 	case reflect.Struct:
 		return encoderOfStruct(ctx, typ)
 	case reflect.Array:

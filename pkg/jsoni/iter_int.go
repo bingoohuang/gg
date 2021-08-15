@@ -237,9 +237,7 @@ func (iter *Iterator) ReadInt64() (ret int64) {
 }
 
 // ReadUint64 read uint64
-func (iter *Iterator) ReadUint64() uint64 {
-	return iter.readUint64(iter.nextToken())
-}
+func (iter *Iterator) ReadUint64() uint64 { return iter.readUint64(iter.nextToken()) }
 
 func (iter *Iterator) readUint64(c byte) (ret uint64) {
 	ind := intDigits[c]

@@ -49,16 +49,9 @@ func init() {
 	}
 	valueTypes['"'] = StringValue
 	valueTypes['-'] = NumberValue
-	valueTypes['0'] = NumberValue
-	valueTypes['1'] = NumberValue
-	valueTypes['2'] = NumberValue
-	valueTypes['3'] = NumberValue
-	valueTypes['4'] = NumberValue
-	valueTypes['5'] = NumberValue
-	valueTypes['6'] = NumberValue
-	valueTypes['7'] = NumberValue
-	valueTypes['8'] = NumberValue
-	valueTypes['9'] = NumberValue
+	for c := '0'; c <= '9'; c++ {
+		valueTypes[c] = NumberValue
+	}
 	valueTypes['t'] = BoolValue
 	valueTypes['f'] = BoolValue
 	valueTypes['n'] = NilValue
@@ -287,7 +280,7 @@ func (iter *Iterator) unreadByte() {
 	return
 }
 
-// Read read the next JSON element as generic interface{}.
+// Read reads the next JSON element as generic interface{}.
 func (iter *Iterator) Read() interface{} {
 	valueType := iter.WhatIsNext()
 	switch valueType {

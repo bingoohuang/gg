@@ -159,7 +159,7 @@ non_decimal_loop:
 func (iter *Iterator) readNumberAsString() (ret string) {
 	strBuf := [16]byte{}
 	str := strBuf[0:0]
-load_loop:
+loadLoop:
 	for {
 		for i := iter.head; i < iter.tail; i++ {
 			c := iter.buf[i]
@@ -169,7 +169,7 @@ load_loop:
 				continue
 			default:
 				iter.head = i
-				break load_loop
+				break loadLoop
 			}
 		}
 		if !iter.loadMore() {
@@ -205,8 +205,7 @@ func (iter *Iterator) readFloat32SlowPath() (ret float32) {
 
 // ReadFloat64 read float64
 func (iter *Iterator) ReadFloat64() (ret float64) {
-	c := iter.nextToken()
-	if c == '-' {
+	if c := iter.nextToken(); c == '-' {
 		return -iter.readPositiveFloat64()
 	}
 	iter.unreadByte()
@@ -235,8 +234,8 @@ func (iter *Iterator) readPositiveFloat64() (ret float64) {
 		if i == iter.tail {
 			return iter.readFloat64SlowPath()
 		}
-		c = iter.buf[i]
-		switch c {
+
+		switch c = iter.buf[i]; c {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			iter.ReportError("readFloat64", "leading zero is invalid")
 			return
@@ -244,7 +243,7 @@ func (iter *Iterator) readPositiveFloat64() (ret float64) {
 	}
 	value := uint64(ind)
 	// chars before dot
-non_decimal_loop:
+nonDecimalLoop:
 	for ; i < iter.tail; i++ {
 		c = iter.buf[i]
 		ind := floatDigits[c]
@@ -255,7 +254,7 @@ non_decimal_loop:
 			iter.head = i
 			return float64(value)
 		case dotInNumber:
-			break non_decimal_loop
+			break nonDecimalLoop
 		}
 		if value > uint64SafeToMultiple10 {
 			return iter.readFloat64SlowPath()
@@ -301,8 +300,7 @@ func (iter *Iterator) readFloat64SlowPath() (ret float64) {
 	if iter.Error != nil && iter.Error != io.EOF {
 		return
 	}
-	errMsg := validateFloat(str)
-	if errMsg != "" {
+	if errMsg := validateFloat(str); errMsg != "" {
 		iter.ReportError("readFloat64SlowPath", errMsg)
 		return
 	}
@@ -322,8 +320,7 @@ func validateFloat(str string) string {
 	if str[0] == '-' {
 		return "-- is not valid"
 	}
-	dotPos := strings.IndexByte(str, '.')
-	if dotPos != -1 {
+	if dotPos := strings.IndexByte(str, '.'); dotPos != -1 {
 		if dotPos == len(str)-1 {
 			return "dot can not be last character"
 		}
