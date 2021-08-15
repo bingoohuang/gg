@@ -67,7 +67,7 @@ func ContextKeyValuesSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect
 
 func BindSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	argValue := reflect.New(arg.Type)
-	if err := c.ShouldBind(argValue.Interface()); err != nil {
+	if err := ShouldBind(c, argValue.Interface()); err != nil {
 		return reflect.Value{}, &AdapterError{Err: err, Context: "ShouldBind"}
 	}
 

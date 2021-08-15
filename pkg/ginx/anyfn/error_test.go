@@ -40,8 +40,7 @@ func TestError2(t *testing.T) {
 	}
 	af.AddOutSupport(anyfn.OutSupportFn(func(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
 		if err, ok := v.(error); ok {
-			c.JSON(505, Resp{Code: 500, Message: err.Error()})
-
+			c.Render(505, anyfn.JSONRender{Data: Resp{Code: 500, Message: err.Error()}})
 			return true, nil
 		}
 

@@ -40,7 +40,7 @@ func (d DirectResponse) Deal(c *gin.Context) {
 	}
 
 	if d.JSON != nil {
-		c.JSON(d.Code, d.JSON)
+		c.Render(d.Code, JSONRender{Data: d.JSON})
 		return
 	}
 
