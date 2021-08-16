@@ -39,7 +39,7 @@ func TestError2(t *testing.T) {
 		Code    int
 		Message string
 	}
-	af.AddOutSupport(anyfn.OutSupportFn(func(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
+	af.PrependOutSupport(anyfn.OutSupportFn(func(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
 		if err, ok := v.(error); ok {
 			c.Render(505, ginx.JSONRender{Data: Resp{Code: 500, Message: err.Error()}})
 			return true, nil
@@ -55,7 +55,7 @@ func TestError2(t *testing.T) {
 
 	rr := gintest.Get("/error", r)
 	assert.Equal(t, 505, rr.StatusCode())
-	assert.Equal(t, `{"Code":500,"Message":"error occurred"}`, rr.Body())
+	assert.Equal(t, `{"code":500,"message":"error occurred"}`, rr.Body())
 
 	rr = gintest.Get("/ok", r)
 	assert.Equal(t, 200, rr.StatusCode())

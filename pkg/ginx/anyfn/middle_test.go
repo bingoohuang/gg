@@ -40,7 +40,7 @@ func TestMiddlewarePtr(t *testing.T) {
 func TestInSupport(t *testing.T) {
 	user := AuthUser{Name: "TestAuthUser"}
 	af := anyfn.NewAdapter()
-	af.AddInSupport(anyfn.InSupportFn(func(argIn anyfn.ArgIn, argsIn []anyfn.ArgIn, c *gin.Context) (reflect.Value, error) {
+	af.PrependInSupport(anyfn.InSupportFn(func(argIn anyfn.ArgIn, argsIn []anyfn.ArgIn, c *gin.Context) (reflect.Value, error) {
 		if argIn.Type == reflect.TypeOf(AuthUser{}) {
 			return anyfn.ConvertPtr(argIn.Ptr, reflect.ValueOf(user)), nil
 		}

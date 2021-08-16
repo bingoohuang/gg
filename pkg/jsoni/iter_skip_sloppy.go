@@ -115,7 +115,7 @@ func (iter *Iterator) skipString() {
 
 // adapted from: https://github.com/buger/jsonparser/blob/master/parser.go
 // Tries to find the end of string
-// Support if string contains escaped quote symbols.
+// InSupport if string contains escaped quote symbols.
 func (iter *Iterator) findStringEnd() (int, bool) {
 	escaped := false
 	for i := iter.head; i < iter.tail; i++ {

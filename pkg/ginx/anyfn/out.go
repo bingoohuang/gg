@@ -10,12 +10,12 @@ import (
 )
 
 type OutSupport interface {
-	Support(v interface{}, vs []interface{}, c *gin.Context) (bool, error)
+	OutSupport(v interface{}, vs []interface{}, c *gin.Context) (bool, error)
 }
 
 type OutSupportFn func(v interface{}, vs []interface{}, c *gin.Context) (bool, error)
 
-func (o OutSupportFn) Support(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
+func (o OutSupportFn) OutSupport(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
 	return o(v, vs, c)
 }
 

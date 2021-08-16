@@ -8,32 +8,33 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *Adapter) AddInSupport(support InSupport) {
+func (a *Adapter) PrependInSupport(support InSupport) {
 	a.InSupports = append([]InSupport{support}, a.InSupports...)
 }
 
-func (a *Adapter) AddOutSupport(support OutSupport) {
+func (a *Adapter) PrependOutSupport(support OutSupport) {
 	a.OutSupports = append([]OutSupport{support}, a.OutSupports...)
 }
 
 type InSupport interface {
-	Support(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error)
+	InSupport(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error)
 }
 
 type InSupportFn func(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error)
 
-func (f InSupportFn) Support(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
+func (f InSupportFn) InSupport(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	return f(argIn, argsIn, c)
 }
 
 var GinContextType = reflect.TypeOf((*gin.Context)(nil)).Elem()
+var InvalidValue = reflect.Value{}
 
 func GinContextSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	if arg.Ptr && arg.Type == GinContextType { // 直接注入gin.Context
 		return reflect.ValueOf(c), nil
 	}
 
-	return reflect.Value{}, nil
+	return InvalidValue, nil
 }
 
 var HTTPRequestType = reflect.TypeOf((*http.Request)(nil)).Elem()
@@ -43,7 +44,7 @@ func HTTPRequestSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Valu
 		return reflect.ValueOf(c.Request), nil
 	}
 
-	return reflect.Value{}, nil
+	return InvalidValue, nil
 }
 
 var HTTPResponseWriterType = reflect.TypeOf((*http.ResponseWriter)(nil)).Elem()
@@ -53,7 +54,7 @@ func HTTPResponseWriterSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (refle
 		return reflect.ValueOf(c.Writer), nil
 	}
 
-	return reflect.Value{}, nil
+	return InvalidValue, nil
 }
 
 func ContextKeyValuesSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
@@ -63,13 +64,13 @@ func ContextKeyValuesSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect
 		}
 	}
 
-	return reflect.Value{}, nil
+	return InvalidValue, nil
 }
 
 func BindSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	argValue := reflect.New(arg.Type)
 	if err := ginx.ShouldBind(c, argValue.Interface()); err != nil {
-		return reflect.Value{}, &AdapterError{Err: err, Context: "ShouldBind"}
+		return InvalidValue, &AdapterError{Err: err, Context: "ShouldBind"}
 	}
 
 	return ConvertPtr(arg.Ptr, argValue), nil
@@ -81,5 +82,5 @@ func SinglePrimitiveValueSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (ref
 		return arg.convertValue(v)
 	}
 
-	return reflect.Value{}, nil
+	return InvalidValue, nil
 }

@@ -190,6 +190,13 @@ func (a *Adapter) processOut(c *gin.Context, fv reflect.Value, r []reflect.Value
 		vs = append(vs, r[i].Interface())
 	}
 
+	if len(vs) > 0 {
+		if err, ok := vs[len(vs)-1].(error); ok {
+			a.processOutV(c, err, vs)
+			return nil
+		}
+	}
+
 	for _, v := range vs {
 		a.processOutV(c, v, vs)
 	}
@@ -199,7 +206,7 @@ func (a *Adapter) processOut(c *gin.Context, fv reflect.Value, r []reflect.Value
 
 func (a *Adapter) processOutV(c *gin.Context, v interface{}, vs []interface{}) bool {
 	for _, support := range a.OutSupports {
-		if ok, _ := support.Support(v, vs, c); ok {
+		if ok, _ := support.OutSupport(v, vs, c); ok {
 			return ok
 		}
 	}
@@ -223,7 +230,7 @@ func (a *Adapter) createArgs(c *gin.Context, fv reflect.Value) (v []reflect.Valu
 
 func (a *Adapter) createArgValue(c *gin.Context, arg ArgIn, argsIn []ArgIn) (reflect.Value, error) {
 	for _, support := range a.InSupports {
-		v, err := support.Support(arg, argsIn, c)
+		v, err := support.InSupport(arg, argsIn, c)
 		if err == nil && v.IsValid() {
 			return v, nil
 		}
