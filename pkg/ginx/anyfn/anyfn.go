@@ -1,6 +1,7 @@
 package anyfn
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/sirupsen/logrus"
@@ -124,7 +125,7 @@ func (a *Adapter) Attr(k string, v interface{}) OptionFn {
 	}
 }
 
-func (a *Adapter) F(v interface{}, fns ...OptionFn) *anyF {
+func (a *Adapter) F(v interface{}, fns ...OptionFn) adapt.Parent {
 	option := &Option{
 		Attrs: make(map[string]interface{}),
 	}
@@ -184,22 +185,36 @@ func (v Values) Interface() []interface{} {
 
 func (a *Adapter) processOut(c *gin.Context, fv reflect.Value, r []reflect.Value) error {
 	numOut := fv.Type().NumOut()
+	if numOut == 0 {
+		return nil
+	}
 
 	vs := make([]interface{}, 0, numOut)
 	for i := 0; i < numOut; i++ {
 		vs = append(vs, r[i].Interface())
 	}
 
+	lastErrNil := false
 	if numOut > 0 {
 		if e, ok := vs[numOut-1].(error); ok {
-			_, err := a.processOutV(c, e, vs)
-			return err
+			if e != nil {
+				_, err := a.processOutV(c, e, vs)
+				return err
+			} else {
+				lastErrNil = true
+			}
 		}
 	}
 
+	if lastErrNil {
+		vs = vs[:numOut-1]
+	}
+
 	for _, v := range vs {
-		if _, err := a.processOutV(c, v, vs); err != nil {
+		if processed, err := a.processOutV(c, v, vs); err != nil {
 			return err
+		} else if processed {
+			return nil
 		}
 	}
 
@@ -237,6 +252,8 @@ func (a *Adapter) createArgValue(c *gin.Context, arg ArgIn, argsIn []ArgIn) (ref
 		v, err := support.InSupport(arg, argsIn, c)
 		if err == nil && v.IsValid() {
 			return v, nil
+		} else if err != nil {
+			log.Printf("error parse argument %v: %v", arg, err)
 		}
 
 	}

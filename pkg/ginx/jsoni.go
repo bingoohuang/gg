@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
+	"github.com/bingoohuang/gg/pkg/strcase"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"io"
@@ -56,7 +57,7 @@ var JsoniConfig = jsoni.Config{
 }.Froze()
 
 func init() {
-	JsoniConfig.RegisterExtension(&extra.NamingStrategyExtension{Translate: extra.LowerCaseWithUnderscores})
+	JsoniConfig.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})
 }
 
 func decodeJSON(r io.Reader, obj interface{}) error {

@@ -10,7 +10,7 @@ import (
 // Store defines the interface to Store a log.
 type Store interface {
 	// Store stores the log in database like MySQL, InfluxDB, and etc.
-	Store(log *Log)
+	Store(c *gin.Context, log *Log)
 }
 
 // Log describes info about HTTP request.

@@ -17,23 +17,20 @@ func ConvertPtr(isPtr bool, v reflect.Value) reflect.Value {
 	return p
 }
 
-// NonPtrTypeOf returns the non-ptr type of v.
-func NonPtrTypeOf(v interface{}) reflect.Type {
-	if vt, ok := v.(reflect.Type); ok {
-		return vt
-	}
-
+// IndirectTypeOf returns the non-ptr type of v.
+func IndirectTypeOf(v interface{}) reflect.Type {
 	var t reflect.Type
-
-	if vt, ok := v.(reflect.Value); ok {
+	if vt, ok1 := v.(reflect.Type); ok1 {
+		t = vt
+	} else if vt, ok2 := v.(reflect.Value); ok2 {
 		t = vt.Type()
 	} else {
 		t = reflect.TypeOf(v)
 	}
 
-	if t.Kind() != reflect.Ptr {
-		return t
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
 	}
 
-	return t.Elem()
+	return t
 }

@@ -90,7 +90,7 @@ func (m *Middle) Before(c *gin.Context) (after adapt.Handler) {
 		l.RspHeader = copyWriter.Header()
 		l.Attrs = c.Keys
 
-		m.P.Store.Store(l)
+		m.P.Store.Store(c, l)
 	})
 }
 
@@ -165,15 +165,11 @@ type hlog struct {
 
 func (h *hlog) Parent() adapt.Adapter { return h.P }
 
-func (a *Adapter) F(fns ...OptionFn) *hlog {
+func (a *Adapter) F(fns ...OptionFn) adapt.Parent {
 	o := NewOption()
-
 	for _, f := range fns {
 		f(o)
 	}
 
-	return &hlog{
-		P:      a,
-		Option: o,
-	}
+	return &hlog{P: a, Option: o}
 }

@@ -1,6 +1,9 @@
 package hlog
 
-import "github.com/sirupsen/logrus"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
 
 // LogrusStore stores the log as logurs info.
 type LogrusStore struct{}
@@ -11,7 +14,7 @@ func NewLogrusStore() *LogrusStore {
 }
 
 // Store stores the log in database like MySQL, InfluxDB, and etc.
-func (s *LogrusStore) Store(log *Log) {
+func (s *LogrusStore) Store(c *gin.Context, log *Log) {
 	logrus.Infof("http:%+v\n", log)
 }
 
@@ -21,9 +24,9 @@ type Stores struct {
 }
 
 // Store stores the log in database like MySQL, InfluxDB, and etc.
-func (s *Stores) Store(log *Log) {
+func (s *Stores) Store(c *gin.Context, log *Log) {
 	for _, v := range s.Composite {
-		v.Store(log)
+		v.Store(c, log)
 	}
 }
 

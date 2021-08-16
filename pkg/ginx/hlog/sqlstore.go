@@ -5,6 +5,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/ginx/sqlrun"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -75,7 +76,7 @@ func (s *TableCol) IsNullable() bool {
 }
 
 // Store stores the log in database like MySQL, InfluxDB, and etc.
-func (s *SQLStore) Store(l *Log) {
+func (s *SQLStore) Store(c *gin.Context, l *Log) {
 	tables := l.Option.Tables
 	if len(tables) == 0 {
 		tables = s.LogTables

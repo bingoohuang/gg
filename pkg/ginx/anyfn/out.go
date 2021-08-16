@@ -43,7 +43,7 @@ func DefaultSupport(v0 interface{}, vs []interface{}, g *gin.Context) (bool, err
 	}
 
 	switch reflect.Indirect(reflect.ValueOf(v0)).Kind() {
-	case reflect.Struct, reflect.Map, reflect.Interface:
+	case reflect.Struct, reflect.Map, reflect.Interface, reflect.Slice:
 		g.Render(http.StatusOK, ginx.JSONRender{Data: v0})
 	default:
 		g.String(http.StatusOK, "%v", v0)

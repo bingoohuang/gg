@@ -59,7 +59,7 @@ func HTTPResponseWriterSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (refle
 
 func ContextKeyValuesSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	for _, v := range c.Keys {
-		if arg.Type == NonPtrTypeOf(v) {
+		if arg.Type == IndirectTypeOf(v) {
 			return ConvertPtr(arg.Ptr, reflect.ValueOf(v)), nil
 		}
 	}
