@@ -1,6 +1,7 @@
 package anyfn
 
 import (
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func (d DirectResponse) Deal(c *gin.Context) {
 	}
 
 	if d.JSON != nil {
-		c.Render(d.Code, JSONRender{Data: d.JSON})
+		c.Render(d.Code, ginx.JSONRender{Data: d.JSON})
 		return
 	}
 

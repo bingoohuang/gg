@@ -2,6 +2,7 @@ package anyfn_test
 
 import (
 	"errors"
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"github.com/bingoohuang/gg/pkg/ginx/adapt"
 	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
 	"github.com/bingoohuang/gg/pkg/ginx/gintest"
@@ -40,7 +41,7 @@ func TestError2(t *testing.T) {
 	}
 	af.AddOutSupport(anyfn.OutSupportFn(func(v interface{}, vs []interface{}, c *gin.Context) (bool, error) {
 		if err, ok := v.(error); ok {
-			c.Render(505, anyfn.JSONRender{Data: Resp{Code: 500, Message: err.Error()}})
+			c.Render(505, ginx.JSONRender{Data: Resp{Code: 500, Message: err.Error()}})
 			return true, nil
 		}
 

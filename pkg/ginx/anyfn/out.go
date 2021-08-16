@@ -2,6 +2,7 @@ package anyfn
 
 import (
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"net/http"
 	"reflect"
 
@@ -43,7 +44,7 @@ func DefaultSupport(v0 interface{}, vs []interface{}, g *gin.Context) (bool, err
 
 	switch reflect.Indirect(reflect.ValueOf(v0)).Kind() {
 	case reflect.Struct, reflect.Map, reflect.Interface:
-		g.Render(http.StatusOK, JSONRender{Data: v0})
+		g.Render(http.StatusOK, ginx.JSONRender{Data: v0})
 	default:
 		g.String(http.StatusOK, "%v", v0)
 	}

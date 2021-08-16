@@ -1,8 +1,7 @@
-package anyfn
+package ginx
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
@@ -13,7 +12,7 @@ import (
 )
 
 // ShouldBind checks the Content-Type to select a binding engine automatically,
-// Depending the "Content-Type" header different bindings are used:
+// Depending on the "Content-Type" header different bindings are used:
 //     "application/json" --> JSON binding
 //     "application/xml"  --> XML binding
 // otherwise --> returns an error
@@ -61,8 +60,7 @@ func init() {
 }
 
 func decodeJSON(r io.Reader, obj interface{}) error {
-	decoder := JsoniConfig.NewDecoder(r)
-	if err := decoder.Decode(obj); err != nil {
+	if err := JsoniConfig.NewDecoder(r).Decode(obj); err != nil {
 		return err
 	}
 	return validate(obj)
@@ -84,22 +82,15 @@ type JSONRender struct {
 var jsonContentType = []string{"application/json; charset=utf-8"}
 
 // Render (JSON) writes data with custom ContentType.
-func (r JSONRender) Render(w http.ResponseWriter) (err error) {
-	if err = WriteJSON(w, r.Data); err != nil {
-		panic(err)
-	}
-	return
-}
+func (r JSONRender) Render(w http.ResponseWriter) (err error) { return WriteJSON(w, r.Data) }
 
 // WriteContentType (JSON) writes JSON ContentType.
-func (r JSONRender) WriteContentType(w http.ResponseWriter) {
-	writeContentType(w, jsonContentType)
-}
+func (r JSONRender) WriteContentType(w http.ResponseWriter) { writeContentType(w, jsonContentType) }
 
 // WriteJSON marshals the given interface object and writes it with custom ContentType.
 func WriteJSON(w http.ResponseWriter, obj interface{}) error {
 	writeContentType(w, jsonContentType)
-	jsonBytes, err := json.Marshal(obj)
+	jsonBytes, err := JsoniConfig.Marshal(obj)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package anyfn
 
 import (
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"net/http"
 	"reflect"
 
@@ -67,7 +68,7 @@ func ContextKeyValuesSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect
 
 func BindSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	argValue := reflect.New(arg.Type)
-	if err := ShouldBind(c, argValue.Interface()); err != nil {
+	if err := ginx.ShouldBind(c, argValue.Interface()); err != nil {
 		return reflect.Value{}, &AdapterError{Err: err, Context: "ShouldBind"}
 	}
 
