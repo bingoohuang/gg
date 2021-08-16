@@ -190,8 +190,8 @@ func (a *Adapter) processOut(c *gin.Context, fv reflect.Value, r []reflect.Value
 		vs = append(vs, r[i].Interface())
 	}
 
-	if len(vs) > 0 {
-		if err, ok := vs[len(vs)-1].(error); ok {
+	if numOut > 0 {
+		if err, ok := vs[numOut-1].(error); ok {
 			a.processOutV(c, err, vs)
 			return nil
 		}
