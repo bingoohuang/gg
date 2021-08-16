@@ -191,27 +191,31 @@ func (a *Adapter) processOut(c *gin.Context, fv reflect.Value, r []reflect.Value
 	}
 
 	if numOut > 0 {
-		if err, ok := vs[numOut-1].(error); ok {
-			a.processOutV(c, err, vs)
-			return nil
+		if e, ok := vs[numOut-1].(error); ok {
+			_, err := a.processOutV(c, e, vs)
+			return err
 		}
 	}
 
 	for _, v := range vs {
-		a.processOutV(c, v, vs)
+		if _, err := a.processOutV(c, v, vs); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (a *Adapter) processOutV(c *gin.Context, v interface{}, vs []interface{}) bool {
+func (a *Adapter) processOutV(c *gin.Context, v interface{}, vs []interface{}) (bool, error) {
 	for _, support := range a.OutSupports {
-		if ok, _ := support.OutSupport(v, vs, c); ok {
-			return ok
+		if ok, err := support.OutSupport(v, vs, c); err != nil {
+			return false, err
+		} else if ok {
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func (a *Adapter) createArgs(c *gin.Context, fv reflect.Value) (v []reflect.Value, err error) {
