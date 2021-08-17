@@ -173,6 +173,14 @@ func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) err
 		default:
 			return ErrNotSupported
 		}
+	case reflect.String, reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		scanner := &Col1Scanner{MaxRows: 1}
+		err = s.QueryRaw(db, options, WithRowScanner(scanner))
+		if len(scanner.Data) > 0 {
+			input = scanner.Data[0]
+		}
 	default:
 		return ErrNotSupported
 	}

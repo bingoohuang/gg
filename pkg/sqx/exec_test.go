@@ -37,6 +37,11 @@ func TestQueryAsBeans(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, []int{500, 1000}, ages)
 
+	var age1 int
+	err = sqx.NewSQL("select age from person order by age").Query(db, &age1)
+	assert.Nil(t, err)
+	assert.Equal(t, 500, age1)
+
 	type Person struct {
 		ID string
 		Ag int `col:"AGE"`
