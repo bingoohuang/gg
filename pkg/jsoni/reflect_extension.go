@@ -411,12 +411,17 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 			case "omitempty":
 				shouldOmitEmpty = true
 			case "string":
-				if b.Field.Type().Kind() == reflect.String {
+				switch k := b.Field.Type().Kind(); k {
+				case reflect.String:
 					b.Decoder = &stringModeStringDecoder{b.Decoder, cfg}
 					b.Encoder = &stringModeStringEncoder{b.Encoder, cfg}
-				} else {
-					b.Decoder = &stringModeNumberDecoder{b.Decoder}
-					b.Encoder = &stringModeNumberEncoder{b.Encoder}
+				default:
+					if (k == reflect.Int64 || k == reflect.Uint64) && cfg.int64AsString {
+						// ignore
+					} else {
+						b.Decoder = &stringModeNumberDecoder{b.Decoder}
+						b.Encoder = &stringModeNumberEncoder{b.Encoder}
+					}
 				}
 			}
 		}

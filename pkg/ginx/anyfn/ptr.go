@@ -19,6 +19,10 @@ func ConvertPtr(isPtr bool, v reflect.Value) reflect.Value {
 
 // IndirectTypeOf returns the non-ptr type of v.
 func IndirectTypeOf(v interface{}) reflect.Type {
+	if v == nil {
+		return reflect.TypeOf(v)
+	}
+
 	var t reflect.Type
 	if vt, ok1 := v.(reflect.Type); ok1 {
 		t = vt
