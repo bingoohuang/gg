@@ -447,7 +447,7 @@ func convertCustomBinding(insert *Insert, insertPos *int, lastColName *string, v
 }
 
 func (t DBType) checkMySQLOnDuplicateKey(insertStmt *Insert) error {
-	// MySQL 的 ON DUPLICATE KEY 不被支持
+	// 只有MySQL 的 ON DUPLICATE KEY被支持
 	// eg. INSERT INTO table (a,b,c) VALUES (1,2,3),(4,5,6) ON DUPLICATE KEY UPDATE c=VALUES(a)+VALUES(b);
 	if insertStmt != nil && len(insertStmt.OnDup) > 0 {
 		switch t {
