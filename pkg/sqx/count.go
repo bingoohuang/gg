@@ -11,7 +11,7 @@ var ErrNotSelect = errors.New("not a select query statement")
 
 // CreateCount creates a count query sql.
 func (s SQL) CreateCount() (*SQL, error) {
-	parsed, err := sqlparser.Parse(s.Query)
+	parsed, err := sqlparser.Parse(s.Q)
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +35,9 @@ func (s SQL) CreateCount() (*SQL, error) {
 	sel.Limit = nil
 
 	c := &SQL{
-		Query: sqlparser.String(sel),
-		Vars:  s.Vars,
-		Ctx:   s.Ctx,
+		Q:    sqlparser.String(sel),
+		Vars: s.Vars,
+		Ctx:  s.Ctx,
 	}
 
 	if limitVarsCount > 0 && len(s.Vars) >= limitVarsCount {

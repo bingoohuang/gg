@@ -59,7 +59,7 @@ type row struct {
 
 func (s *DbSync) sync(query string) {
 	var rows []row
-	err := sqx.NewSQL(query).QueryAsBeans(s.db, &rows)
+	err := sqx.NewSQL(query).Query(s.db, &rows)
 	if err != nil {
 		log.Printf("E! failed to execute query: %s, err: %v", query, err)
 		return

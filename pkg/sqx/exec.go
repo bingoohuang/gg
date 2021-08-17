@@ -2,6 +2,7 @@ package sqx
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -38,15 +39,15 @@ func (s SQL) QueryAsString(db SqxDB) (string, error) {
 // Update executes an update/delete query and returns rows affected.
 func (s SQL) Update(db SqxDB) (int64, error) {
 	if s.Log {
-		log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+		log.Printf("I! execute [%s] with [%v]", s.Q, s.Vars)
 	}
 
 	var r sql.Result
 	var err error
 	if s.Ctx != nil {
-		r, err = db.ExecContext(s.Ctx, s.Query, s.Vars...)
+		r, err = db.ExecContext(s.Ctx, s.Q, s.Vars...)
 	} else {
-		r, err = db.Exec(s.Query, s.Vars...)
+		r, err = db.Exec(s.Q, s.Vars...)
 	}
 	if err != nil {
 		return 0, err
@@ -130,14 +131,56 @@ func (o QueryOption) allowRowNum(rowNum int) bool {
 	return o.MaxRows == 0 || rowNum <= o.MaxRows
 }
 
-// QueryAsBeans query return with result.
-func (s SQL) QueryAsBeans(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
+// Query queries return with result.
+func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
 	resultValue := reflect.ValueOf(result)
 	if resultValue.Kind() != reflect.Ptr {
 		return fmt.Errorf("result must be a pointer")
 	}
 
+	elem := resultValue.Elem()
+	elemKind := elem.Kind()
+	if elemKind == reflect.Ptr { // 如果依然是指针
+		typ := elem.Type().Elem() // 获取二级指针底层类型
+		val := reflect.New(typ)   // 创新底层类型对象
+		err := s.Query(db, val.Interface(), optionFns...)
+		if err == nil {
+			elem.Set(val) // 赋予一级指针新对象地址
+		}
+		return err
+	}
+
 	option := QueryOptionFns(optionFns).Options()
+
+	var err error
+	var input interface{}
+
+	options := WithOptions(option)
+	switch elemKind {
+	case reflect.Struct:
+		input, err = s.QueryAsMap(db, options)
+	case reflect.Slice:
+		sliceElemType := elem.Type().Elem()
+		switch sliceElemType.Kind() {
+		case reflect.Struct:
+			input, err = s.QueryAsMaps(db, options)
+		case reflect.String, reflect.Bool,
+			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			scanner := &Col1Scanner{}
+			err = s.QueryRaw(db, options, WithRowScanner(scanner))
+			input = scanner.Data
+		default:
+			return ErrNotSupported
+		}
+	default:
+		return ErrNotSupported
+	}
+
+	if err != nil {
+		return err
+	}
+
 	decoder, err := mapstruct.NewDecoder(&mapstruct.Config{
 		Result:           result,
 		TagNames:         option.TagNames,
@@ -148,22 +191,28 @@ func (s SQL) QueryAsBeans(db SqxDB, result interface{}, optionFns ...QueryOption
 		return err
 	}
 
-	var input interface{}
-
-	if resultValue.Elem().Kind() == reflect.Struct {
-		input, err = s.QueryAsMap(db, WithOptions(option))
-		if err == nil && input == nil {
-			return sql.ErrNoRows
-		}
-	} else {
-		input, err = s.QueryAsMaps(db, WithOptions(option))
-	}
-
-	if err != nil {
-		return err
-	}
-
 	return decoder.Decode(input)
+}
+
+var ErrNotSupported = errors.New("sqx: Unsupported result type")
+
+type Col1Scanner struct {
+	Data    []string
+	Columns []string
+	MaxRows int
+}
+
+func (s *Col1Scanner) InitRowScanner(columns []string) {
+	s.Columns = append(s.Columns, columns...)
+}
+
+func (s *Col1Scanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
+	if v, err := ScanSliceRow(rows, s.Columns); err != nil {
+		return false, err
+	} else {
+		s.Data = append(s.Data, v[0])
+		return s.MaxRows == 0 || len(s.Data) < s.MaxRows, nil
+	}
 }
 
 type MapScanner struct {
@@ -172,24 +221,24 @@ type MapScanner struct {
 	MaxRows int
 }
 
-func (r *MapScanner) Data0() map[string]string {
-	if len(r.Data) == 0 {
+func (s *MapScanner) Data0() map[string]string {
+	if len(s.Data) == 0 {
 		return nil
 	}
 
-	return r.Data[0]
+	return s.Data[0]
 }
 
-func (m *MapScanner) InitRowScanner(columns []string) {
-	m.Columns = append(m.Columns, columns...)
+func (s *MapScanner) InitRowScanner(columns []string) {
+	s.Columns = append(s.Columns, columns...)
 }
 
-func (m *MapScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
-	if v, err := ScanMapRow(rows, m.Columns); err != nil {
+func (s *MapScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
+	if v, err := ScanMapRow(rows, s.Columns); err != nil {
 		return false, err
 	} else {
-		m.Data = append(m.Data, v)
-		return m.MaxRows == 0 || len(m.Data) < m.MaxRows, nil
+		s.Data = append(s.Data, v)
+		return s.MaxRows == 0 || len(s.Data) < s.MaxRows, nil
 	}
 }
 
@@ -205,6 +254,20 @@ func (s SQL) QueryAsMap(db SqxDB, optionFns ...QueryOptionFn) (map[string]string
 	scanner := &MapScanner{Data: make([]map[string]string, 0), MaxRows: 1}
 	err := s.QueryRaw(db, append(optionFns, WithRowScanner(scanner))...)
 	return scanner.Data0(), err
+}
+
+func ScanSliceRow(rows *sql.Rows, columns []string) ([]string, error) {
+	holders, err := ScanRow(len(columns), rows)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make([]string, len(columns))
+	for i, h := range holders {
+		m[i] = h.String
+	}
+
+	return m, nil
 }
 
 func ScanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
@@ -294,12 +357,18 @@ func (s SQL) QueryRaw(db SqxDB, optionFns ...QueryOptionFn) error {
 		initial.InitRowScanner(columns)
 	}
 
+	rows := 0
 	for rn := 0; r.Next() && option.allowRowNum(rn+1); rn++ {
+		rows++
 		if continued, err := option.Scanner.ScanRow(r, rn); err != nil {
 			return err
 		} else if !continued {
 			break
 		}
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 
 	return nil
@@ -323,14 +392,14 @@ func (s SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *
 	option := QueryOptionFns(optionFns).Options()
 
 	if s.Log {
-		log.Printf("I! execute [%s] with [%v]", s.Query, s.Vars)
+		log.Printf("I! execute [%s] with [%v]", s.Q, s.Vars)
 	}
 	var r *sql.Rows
 	var err error
 	if s.Ctx != nil {
-		r, err = db.QueryContext(s.Ctx, s.Query, s.Vars...)
+		r, err = db.QueryContext(s.Ctx, s.Q, s.Vars...)
 	} else {
-		r, err = db.Query(s.Query, s.Vars...)
+		r, err = db.Query(s.Q, s.Vars...)
 	}
 	if err != nil {
 		return nil, nil, nil, err

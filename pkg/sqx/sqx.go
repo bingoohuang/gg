@@ -18,10 +18,10 @@ var ErrConditionKind = errors.New("condition kind should be struct or its pointe
 
 // SQL is a structure for query and vars.
 type SQL struct {
-	Query string
-	Vars  []interface{}
-	Ctx   context.Context
-	Log   bool
+	Q    string
+	Vars []interface{}
+	Ctx  context.Context
+	Log  bool
 }
 
 func (s *SQL) AppendIf(ok bool, sub string, args ...interface{}) *SQL {
@@ -32,16 +32,16 @@ func (s *SQL) AppendIf(ok bool, sub string, args ...interface{}) *SQL {
 	return s.Append(sub, args...)
 }
 
-// Append apppends sub statement to the query.
+// Append appends sub statement to the query.
 func (s *SQL) Append(sub string, args ...interface{}) *SQL {
 	if sub == "" {
 		return s
 	}
 
 	if strings.HasPrefix(sub, " ") {
-		s.Query += sub
+		s.Q += sub
 	} else {
-		s.Query += " " + sub
+		s.Q += " " + sub
 	}
 
 	s.Vars = append(s.Vars, args...)
@@ -51,7 +51,7 @@ func (s *SQL) Append(sub string, args ...interface{}) *SQL {
 
 // NewSQL create s SQL object.
 func NewSQL(query string, vars ...interface{}) *SQL {
-	return &SQL{Query: query, Vars: vars}
+	return &SQL{Q: query, Vars: vars}
 }
 
 // WithVars replace vars.
@@ -74,10 +74,10 @@ func (s *SQL) AndIf(ok bool, cond string, args ...interface{}) *SQL {
 func (s *SQL) And(cond string, args ...interface{}) *SQL {
 	switch len(args) {
 	case 0:
-		if !ss.ContainsFold(s.Query, "where") {
-			s.Query += " where " + cond
+		if !ss.ContainsFold(s.Q, "where") {
+			s.Q += " where " + cond
 		} else {
-			s.Query += " and " + cond
+			s.Q += " and " + cond
 		}
 		return s
 	case 1:
@@ -93,10 +93,10 @@ func (s *SQL) And(cond string, args ...interface{}) *SQL {
 		if isSlice && arg.Len() > 1 && strings.Count(cond, "?") == 1 {
 			cond = strings.Replace(cond, "?", ss.Repeat("?", ",", arg.Len()), 1)
 		}
-		if !ss.ContainsFold(s.Query, "where") {
-			s.Query += " where " + cond
+		if !ss.ContainsFold(s.Q, "where") {
+			s.Q += " where " + cond
 		} else {
-			s.Query += " and " + cond
+			s.Q += " and " + cond
 		}
 
 		if isSlice {
@@ -116,7 +116,7 @@ func (s *SQL) And(cond string, args ...interface{}) *SQL {
 func CreateSQL(base string, cond interface{}) (*SQL, error) {
 	result := &SQL{}
 	if cond == nil {
-		result.Query = base
+		result.Q = base
 		return result, nil
 	}
 
@@ -131,7 +131,7 @@ func CreateSQL(base string, cond interface{}) (*SQL, error) {
 	}
 
 	if condSql == "" {
-		result.Query = base
+		result.Q = base
 		return result, nil
 	}
 
@@ -154,7 +154,7 @@ func CreateSQL(base string, cond interface{}) (*SQL, error) {
 	}
 
 	iw.SetWhere(condParsed.(*sqlparser.Select).Where)
-	result.Query = sqlparser.String(parsed)
+	result.Q = sqlparser.String(parsed)
 
 	return result, nil
 }

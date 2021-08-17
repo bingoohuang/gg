@@ -170,18 +170,19 @@ func (*ParenSelect) iSelectStatement() {}
 
 // Select represents a SELECT statement.
 type Select struct {
-	Cache       string
-	Comments    Comments
-	Distinct    string
-	Hints       string
-	SelectExprs SelectExprs
-	From        TableExprs
-	Where       *Where
-	GroupBy     GroupBy
-	Having      *Where
-	OrderBy     OrderBy
-	Limit       *Limit
-	Lock        string
+	Cache        string
+	Comments     Comments
+	Distinct     string
+	Hints        string
+	SelectExprs  SelectExprs
+	From         TableExprs
+	Where        *Where
+	GroupBy      GroupBy
+	Having       *Where
+	OrderBy      OrderBy
+	Limit        *Limit
+	LimitSQLNode SQLNode
+	Lock         string
 }
 
 func (node *Select) GetWhere() *Where  { return node.Where }
@@ -215,13 +216,23 @@ func (node *Select) SetLimit(limit *Limit) {
 	node.Limit = limit
 }
 
+// SetLimitSQLNode sets the limit clause.
+func (node *Select) SetLimitSQLNode(limit SQLNode) {
+	node.LimitSQLNode = limit
+}
+
 // Format formats the node.
 func (node *Select) Format(buf *TrackedBuffer) {
+	limit := node.LimitSQLNode
+	if limit == nil {
+		limit = node.Limit
+	}
+
 	buf.Myprintf("select %v%s%s%s%v from %v%v%v%v%v%v%s",
 		node.Comments, node.Cache, node.Distinct, node.Hints, node.SelectExprs,
 		node.From, node.Where,
 		node.GroupBy, node.Having, node.OrderBy,
-		node.Limit, node.Lock)
+		limit, node.Lock)
 }
 
 // WalkSubtree walks the nodes of the subtree.

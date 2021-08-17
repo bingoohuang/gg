@@ -73,6 +73,44 @@ func (p *Paging) SetRowsCount(total int) {
 	}
 }
 
+// CompatibleLimit represents a LIMIT clause.
+type CompatibleLimit struct {
+	*Limit
+	DBType
+}
+
+// Format formats the node.
+func (n *CompatibleLimit) Format(buf *TrackedBuffer) {
+	if n == nil {
+		return
+	}
+	switch n.DBType {
+	case Mysql, Sqlite3, Dm, Gbase, Clickhouse:
+		buf.Myprintf(" limit ")
+		if n.Offset != nil {
+			buf.Myprintf("%v, ", n.Offset)
+		}
+		buf.Myprintf("%v", n.Rowcount)
+	case Postgresql, Kingbase, Shentong:
+		// https://www.postgresql.org/docs/9.3/queries-limit.html
+		// SELECT select_list
+		//    FROM table_expression
+		//    [ ORDER BY ... ]
+		//    [ LIMIT { number | ALL } ] [ OFFSET number ]
+		buf.Myprintf(" limit %v", n.Rowcount)
+		if n.Offset != nil {
+			buf.Myprintf("offset %v", n.Offset)
+		}
+	case Mssql, Oracle:
+		if n.Offset != nil {
+			buf.Myprintf(" offset %v rows", n.Offset)
+		}
+		buf.Myprintf(" fetch next %v rows only", n.Rowcount)
+	default:
+		panic(ErrUnsupportedDBType)
+	}
+}
+
 func (t DBType) createPagingClause(plFormatter PlaceholderFormatter, p *Paging, placeholder bool) (page string, bindArgs []interface{}) {
 	var s strings.Builder
 	start := p.PageSize * (p.PageSeq - 1)
@@ -352,19 +390,23 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		selectStmt.SetLimit(nil)
 	}
 
+	p := config.Paging
+	isPaging := selectStmt != nil && p != nil
+	if !isPaging && limit != nil {
+		selectStmt.SetLimitSQLNode(&CompatibleLimit{Limit: limit, DBType: t})
+	}
+
 	buf.Myprintf("%v", stmt)
 	q := buf.String()
 	buf.Reset()
 
-	if p := config.Paging; selectStmt != nil && p != nil {
+	if isPaging {
 		pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
 		cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
 		if p.RowsCount == CreateCountingQuery {
 			cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
 		}
 		q += " " + pagingClause
-	} else if limit != nil {
-		return "", nil, fmt.Errorf("limit is not supported directly in SQL, error %w", ErrSyntax)
 	}
 
 	if f := config.AutoIncrementField; f != "" {

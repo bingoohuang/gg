@@ -34,9 +34,9 @@ func ExampleCondition() {
 	fmt.Println(fmt.Sprintf("%+v", ret), err)
 
 	// Output:
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? order by code Vars:[%天问一号% 火星基地] Ctx:<nil> Log:false} <nil>
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code Vars:[%嫦娥% 广寒宫 100] Ctx:<nil> Log:false} <nil>
-	// &{Query:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code limit ?, ? Vars:[%嫦娥% 广寒宫 100 1 10] Ctx:<nil> Log:false} <nil>
+	// &{Q:select code, name, addr, email from person where name like ? and addr = ? order by code Vars:[%天问一号% 火星基地] Ctx:<nil> Log:false} <nil>
+	// &{Q:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code Vars:[%嫦娥% 广寒宫 100] Ctx:<nil> Log:false} <nil>
+	// &{Q:select code, name, addr, email from person where name like ? and addr = ? and code > ? order by code limit ?, ? Vars:[%嫦娥% 广寒宫 100 1 10] Ctx:<nil> Log:false} <nil>
 }
 
 func TestEmbeddedCondition(t *testing.T) {
@@ -53,7 +53,7 @@ func TestEmbeddedCondition(t *testing.T) {
 
 	x, err := sqx.CreateSQL(`select a,b,c from t`, Cond2{Cond1: Cond1{BigName: "bb"}, E: "ee"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where big_name = ? and e = ?`, x.Query)
+	assert.Equal(t, `select a, b, c from t where big_name = ? and e = ?`, x.Q)
 	assert.Equal(t, []interface{}{"bb", "ee"}, x.Vars)
 }
 
@@ -64,17 +64,17 @@ func TestModifier(t *testing.T) {
 
 	x, err := sqx.CreateSQL(`select a,b,c from t`, Cond2{E: "ee"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where e like ?`, x.Query)
+	assert.Equal(t, `select a, b, c from t where e like ?`, x.Q)
 	assert.Equal(t, []interface{}{"%ee%"}, x.Vars)
 }
 
 func TestManual(t *testing.T) {
-	s := sqx.SQL{Query: `select * from warn_template_rule`}
+	s := sqx.SQL{Q: `select * from warn_template_rule`}
 	s.And(`source_type = ?`, "x")
 	s.And(`temp_source_id = ?`, "y")
 	s.And(`id in (?)`, []string{"a", "b", "c"})
 	s.Append(`order by id desc`)
-	assert.Equal(t, `select * from warn_template_rule where source_type = ? and temp_source_id = ? and id in (?,?,?) order by id desc`, s.Query)
+	assert.Equal(t, `select * from warn_template_rule where source_type = ? and temp_source_id = ? and id in (?,?,?) order by id desc`, s.Q)
 	assert.Equal(t, []interface{}{"x", "y", "a", "b", "c"}, s.Vars)
 }
 
@@ -89,44 +89,44 @@ func TestCondition(t *testing.T) {
 
 	x, err := sqx.CreateSQL(`select a,b,c from t`, cond{})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where c2 > ? and e = ?`, x.Query)
+	assert.Equal(t, `select a, b, c from t where c2 > ? and e = ?`, x.Q)
 	assert.Equal(t, []interface{}{0, ""}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t`, cond{E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where c2 > ?`, x.Query)
+	assert.Equal(t, `select a, b, c from t where c2 > ?`, x.Q)
 	assert.Equal(t, []interface{}{0}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t order by a`, &cond{E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where c2 > ? order by a`, x.Query)
+	assert.Equal(t, `select a, b, c from t where c2 > ? order by a`, x.Q)
 	assert.Equal(t, []interface{}{0}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t order by a`, cond{D: -1, E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a,b,c from t order by a`, x.Query)
+	assert.Equal(t, `select a,b,c from t order by a`, x.Q)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t order by a`, cond{B: "bb", D: -1, E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where b = ? order by a`, x.Query)
+	assert.Equal(t, `select a, b, c from t where b = ? order by a`, x.Q)
 	assert.Equal(t, []interface{}{"bb"}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t where a = 1 order by a`, cond{B: "bb", D: -1, E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where a = 1 and b = ? order by a`, x.Query)
+	assert.Equal(t, `select a, b, c from t where a = 1 and b = ? order by a`, x.Q)
 	assert.Equal(t, []interface{}{"bb"}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t where a = 1 or a = 2 order by a`, cond{B: "bb", D: -1, E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and b = ? order by a`, x.Query)
+	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and b = ? order by a`, x.Q)
 	assert.Equal(t, []interface{}{"bb"}, x.Vars)
 
 	x, err = sqx.CreateSQL(`select a,b,c from t where a = 1 or a = 2 order by a`, cond{C: 10, D: -1, E: "null"})
 	assert.Nil(t, err)
-	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and c0 > ? order by a`, x.Query)
+	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and c0 > ? order by a`, x.Q)
 	assert.Equal(t, []interface{}{10}, x.Vars)
 
 	x.Append(`limit ?,?`, 0, 100)
-	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and c0 > ? order by a limit ?,?`, x.Query)
+	assert.Equal(t, `select a, b, c from t where (a = 1 or a = 2) and c0 > ? order by a limit ?,?`, x.Q)
 	assert.Equal(t, []interface{}{10, 0, 100}, x.Vars)
 }

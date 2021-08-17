@@ -8,24 +8,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func ExampleCreateCount() { // nolint:govet
+func ExampleCreateCount() {
 	ret, err := sqx.SQL{
-		Query: `select a, b, c from t where a = ? and b = ? order by a limit ?, ?`,
-		Vars:  []interface{}{"地球", "亚洲", 0, 100},
+		Q:    `select a, b, c from t where a = ? and b = ? order by a limit ?, ?`,
+		Vars: []interface{}{"地球", "亚洲", 0, 100},
 	}.CreateCount()
 	fmt.Println(fmt.Sprintf("%+v", ret), err)
 
 	// Output:
-	// &{Query:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲] Ctx:<nil> Log:false} <nil>
+	// &{Q:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲] Ctx:<nil> Log:false} <nil>
 }
 
 func TestCreateCount(t *testing.T) {
 	s := &sqx.SQL{
-		Query: `select a,b,c from t order by a`,
+		Q: `select a,b,c from t order by a`,
 	}
 
 	c, err := s.CreateCount()
 	assert.Nil(t, err)
-	assert.Equal(t, `select count(*) from t`, c.Query)
+	assert.Equal(t, `select count(*) from t`, c.Q)
 	assert.Nil(t, c.Vars)
 }
