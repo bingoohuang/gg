@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -21,9 +22,26 @@ func ExampleMarshal() {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	os.Stdout.Write(b)
+	fmt.Println(string(b))
+
+	var p *int
+	b, err = json.Marshal(p)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(b))
+
+	b, err = Marshal(p)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(b))
 	// Output:
 	// {"ID":1,"Name":"Reds","Colors":["Crimson","Red","Ruby","Maroon"]}
+	// null
+	// null
 }
 
 func ExampleUnmarshal() {
