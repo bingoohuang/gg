@@ -178,27 +178,27 @@ func (r *sqlRun) createFn(f StructField) error {
 }
 
 func (r *sqlRun) MakeFunc(f StructField, numIn, numOut int) func([]reflect.Value) ([]reflect.Value, error) {
-	var fn func(int, StructField, []reflect.Type, []reflect.Value) ([]reflect.Value, error)
-
-	switch isBindByName := r.isBindBy(ByName); {
-	case !r.IsQuery && isBindByName:
-		fn = r.execByName
-	case !r.IsQuery && !isBindByName:
-		fn = r.execBySeq
-	case r.IsQuery && isBindByName:
-		fn = r.queryByName
-	default: // isQuery && !isBindByName:
-		fn = r.queryBySeq
-	}
-
+	fn := r.getExecFn()
 	return func(args []reflect.Value) ([]reflect.Value, error) {
 		return fn(numIn, f, makeOutTypes(f.Type, numOut), args)
 	}
 }
 
+func (r *sqlRun) getExecFn() func(int, StructField, []reflect.Type, []reflect.Value) ([]reflect.Value, error) {
+	switch isBindByName := r.isBindBy(ByName); {
+	case !r.IsQuery && isBindByName:
+		return r.execByName
+	case !r.IsQuery && !isBindByName:
+		return r.execBySeq
+	case r.IsQuery && isBindByName:
+		return r.queryByName
+	default: // isQuery && !isBindByName:
+		return r.queryBySeq
+	}
+}
+
 func makeOutTypes(outType reflect.Type, numOut int) []reflect.Type {
 	rt := make([]reflect.Type, numOut)
-
 	for i := 0; i < numOut; i++ {
 		rt[i] = outType.Out(i)
 	}
@@ -313,8 +313,7 @@ func indexOfTypes(types []reflect.Type, typ reflect.Type) int {
 	return -1
 }
 
-func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
-	args []reflect.Value) ([]reflect.Value, error) {
+func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type, args []reflect.Value) ([]reflect.Value, error) {
 	var bean reflect.Value
 
 	if numIn > 0 {
@@ -357,6 +356,10 @@ func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
 		if err := parsed.eval(numIn, f, namedMap); err != nil {
 			return nil, err
 		}
+		vars, err := parsed.createNamedVars(item0)
+		if err != nil {
+			return nil, err
+		}
 
 		if lastSQL != parsed.runSQL {
 			lastSQL = parsed.runSQL
@@ -366,24 +369,18 @@ func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
 				return nil, fmt.Errorf("replaceQuery %s error %w", parsed.runSQL, err)
 			}
 
-			log.Printf("PrepareContext [%s]", query)
+			log.Printf("exec %s [%s] with %v", parsed.ID, query, vars)
 			if pr, err = tx.PrepareContext(parsed.opt.Ctx, query); err != nil {
 				return nil, fmt.Errorf("failed to prepare sql [%s] error %w", r.RawStmt, err)
 			}
 		}
 
-		vars, err := parsed.createNamedVars(item0)
-		if err != nil {
-			return nil, err
-		}
-
-		parsed.logPrepare(vars)
-
 		lastResult, err = pr.ExecContext(parsed.opt.Ctx, vars...)
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute %s with vars %v error %w", parsed.runSQL, vars, err)
 		}
+
+		LogSqlResult(lastResult)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -391,6 +388,12 @@ func (r *sqlRun) execByName(numIn int, f StructField, outTypes []reflect.Type,
 	}
 
 	return convertExecResult(lastResult, lastSQL, outTypes)
+}
+
+func LogSqlResult(lastResult sql.Result) {
+	lastInsertId, _ := lastResult.LastInsertId()
+	rowsAffected, _ := lastResult.RowsAffected()
+	log.Printf("Result lastInsertId: %d, rowsAffected: %d", lastInsertId, rowsAffected)
 }
 
 func (p *SQLParsed) createFieldSqlParts(m map[string]interface{}, bean reflect.Value) map[string]interface{} {
@@ -407,11 +410,9 @@ func (p *SQLParsed) createFieldSqlParts(m map[string]interface{}, bean reflect.V
 
 			if f.Type.AssignableTo(LimitType) {
 				l := bean.Field(i).Interface().(Limit)
-				p.fp.AddFieldSqlPart(sqlPart,
-					[]interface{}{l.Offset, l.Length}, false)
+				p.fp.AddFieldSqlPart(sqlPart, []interface{}{l.Offset, l.Length}, false)
 			} else {
-				p.fp.AddFieldSqlPart(sqlPart,
-					[]interface{}{bean.Field(i).Interface()}, true)
+				p.fp.AddFieldSqlPart(sqlPart, []interface{}{bean.Field(i).Interface()}, true)
 			}
 		}
 	}
@@ -480,10 +481,6 @@ func (p *SQLParsed) createNamedVars(bean reflect.Value) ([]interface{}, error) {
 	return vars, nil
 }
 
-func (p *SQLParsed) logPrepare(vars interface{}) {
-	p.opt.Logger.LogStart(p.ID, p.runSQL, vars)
-}
-
 func (r *sqlRun) execBySeq(numIn int, f StructField,
 	outTypes []reflect.Type, args []reflect.Value) ([]reflect.Value, error) {
 	parsed := *r.SQLParsed
@@ -493,20 +490,20 @@ func (r *sqlRun) execBySeq(numIn int, f StructField,
 	}
 
 	vars := parsed.makeVars(args)
-	parsed.logPrepare(vars)
-
 	db := r.opt.DBGetter.GetDB()
 	query, err := r.replaceQuery(db, parsed.runSQL)
 	if err != nil {
 		return nil, fmt.Errorf("replaceQuery %s error %w", parsed.runSQL, err)
 	}
 
-	log.Printf("ExecContext query [%s] with %v", query, vars)
+	log.Printf("exec query %s [%s] with %v", r.ID, query, vars)
 
 	result, err := db.ExecContext(parsed.opt.Ctx, query, vars...)
 	if err != nil {
 		return nil, fmt.Errorf("execute %s error %w", r.SQL, err)
 	}
+
+	LogSqlResult(result)
 
 	results, err := convertExecResult(result, query, outTypes)
 	if err != nil {
@@ -561,8 +558,13 @@ func (p *SQLParsed) processQueryRows(rows *sql.Rows, outTypes []reflect.Type) ([
 	if err != nil {
 		return nil, err
 	}
+	ri := 0
 
-	for ri := 0; rows.Next() && (p.opt.QueryMaxRows <= 0 || ri < p.opt.QueryMaxRows); ri++ {
+	defer func() {
+		log.Printf("query got %d rows", ri)
+	}()
+
+	for ; rows.Next() && (p.opt.QueryMaxRows <= 0 || ri < p.opt.QueryMaxRows); ri++ {
 		pointers, out := resetDests(out0Type, out0TypePtr, outTypes, mapFields)
 		if err := rows.Scan(pointers[:len(columns)]...); err != nil {
 			return nil, fmt.Errorf("scan rows %s error %w", p.SQL, err)
@@ -632,14 +634,12 @@ func (p *SQLParsed) doQuery(db *sql.DB, args []reflect.Value, counting bool) (*s
 }
 
 func (p *SQLParsed) doQueryDirectVars(db *sql.DB, vars []interface{}, counting bool) (*sql.Rows, func() (int64, error), error) {
-	p.logPrepare(vars)
-
 	query, err := p.replaceQuery(db, p.runSQL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("replaceQuery %s error %w", query, err)
 	}
 
-	log.Printf("QueryContext query [%s] with %v", query, vars)
+	log.Printf("exec query %s [%s] with %v", p.ID, query, vars)
 
 	rows, err := db.QueryContext(p.opt.Ctx, query, vars...)
 	if err != nil || rows.Err() != nil {
@@ -693,7 +693,7 @@ func (p *SQLParsed) pagingCount(db *sql.DB, query string, vars []interface{}) (i
 	countQuery := sqlparser.String(selectQuery)
 	vars = vars[:len(vars)-limitVarsCount]
 
-	log.Printf("I! execute qury %s with args %v", countQuery, vars)
+	log.Printf("I! execute query %s [%s] with args %v", p.ID, countQuery, vars)
 
 	countQuery, err = p.replaceQuery(db, countQuery)
 	if err != nil {

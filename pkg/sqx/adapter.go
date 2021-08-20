@@ -5,6 +5,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"go.uber.org/multierr"
 	"log"
+	"reflect"
 )
 
 type Sqx struct {
@@ -13,16 +14,45 @@ type Sqx struct {
 	dbExec ExecFn
 }
 
+func LogSqlResultDesc(desc string, lastResult sql.Result) {
+	lastInsertId, _ := lastResult.LastInsertId()
+	rowsAffected, _ := lastResult.RowsAffected()
+	if desc == "" {
+		log.Printf("Result lastInsertId: %d, rowsAffected: %d", lastInsertId, rowsAffected)
+	} else {
+		log.Printf("%s result lastInsertId: %d, rowsAffected: %d", desc, lastInsertId, rowsAffected)
+	}
+}
 func logQueryError(desc string, result sql.Result, err error) {
+	if desc == "" {
+		if err != nil {
+			log.Printf("query error: %v", err)
+		} else if result != nil {
+			LogSqlResultDesc(desc, result)
+		}
+		return
+	}
+
 	if err != nil {
-		log.Printf("%s query error: %v", desc, err)
+		log.Printf("[%s] query error: %v", desc, err)
 	} else if result != nil {
-		rowsAffected, _ := result.RowsAffected()
-		log.Printf("%s result rowsAffected: %d", desc, rowsAffected)
+		LogSqlResultDesc(desc, result)
+	}
+}
+
+func logRows(desc string, rows int) {
+	if desc == "" {
+		log.Printf("query %d rows", rows)
+	} else {
+		log.Printf("[%s] query %d rows", desc, rows)
 	}
 }
 func logQuery(desc, query string, args []interface{}) {
-	log.Printf("%s query: [%s] with args: %v", desc, query, args)
+	if desc == "" {
+		log.Printf("query [%s] with args: %v", query, args)
+	} else {
+		log.Printf("[%s] query [%s] with args: %v", desc, query, args)
+	}
 }
 
 type Executable interface {
@@ -62,6 +92,24 @@ type QueryArgs struct {
 	Options []sqlparser.ConvertOption
 }
 
+func (a *QueryArgs) GetQueryRows() int {
+	if a.Dest == nil {
+		return 0
+	}
+
+	v := reflect.ValueOf(a.Dest)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		return v.Len()
+	default:
+		return 0
+	}
+}
+
 func (s *Sqx) Query(arg *QueryArgs) error {
 	options := arg.Options
 	if arg.Limit > 0 {
@@ -77,6 +125,7 @@ func (s *Sqx) Query(arg *QueryArgs) error {
 
 	err = NewSQL(qq, args...).Query(s.DB, arg.Dest)
 	logQueryError(arg.Desc, nil, err)
+	logRows(arg.Desc, arg.GetQueryRows())
 
 	return err
 }
