@@ -59,8 +59,19 @@ func ExampleUnmarshal() {
 		fmt.Println("error:", err)
 	}
 	fmt.Printf("%+v", animals)
+
+	type A struct {
+		Bar string `json:"Bar"`
+	}
+
+	var a A
+	c := Config{EscapeHTML: true, CaseSensitive: true}.Froze()
+	c.Unmarshal([]byte(`{"Bar": "1", "bar": "2" }`), &a)
+	println(a.Bar)
+
 	// Output:
 	// [{Name:Platypus Order:Monotremata} {Name:Quoll Order:Dasyuromorphia}]
+	// 1
 }
 
 func ExampleConfigFastest_Marshal() {

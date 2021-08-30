@@ -22,8 +22,10 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spyzhov/ajson v0.4.2
+	github.com/src-d/go-mysql-server v0.6.1-0.20191029145134-62780e17d9e5
 	github.com/stretchr/testify v1.7.0
 	github.com/thoas/go-funk v0.9.0
+	go.uber.org/multierr v1.6.0
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/text v0.3.5
 	gorm.io/driver/mysql v1.1.0
