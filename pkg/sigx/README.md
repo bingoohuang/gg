@@ -1,5 +1,20 @@
 # help
 
+## 代码嵌入
+
+```go
+package main
+
+import (
+	"github.com/bingoohuang/gg/pkg/sigx"
+)
+
+func init() {
+	ctx, _ := sigx.RegisterSignals(nil)
+	sigx.RegisterSignalProfile(ctx)
+}
+```
+
 ## cpu.profile
 
 1. start to collect cpu.profile `touch jj.cpu; kill -USR1 69110`
