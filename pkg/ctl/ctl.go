@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/v"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -14,12 +15,9 @@ import (
 	_ "embed"
 )
 
-var COMMIT string
-
 type Config struct {
 	Initing      bool
 	PrintVersion bool
-	VersionInfo  string
 	InitFiles    embed.FS
 }
 
@@ -35,7 +33,7 @@ func (c Config) ProcessInit() {
 	}
 
 	if c.PrintVersion {
-		fmt.Printf("Version: %s, COMMIT: %s\n", c.VersionInfo, COMMIT)
+		fmt.Print(v.Version())
 	}
 
 	if c.Initing || c.PrintVersion {
