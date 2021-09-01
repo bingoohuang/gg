@@ -12,89 +12,45 @@ type arrayLazyAny struct {
 	err error
 }
 
-func (any *arrayLazyAny) ValueType() ValueType { return ArrayValue }
-func (any *arrayLazyAny) MustBeValid() Any     { return any }
-func (any *arrayLazyAny) LastError() error     { return any.err }
-func (any *arrayLazyAny) ToBool() bool {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
+func (a *arrayLazyAny) ValueType() ValueType { return ArrayValue }
+func (a *arrayLazyAny) MustBeValid() Any     { return a }
+func (a *arrayLazyAny) LastError() error     { return a.err }
+func (a *arrayLazyAny) ToBool() bool {
+	iter := a.cfg.BorrowIterator(a.buf)
+	defer a.cfg.ReturnIterator(iter)
 	return iter.ReadArray()
 }
 
-func (any *arrayLazyAny) ToInt() int {
-	if any.ToBool() {
+func (a *arrayLazyAny) ToInt() int {
+	if a.ToBool() {
 		return 1
 	}
 	return 0
 }
 
-func (any *arrayLazyAny) ToInt32() int32 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
+func (a *arrayLazyAny) ToInt32() int32     { return int32(a.ToInt()) }
+func (a *arrayLazyAny) ToInt64() int64     { return int64(a.ToInt()) }
+func (a *arrayLazyAny) ToUint() uint       { return uint(a.ToInt()) }
+func (a *arrayLazyAny) ToUint32() uint32   { return uint32(a.ToInt()) }
+func (a *arrayLazyAny) ToUint64() uint64   { return uint64(a.ToInt()) }
+func (a *arrayLazyAny) ToFloat32() float32 { return float32(a.ToInt()) }
+func (a *arrayLazyAny) ToFloat64() float64 { return float64(a.ToInt()) }
+func (a *arrayLazyAny) ToString() string   { return *(*string)(unsafe.Pointer(&a.buf)) }
 
-func (any *arrayLazyAny) ToInt64() int64 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToUint() uint {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToUint32() uint32 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToUint64() uint64 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToFloat32() float32 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToFloat64() float64 {
-	if any.ToBool() {
-		return 1
-	}
-	return 0
-}
-
-func (any *arrayLazyAny) ToString() string {
-	return *(*string)(unsafe.Pointer(&any.buf))
-}
-
-func (any *arrayLazyAny) ToVal(val interface{}) {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
+func (a *arrayLazyAny) ToVal(val interface{}) {
+	iter := a.cfg.BorrowIterator(a.buf)
+	defer a.cfg.ReturnIterator(iter)
 	iter.ReadVal(val)
 }
 
-func (any *arrayLazyAny) Get(path ...interface{}) Any {
+func (a *arrayLazyAny) Get(path ...interface{}) Any {
 	if len(path) == 0 {
-		return any
+		return a
 	}
 	switch firstPath := path[0].(type) {
 	case int:
-		iter := any.cfg.BorrowIterator(any.buf)
-		defer any.cfg.ReturnIterator(iter)
+		iter := a.cfg.BorrowIterator(a.buf)
+		defer a.cfg.ReturnIterator(iter)
 		valueBytes := locateArrayElement(iter, firstPath)
 		if valueBytes == nil {
 			return newInvalidAny(path)
@@ -103,8 +59,8 @@ func (any *arrayLazyAny) Get(path ...interface{}) Any {
 		return locatePath(iter, path[1:])
 	case int32:
 		if '*' == firstPath {
-			iter := any.cfg.BorrowIterator(any.buf)
-			defer any.cfg.ReturnIterator(iter)
+			iter := a.cfg.BorrowIterator(a.buf)
+			defer a.cfg.ReturnIterator(iter)
 			arr := make([]Any, 0)
 			iter.ReadArrayCB(func(iter *Iterator) bool {
 				found := iter.readAny().Get(path[1:]...)
@@ -121,10 +77,10 @@ func (any *arrayLazyAny) Get(path ...interface{}) Any {
 	}
 }
 
-func (any *arrayLazyAny) Size() int {
+func (a *arrayLazyAny) Size() int {
 	size := 0
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
+	iter := a.cfg.BorrowIterator(a.buf)
+	defer a.cfg.ReturnIterator(iter)
 	iter.ReadArrayCB(func(iter *Iterator) bool {
 		size++
 		iter.Skip()
@@ -133,13 +89,11 @@ func (any *arrayLazyAny) Size() int {
 	return size
 }
 
-func (any *arrayLazyAny) WriteTo(stream *Stream) {
-	stream.Write(any.buf)
-}
+func (a *arrayLazyAny) WriteTo(stream *Stream) { stream.Write(a.buf) }
 
-func (any *arrayLazyAny) GetInterface() interface{} {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
+func (a *arrayLazyAny) GetInterface() interface{} {
+	iter := a.cfg.BorrowIterator(a.buf)
+	defer a.cfg.ReturnIterator(iter)
 	return iter.Read()
 }
 
@@ -152,98 +106,45 @@ func wrapArray(val interface{}) *arrayAny {
 	return &arrayAny{baseAny{}, reflect.ValueOf(val)}
 }
 
-func (any *arrayAny) ValueType() ValueType {
-	return ArrayValue
-}
-
-func (any *arrayAny) MustBeValid() Any {
-	return any
-}
-
-func (any *arrayAny) LastError() error {
-	return nil
-}
-
-func (any *arrayAny) ToBool() bool {
-	return any.val.Len() != 0
-}
-
-func (any *arrayAny) ToInt() int {
-	if any.val.Len() == 0 {
+func (a *arrayAny) ValueType() ValueType { return ArrayValue }
+func (a *arrayAny) MustBeValid() Any     { return a }
+func (a *arrayAny) LastError() error     { return nil }
+func (a *arrayAny) ToBool() bool         { return a.val.Len() != 0 }
+func (a *arrayAny) ToInt() int {
+	if a.val.Len() == 0 {
 		return 0
 	}
 	return 1
 }
 
-func (any *arrayAny) ToInt32() int32 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
+func (a *arrayAny) ToInt32() int32     { return int32(a.ToInt()) }
+func (a *arrayAny) ToInt64() int64     { return int64(a.ToInt()) }
+func (a *arrayAny) ToUint() uint       { return uint(a.ToInt()) }
+func (a *arrayAny) ToUint32() uint32   { return uint32(a.ToInt()) }
+func (a *arrayAny) ToUint64() uint64   { return uint64(a.ToInt()) }
+func (a *arrayAny) ToFloat32() float32 { return float32(a.ToInt()) }
+func (a *arrayAny) ToFloat64() float64 { return float64(a.ToInt()) }
 
-func (any *arrayAny) ToInt64() int64 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToUint() uint {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToUint32() uint32 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToUint64() uint64 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToFloat32() float32 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToFloat64() float64 {
-	if any.val.Len() == 0 {
-		return 0
-	}
-	return 1
-}
-
-func (any *arrayAny) ToString() string {
-	str, _ := MarshalToString(any.val.Interface())
+func (a *arrayAny) ToString() string {
+	str, _ := MarshalToString(a.val.Interface())
 	return str
 }
 
-func (any *arrayAny) Get(path ...interface{}) Any {
+func (a *arrayAny) Get(path ...interface{}) Any {
 	if len(path) == 0 {
-		return any
+		return a
 	}
 	switch firstPath := path[0].(type) {
 	case int:
-		if firstPath < 0 || firstPath >= any.val.Len() {
+		if firstPath < 0 || firstPath >= a.val.Len() {
 			return newInvalidAny(path)
 		}
-		return Wrap(any.val.Index(firstPath).Interface())
+		return Wrap(a.val.Index(firstPath).Interface())
 	case int32:
 		if '*' == firstPath {
 			mappedAll := make([]Any, 0)
-			for i := 0; i < any.val.Len(); i++ {
-				mapped := Wrap(any.val.Index(i).Interface()).Get(path[1:]...)
+			for i := 0; i < a.val.Len(); i++ {
+				mapped := Wrap(a.val.Index(i).Interface()).Get(path[1:]...)
 				if mapped.ValueType() != InvalidValue {
 					mappedAll = append(mappedAll, mapped)
 				}
@@ -256,14 +157,6 @@ func (any *arrayAny) Get(path ...interface{}) Any {
 	}
 }
 
-func (any *arrayAny) Size() int {
-	return any.val.Len()
-}
-
-func (any *arrayAny) WriteTo(stream *Stream) {
-	stream.WriteVal(any.val)
-}
-
-func (any *arrayAny) GetInterface() interface{} {
-	return any.val.Interface()
-}
+func (a *arrayAny) Size() int                 { return a.val.Len() }
+func (a *arrayAny) WriteTo(stream *Stream)    { stream.WriteVal(a.val) }
+func (a *arrayAny) GetInterface() interface{} { return a.val.Interface() }

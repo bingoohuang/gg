@@ -12,101 +12,65 @@ type numberLazyAny struct {
 	err error
 }
 
-func (any *numberLazyAny) ValueType() ValueType { return NumberValue }
-func (any *numberLazyAny) MustBeValid() Any     { return any }
-func (any *numberLazyAny) LastError() error     { return any.err }
-func (any *numberLazyAny) ToBool() bool         { return any.ToFloat64() != 0 }
+func (a *numberLazyAny) ValueType() ValueType { return NumberValue }
+func (a *numberLazyAny) MustBeValid() Any     { return a }
+func (a *numberLazyAny) LastError() error     { return a.err }
+func (a *numberLazyAny) ToBool() bool         { return a.ToFloat64() != 0 }
 
-func (any *numberLazyAny) ToInt() int {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadInt()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
+func (a *numberLazyAny) iterFunc(f func(*Iterator)) {
+	i := a.cfg.BorrowIterator(a.buf)
+	f(i)
+	if i.Error != nil && i.Error != io.EOF {
+		a.err = i.Error
 	}
-	return val
+
+	a.cfg.ReturnIterator(i)
 }
 
-func (any *numberLazyAny) ToInt32() int32 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadInt32()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToInt() (val int) {
+	a.iterFunc(func(iter *Iterator) { val = iter.ReadInt() })
+	return
 }
 
-func (any *numberLazyAny) ToInt64() int64 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadInt64()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToInt32() (val int32) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadInt32() })
+	return
 }
 
-func (any *numberLazyAny) ToUint() uint {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadUint()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToInt64() (val int64) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadInt64() })
+	return
 }
 
-func (any *numberLazyAny) ToUint32() uint32 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadUint32()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToUint() (val uint) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadUint() })
+	return
 }
 
-func (any *numberLazyAny) ToUint64() uint64 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadUint64()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToUint32() (val uint32) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadUint32() })
+	return
 }
 
-func (any *numberLazyAny) ToFloat32() float32 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadFloat32()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToUint64() (val uint64) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadUint64() })
+	return
 }
 
-func (any *numberLazyAny) ToFloat64() float64 {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	val := iter.ReadFloat64()
-	if iter.Error != nil && iter.Error != io.EOF {
-		any.err = iter.Error
-	}
-	return val
+func (a *numberLazyAny) ToFloat32() (val float32) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadFloat32() })
+	return
 }
 
-func (any *numberLazyAny) ToString() string {
-	return *(*string)(unsafe.Pointer(&any.buf))
+func (a *numberLazyAny) ToFloat64() (val float64) {
+	a.iterFunc(func(i *Iterator) { val = i.ReadFloat64() })
+	return
 }
 
-func (any *numberLazyAny) WriteTo(stream *Stream) {
-	stream.Write(any.buf)
-}
+func (a *numberLazyAny) ToString() string       { return *(*string)(unsafe.Pointer(&a.buf)) }
+func (a *numberLazyAny) WriteTo(stream *Stream) { stream.Write(a.buf) }
 
-func (any *numberLazyAny) GetInterface() interface{} {
-	iter := any.cfg.BorrowIterator(any.buf)
-	defer any.cfg.ReturnIterator(iter)
-	return iter.Read()
+func (a *numberLazyAny) GetInterface() (val interface{}) {
+	a.iterFunc(func(i *Iterator) { val = i.Read() })
+	return
 }

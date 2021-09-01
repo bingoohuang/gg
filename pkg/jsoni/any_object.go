@@ -67,7 +67,7 @@ func (any *objectLazyAny) Get(path ...interface{}) Any {
 }
 
 func (any *objectLazyAny) Keys() []string {
-	keys := []string{}
+	var keys []string
 	iter := any.cfg.BorrowIterator(any.buf)
 	defer any.cfg.ReturnIterator(iter)
 	iter.ReadMapCB(func(iter *Iterator, field string) bool {

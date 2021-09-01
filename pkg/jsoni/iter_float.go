@@ -107,7 +107,7 @@ func (iter *Iterator) readPositiveFloat32() (ret float32) {
 	}
 	value := uint64(ind)
 	// chars before dot
-non_decimal_loop:
+nonDecimalLoop:
 	for ; i < iter.tail; i++ {
 		c = iter.buf[i]
 		ind := floatDigits[c]
@@ -118,7 +118,7 @@ non_decimal_loop:
 			iter.head = i
 			return float32(value)
 		case dotInNumber:
-			break non_decimal_loop
+			break nonDecimalLoop
 		}
 		if value > uint64SafeToMultiple10 {
 			return iter.readFloat32SlowPath()

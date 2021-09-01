@@ -1,43 +1,39 @@
 package jsoni
 
-type trueAny struct {
-	baseAny
-}
+type trueAny struct{ baseAny }
 
-func (any *trueAny) LastError() error          { return nil }
-func (any *trueAny) ToBool() bool              { return true }
-func (any *trueAny) ToInt() int                { return 1 }
-func (any *trueAny) ToInt32() int32            { return 1 }
-func (any *trueAny) ToInt64() int64            { return 1 }
-func (any *trueAny) ToUint() uint              { return 1 }
-func (any *trueAny) ToUint32() uint32          { return 1 }
-func (any *trueAny) ToUint64() uint64          { return 1 }
-func (any *trueAny) ToFloat32() float32        { return 1 }
-func (any *trueAny) ToFloat64() float64        { return 1 }
-func (any *trueAny) ToString() string          { return "true" }
-func (any *trueAny) WriteTo(stream *Stream)    { stream.WriteTrue() }
-func (any *trueAny) Parse() *Iterator          { return nil }
-func (any *trueAny) GetInterface() interface{} { return true }
-func (any *trueAny) ValueType() ValueType      { return BoolValue }
-func (any *trueAny) MustBeValid() Any          { return any }
+func (a *trueAny) LastError() error          { return nil }
+func (a *trueAny) ToBool() bool              { return true }
+func (a *trueAny) ToInt() int                { return 1 }
+func (a *trueAny) ToInt32() int32            { return 1 }
+func (a *trueAny) ToInt64() int64            { return 1 }
+func (a *trueAny) ToUint() uint              { return 1 }
+func (a *trueAny) ToUint32() uint32          { return 1 }
+func (a *trueAny) ToUint64() uint64          { return 1 }
+func (a *trueAny) ToFloat32() float32        { return 1 }
+func (a *trueAny) ToFloat64() float64        { return 1 }
+func (a *trueAny) ToString() string          { return "true" }
+func (a *trueAny) WriteTo(stream *Stream)    { stream.WriteTrue() }
+func (a *trueAny) Parse() *Iterator          { return nil }
+func (a *trueAny) GetInterface() interface{} { return true }
+func (a *trueAny) ValueType() ValueType      { return BoolValue }
+func (a *trueAny) MustBeValid() Any          { return a }
 
-type falseAny struct {
-	baseAny
-}
+type falseAny struct{ baseAny }
 
-func (any *falseAny) LastError() error          { return nil }
-func (any *falseAny) ToBool() bool              { return false }
-func (any *falseAny) ToInt() int                { return 0 }
-func (any *falseAny) ToInt32() int32            { return 0 }
-func (any *falseAny) ToInt64() int64            { return 0 }
-func (any *falseAny) ToUint() uint              { return 0 }
-func (any *falseAny) ToUint32() uint32          { return 0 }
-func (any *falseAny) ToUint64() uint64          { return 0 }
-func (any *falseAny) ToFloat32() float32        { return 0 }
-func (any *falseAny) ToFloat64() float64        { return 0 }
-func (any *falseAny) ToString() string          { return "false" }
-func (any *falseAny) WriteTo(stream *Stream)    { stream.WriteFalse() }
-func (any *falseAny) Parse() *Iterator          { return nil }
-func (any *falseAny) GetInterface() interface{} { return false }
-func (any *falseAny) ValueType() ValueType      { return BoolValue }
-func (any *falseAny) MustBeValid() Any          { return any }
+func (a *falseAny) LastError() error          { return nil }
+func (a *falseAny) ToBool() bool              { return false }
+func (a *falseAny) ToInt() int                { return 0 }
+func (a *falseAny) ToInt32() int32            { return 0 }
+func (a *falseAny) ToInt64() int64            { return 0 }
+func (a *falseAny) ToUint() uint              { return 0 }
+func (a *falseAny) ToUint32() uint32          { return 0 }
+func (a *falseAny) ToUint64() uint64          { return 0 }
+func (a *falseAny) ToFloat32() float32        { return 0 }
+func (a *falseAny) ToFloat64() float64        { return 0 }
+func (a *falseAny) ToString() string          { return "false" }
+func (a *falseAny) WriteTo(stream *Stream)    { stream.WriteFalse() }
+func (a *falseAny) Parse() *Iterator          { return nil }
+func (a *falseAny) GetInterface() interface{} { return false }
+func (a *falseAny) ValueType() ValueType      { return BoolValue }
+func (a *falseAny) MustBeValid() Any          { return a }

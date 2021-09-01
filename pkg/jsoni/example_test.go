@@ -58,7 +58,7 @@ func ExampleUnmarshal() {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	fmt.Printf("%+v", animals)
+	fmt.Printf("%+v\n", animals)
 
 	type A struct {
 		Bar string `json:"Bar"`
@@ -67,7 +67,7 @@ func ExampleUnmarshal() {
 	var a A
 	c := Config{EscapeHTML: true, CaseSensitive: true}.Froze()
 	c.Unmarshal([]byte(`{"Bar": "1", "bar": "2" }`), &a)
-	println(a.Bar)
+	fmt.Println(a.Bar)
 
 	// Output:
 	// [{Name:Platypus Order:Monotremata} {Name:Quoll Order:Dasyuromorphia}]

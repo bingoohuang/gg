@@ -7,6 +7,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
 	"github.com/bingoohuang/gg/pkg/randx"
 	"github.com/bingoohuang/gg/pkg/reflector"
+	"github.com/bingoohuang/gg/pkg/strcase"
 	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -44,7 +45,7 @@ func TestInt64(t *testing.T) {
 	}{}
 
 	c := jsoni.Config{EscapeHTML: true, Int64AsString: true}.Froze()
-	c.RegisterExtension(&extra.NamingStrategyExtension{Translate: extra.LowerCaseWithUnderscores})
+	c.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})
 
 	c.Unmarshal([]byte(`{"Foo":"12341"}`), &f)
 	assert.Equal(t, int64(12341), f.Foo)

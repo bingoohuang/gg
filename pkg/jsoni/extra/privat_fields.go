@@ -17,19 +17,20 @@ type privateFieldsExtension struct {
 
 func (extension *privateFieldsExtension) UpdateStructDescriptor(structDescriptor *jsoni.StructDescriptor) {
 	for _, binding := range structDescriptor.Fields {
-		isPrivate := unicode.IsLower(rune(binding.Field.Name()[0]))
-		if isPrivate {
-			tag, hastag := binding.Field.Tag().Lookup("json")
-			if !hastag {
-				binding.FromNames = []string{binding.Field.Name()}
-				binding.ToNames = []string{binding.Field.Name()}
-				continue
-			}
-			tagParts := strings.Split(tag, ",")
-			names := calcFieldNames(binding.Field.Name(), tagParts[0], tag)
-			binding.FromNames = names
-			binding.ToNames = names
+		if isPrivate := unicode.IsLower(rune(binding.Field.Name()[0])); !isPrivate {
+			continue
 		}
+
+		tag, hastag := binding.Field.Tag().Lookup("json")
+		if !hastag {
+			binding.FromNames = []string{binding.Field.Name()}
+			binding.ToNames = []string{binding.Field.Name()}
+			continue
+		}
+		tagParts := strings.Split(tag, ",")
+		names := calcFieldNames(binding.Field.Name(), tagParts[0], tag)
+		binding.FromNames = names
+		binding.ToNames = names
 	}
 }
 
