@@ -38,8 +38,6 @@ github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+Ce
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bingoohuang/ginx v0.0.0-20200729033750-047869f5e81c/go.mod h1:fv5fKhsGUfPInVsslF5FJv2oNlZn153C5OogaaUFvFc=
-github.com/bingoohuang/go-yaml v1.8.11-0.20210728042640-dd45bee5a10f h1:3VA7EtOIol6p3x8udi4fM45o71qBZrS6MakRxehy5Ek=
-github.com/bingoohuang/go-yaml v1.8.11-0.20210728042640-dd45bee5a10f/go.mod h1:CqSxKzOVtBsKSt4rxMV1BCh4jK6WtNT3b55q7eECx64=
 github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec h1:qO1GjhDg+5AgmFSEmxHimeVnJH8XWy+I2Jc7ma/tsAY=
 github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec/go.mod h1:fzPzW4tq/ey2qIiYlqhoSPJRYQ5gmmLha5dcDoUgfVI=
 github.com/bingoohuang/sariaf v0.0.0-20201222043148-21fd9703b115/go.mod h1:DSi1LVR76Ap189KzzA40C8pFSpRZHsy/n+kgK8ihfhs=
