@@ -1,3 +1,34 @@
+## v1.9.2 - 2021-07-26
+
+### Support WithComment option ( #238 )
+
+`yaml.WithComment` is a option for encoding with comment.
+The position where you want to add a comment is represented by YAMLPath, and it is the key of `yaml.CommentMap`.
+Also, you can select `Head` comment or `Line` comment as the comment type.
+
+## v1.9.1 - 2021-07-20
+
+### Fix DecodeFromNode ( #237 )
+
+- Fix YAML handling where anchor exists
+
+## v1.9.0 - 2021-07-19
+
+### New features
+
+- Support encoding of comment node ( #233 )
+- Support `yaml.NodeToValue(ast.Node, interface{}, ...DecodeOption) error` ( #236 )
+  - Can convert a AST node to a value directly
+
+### Fix decoder for comment
+
+- Fix parsing of literal with comment ( #234 )
+
+### Rename API ( #235 )
+
+- Rename `MarshalWithContext` to `MarshalContext`
+- Rename `UnmarshalWithContext` to `UnmarshalContext`
+
 ## v1.8.10 - 2021-07-02
 
 ### Fixed bugs

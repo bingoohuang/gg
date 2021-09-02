@@ -94,6 +94,11 @@ func TestEncoder(t *testing.T) {
 			nil,
 		},
 		{
+			"v: 1e+06\n",
+			map[string]float64{"v": 1000000},
+			nil,
+		},
+		{
 			"v: .inf\n",
 			map[string]interface{}{"v": math.Inf(0)},
 			nil,
@@ -222,7 +227,7 @@ func TestEncoder(t *testing.T) {
 			nil,
 		},
 		{
-			"v:\n  - A\n  - 1\n  - B:\n    - 2\n    - 3\n",
+			"v:\n  - A\n  - 1\n  - B:\n      - 2\n      - 3\n  - 2\n",
 			map[string]interface{}{
 				"v": []interface{}{
 					"A",
@@ -230,6 +235,7 @@ func TestEncoder(t *testing.T) {
 					map[string][]int{
 						"B": {2, 3},
 					},
+					2,
 				},
 			},
 			[]yaml.EncodeOption{
@@ -553,17 +559,22 @@ func TestEncoder(t *testing.T) {
 		// time value
 		{
 			"v: 0001-01-01T00:00:00Z\n",
-			map[string]time.Time{"v": time.Time{}},
+			map[string]time.Time{"v": {}},
 			nil,
 		},
 		{
 			"v: 0001-01-01T00:00:00Z\n",
-			map[string]*time.Time{"v": &time.Time{}},
+			map[string]*time.Time{"v": {}},
 			nil,
 		},
 		{
 			"v: null\n",
 			map[string]*time.Time{"v": nil},
+			nil,
+		},
+		{
+			"v: 30s\n",
+			map[string]time.Duration{"v": 30 * time.Second},
 			nil,
 		},
 	}
@@ -928,14 +939,15 @@ func TestEncoder_JSON(t *testing.T) {
 		F float32
 	}
 	if err := enc.Encode(struct {
-		I      int
-		U      uint
-		S      string
-		F      float64
-		Struct *st
-		Slice  []int
-		Map    map[string]interface{}
-		Time   time.Time
+		I        int
+		U        uint
+		S        string
+		F        float64
+		Struct   *st
+		Slice    []int
+		Map      map[string]interface{}
+		Time     time.Time
+		Duration time.Duration
 	}{
 		I: -10,
 		U: 10,
@@ -952,12 +964,13 @@ func TestEncoder_JSON(t *testing.T) {
 			"b": 1.23,
 			"c": "json",
 		},
-		Time: time.Time{},
+		Time:     time.Time{},
+		Duration: 5 * time.Minute,
 	}); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	expect := `
-{"i": -10, "u": 10, "s": "hello", "f": 3.14, "struct": {"i": 2, "s": "world", "f": 1.23}, "slice": [1, 2, 3, 4, 5], "map": {"a": 1, "b": 1.23, "c": "json"}, "time": "0001-01-01T00:00:00Z"}
+{"i": -10, "u": 10, "s": "hello", "f": 3.14, "struct": {"i": 2, "s": "world", "f": 1.23}, "slice": [1, 2, 3, 4, 5], "map": {"a": 1, "b": 1.23, "c": "json"}, "time": "0001-01-01T00:00:00Z", "duration": "5m0s"}
 `
 	actual := "\n" + buf.String()
 	if expect != actual {
@@ -1173,9 +1186,9 @@ func Test_Marshaler(t *testing.T) {
 	t.Logf("%s", buf)
 }
 
-type marshalWithContext struct{}
+type marshalContext struct{}
 
-func (c *marshalWithContext) MarshalYAML(ctx context.Context) ([]byte, error) {
+func (c *marshalContext) MarshalYAML(ctx context.Context) ([]byte, error) {
 	v, ok := ctx.Value("k").(int)
 	if !ok {
 		return nil, fmt.Errorf("cannot get valid context")
@@ -1188,7 +1201,7 @@ func (c *marshalWithContext) MarshalYAML(ctx context.Context) ([]byte, error) {
 
 func Test_MarshalerWithContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "k", 1)
-	bytes, err := yaml.MarshalWithContext(ctx, &marshalWithContext{})
+	bytes, err := yaml.MarshalContext(ctx, &marshalContext{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

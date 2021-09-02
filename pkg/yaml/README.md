@@ -1,6 +1,6 @@
 # YAML support for the Go language
 
-1. Keep synchronized with [original](https://github.com/goccy/go-yaml) to ``
+1. Keep synchronized with [original](https://github.com/goccy/go-yaml) to `864ce75@2021-08-25T11:36:45+09:00`
 
 ## Enhanced features
 

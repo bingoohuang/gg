@@ -45,6 +45,7 @@ type Encoder struct {
 	anchorCallback             func(*ast.AnchorNode, interface{}) error
 	anchorPtrToNameMap         map[uintptr]string
 	useLiteralStyleIfMultiline bool
+	commentMap                 map[*Path]*Comment
 
 	line        int
 	column      int
@@ -91,6 +92,9 @@ func (e *Encoder) EncodeContext(ctx context.Context, v interface{}) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to encode to node")
 	}
+	if err := e.setCommentByCommentMap(node); err != nil {
+		return errors.Wrapf(err, "failed to set comment by comment map")
+	}
 	var p printer.Printer
 	e.writer.Write(p.PrintNode(node))
 	return nil
@@ -113,6 +117,49 @@ func (e *Encoder) EncodeToNodeContext(ctx context.Context, v interface{}) (ast.N
 		return nil, errors.Wrapf(err, "failed to encode value")
 	}
 	return node, nil
+}
+
+func (e *Encoder) setCommentByCommentMap(node ast.Node) error {
+	if e.commentMap == nil {
+		return nil
+	}
+	for path, comment := range e.commentMap {
+		n, err := path.FilterNode(node)
+		if err != nil {
+			return errors.Wrapf(err, "failed to filter node")
+		}
+		comments := []*token.Token{}
+		for _, text := range comment.Texts {
+			comments = append(comments, token.New(text, text, nil))
+		}
+		commentGroup := ast.CommentGroup(comments)
+		switch comment.Position {
+		case CommentLinePosition:
+			if err := n.SetComment(commentGroup); err != nil {
+				return errors.Wrapf(err, "failed to set comment")
+			}
+		case CommentHeadPosition:
+			parent := ast.Parent(node, n)
+			if parent == nil {
+				return ErrUnsupportedHeadPositionType(node)
+			}
+			switch node := parent.(type) {
+			case *ast.MappingValueNode:
+				if err := node.SetComment(commentGroup); err != nil {
+					return errors.Wrapf(err, "failed to set comment")
+				}
+			case *ast.MappingNode:
+				if err := node.SetComment(commentGroup); err != nil {
+					return errors.Wrapf(err, "failed to set comment")
+				}
+			default:
+				return ErrUnsupportedHeadPositionType(node)
+			}
+		default:
+			return ErrUnknownCommentPositionType
+		}
+	}
+	return nil
 }
 
 func (e *Encoder) encodeDocument(doc []byte) (ast.Node, error) {
@@ -161,6 +208,8 @@ func (e *Encoder) canEncodeByMarshaler(v reflect.Value) bool {
 	case InterfaceMarshaler:
 		return true
 	case time.Time:
+		return true
+	case time.Duration:
 		return true
 	case encoding.TextMarshaler:
 		return true
@@ -216,7 +265,9 @@ func (e *Encoder) encodeByMarshaler(ctx context.Context, v reflect.Value, column
 	if t, ok := iface.(time.Time); ok {
 		return e.encodeTime(t, column), nil
 	}
-
+	if t, ok := iface.(time.Duration); ok {
+		return e.encodeDuration(t, column), nil
+	}
 	if marshaler, ok := iface.(encoding.TextMarshaler); ok {
 		doc, err := marshaler.MarshalText()
 		if err != nil {
@@ -347,7 +398,7 @@ func (e *Encoder) encodeFloat(v float64, bitSize int) ast.Node {
 		return ast.Nan(token.New(value, value, e.pos(e.column)))
 	}
 	value := strconv.FormatFloat(v, 'g', -1, bitSize)
-	if !strings.Contains(value, ".") {
+	if !strings.Contains(value, ".") && !strings.Contains(value, "e") {
 		// append x.0 suffix to keep float value context
 		value = fmt.Sprintf("%s.0", value)
 	}
@@ -381,10 +432,10 @@ func (e *Encoder) encodeBool(v bool) ast.Node {
 }
 
 func (e *Encoder) encodeSlice(ctx context.Context, value reflect.Value) (ast.Node, error) {
-	column := e.column
 	if e.indentSequence {
-		column += e.indent
+		e.column += e.indent
 	}
+	column := e.column
 	sequence := ast.Sequence(token.New("-", "-", e.pos(column)), e.isFlowStyle)
 	for i := 0; i < value.Len(); i++ {
 		node, err := e.encodeValue(ctx, value.Index(i), column)
@@ -393,14 +444,17 @@ func (e *Encoder) encodeSlice(ctx context.Context, value reflect.Value) (ast.Nod
 		}
 		sequence.Values = append(sequence.Values, node)
 	}
+	if e.indentSequence {
+		e.column -= e.indent
+	}
 	return sequence, nil
 }
 
 func (e *Encoder) encodeArray(ctx context.Context, value reflect.Value) (ast.Node, error) {
-	column := e.column
 	if e.indentSequence {
-		column += e.indent
+		e.column += e.indent
 	}
+	column := e.column
 	sequence := ast.Sequence(token.New("-", "-", e.pos(column)), e.isFlowStyle)
 	for i := 0; i < value.Len(); i++ {
 		node, err := e.encodeValue(ctx, value.Index(i), column)
@@ -408,6 +462,9 @@ func (e *Encoder) encodeArray(ctx context.Context, value reflect.Value) (ast.Nod
 			return nil, errors.Wrapf(err, "failed to encode value for array")
 		}
 		sequence.Values = append(sequence.Values, node)
+	}
+	if e.indentSequence {
+		e.column -= e.indent
 	}
 	return sequence, nil
 }
@@ -518,6 +575,14 @@ func (e *Encoder) isZeroValue(v reflect.Value) bool {
 
 func (e *Encoder) encodeTime(v time.Time, column int) ast.Node {
 	value := v.Format(time.RFC3339Nano)
+	if e.isJSONStyle {
+		value = strconv.Quote(value)
+	}
+	return ast.String(token.New(value, value, e.pos(column)))
+}
+
+func (e *Encoder) encodeDuration(v time.Duration, column int) ast.Node {
+	value := v.String()
 	if e.isJSONStyle {
 		value = strconv.Quote(value)
 	}

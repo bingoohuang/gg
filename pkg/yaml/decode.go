@@ -520,6 +520,8 @@ func (d *Decoder) canDecodeByUnmarshaler(dst reflect.Value) bool {
 		return true
 	case *time.Time:
 		return true
+	case *time.Duration:
+		return true
 	case encoding.TextUnmarshaler:
 		return true
 	case jsonUnmarshaler:
@@ -579,6 +581,10 @@ func (d *Decoder) decodeByUnmarshaler(ctx context.Context, dst reflect.Value, sr
 
 	if _, ok := iface.(*time.Time); ok {
 		return d.decodeTime(ctx, dst, src)
+	}
+
+	if _, ok := iface.(*time.Duration); ok {
+		return d.decodeDuration(ctx, dst, src)
 	}
 
 	if unmarshaler, isText := iface.(encoding.TextUnmarshaler); isText {
@@ -904,7 +910,40 @@ func (d *Decoder) castToTime(src ast.Node) (time.Time, error) {
 func (d *Decoder) decodeTime(ctx context.Context, dst reflect.Value, src ast.Node) error {
 	t, err := d.castToTime(src)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to convert to time")
+	}
+	dst.Set(reflect.ValueOf(t))
+	return nil
+}
+
+func (d *Decoder) castToDuration(src ast.Node) (time.Duration, error) {
+	if src == nil {
+		return 0, nil
+	}
+	v := d.nodeToValue(src)
+	if t, ok := v.(time.Duration); ok {
+		return t, nil
+	}
+
+	if u, ok := v.(uint64); ok {
+		return time.Duration(u), nil
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		return 0, errTypeMismatch(reflect.TypeOf(time.Duration(0)), reflect.TypeOf(v))
+	}
+	t, err := time.ParseDuration(s)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to parse duration")
+	}
+	return t, nil
+}
+
+func (d *Decoder) decodeDuration(ctx context.Context, dst reflect.Value, src ast.Node) error {
+	t, err := d.castToDuration(src)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert to duration")
 	}
 	dst.Set(reflect.ValueOf(t))
 	return nil
@@ -998,12 +1037,7 @@ func (d *Decoder) decodeStruct(ctx context.Context, dst reflect.Value, src ast.N
 			}
 			newFieldValue, err := d.createDecodedNewValue(ctx, fieldValue.Type(), mapNode, structField.Label)
 			if d.disallowUnknownField {
-				var ufe *unknownFieldError
-				if xerrors.As(err, &ufe) {
-					err = nil
-				}
-
-				if err = d.deleteStructKeys(fieldValue.Type(), unknownFields); err != nil {
+				if err := d.deleteStructKeys(fieldValue.Type(), unknownFields); err != nil {
 					return errors.Wrapf(err, "cannot delete struct keys")
 				}
 			}
@@ -1080,7 +1114,9 @@ func (d *Decoder) decodeStruct(ctx context.Context, dst reflect.Value, src ast.N
 		return errors.Wrapf(foundErr, "failed to decode value")
 	}
 
-	if len(unknownFields) != 0 && d.disallowUnknownField {
+	// Ignore unknown fields when parsing an inline struct (recognized by a nil token).
+	// Unknown fields are expected (they could be fields from the parent struct).
+	if len(unknownFields) != 0 && d.disallowUnknownField && src.GetToken() != nil {
 		for key, node := range unknownFields {
 			return errUnknownField(fmt.Sprintf(`unknown field "%s"`, key), node.GetToken())
 		}
@@ -1111,6 +1147,7 @@ func (d *Decoder) decodeStruct(ctx context.Context, dst reflect.Value, src ast.N
 					}
 				}
 			}
+			return err
 		}
 	}
 	return nil
@@ -1524,6 +1561,30 @@ func (d *Decoder) DecodeContext(ctx context.Context, v interface{}) error {
 			return err
 		}
 		return errors.Wrapf(err, "failed to decode")
+	}
+	return nil
+}
+
+// DecodeFromNode decodes node into the value pointed to by v.
+func (d *Decoder) DecodeFromNode(node ast.Node, v interface{}) error {
+	return d.DecodeFromNodeContext(context.Background(), node, v)
+}
+
+// DecodeFromNodeContext decodes node into the value pointed to by v with context.Context.
+func (d *Decoder) DecodeFromNodeContext(ctx context.Context, node ast.Node, v interface{}) error {
+	rv := reflect.ValueOf(v)
+	if rv.Type().Kind() != reflect.Ptr {
+		return errors.ErrDecodeRequiredPointerType
+	}
+	if !d.isInitialized() {
+		if err := d.decodeInit(); err != nil {
+			return errors.Wrapf(err, "failed to decodInit")
+		}
+	}
+	// resolve references to the anchor on the same file
+	d.nodeToValue(node)
+	if err := d.decodeValue(ctx, rv.Elem(), node); err != nil {
+		return errors.Wrapf(err, "failed to decode value")
 	}
 	return nil
 }
