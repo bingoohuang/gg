@@ -8,25 +8,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/yaml/ast"
 	"os"
 	"reflect"
-	"time"
 )
-
-var durationType = reflect.TypeOf((*time.Duration)(nil)).Elem()
-
-func decodeDuration(node ast.Node, typ reflect.Type) (reflect.Value, error) {
-	if typ != durationType {
-		return reflect.Value{}, yaml.ErrContinue
-	}
-
-	if s, ok := node.(*ast.StringNode); ok {
-		if d, err := time.ParseDuration(s.Value); err != nil {
-			return reflect.Value{}, err
-		} else {
-			return reflect.ValueOf(d), nil
-		}
-	}
-	return reflect.Value{}, yaml.ErrContinue
-}
 
 func decodeSize(node ast.Node, typ reflect.Type) (reflect.Value, error) {
 	if s, ok := node.(*ast.StringNode); ok {
@@ -53,8 +35,7 @@ func LoadConfFile(confFile, defaultConfFile string, app interface{}) error {
 	}
 
 	sizeLabel := yaml.LabelDecoder("size", decodeSize)
-	durationLabel := yaml.TypeDecoder(durationType, decodeDuration)
-	decoder := yaml.NewDecoder(bytes.NewReader(data), sizeLabel, durationLabel)
+	decoder := yaml.NewDecoder(bytes.NewReader(data), sizeLabel)
 
 	if err := decoder.Decode(app); err != nil {
 		return fmt.Errorf("decode conf file %s error:%q", confFile, err)
