@@ -22,7 +22,7 @@ func Repeat(s, sep string, n int) string {
 
 // FirstWord returns the first word of the SQL statement s.
 func FirstWord(s string) string {
-	if v := strings.Fields(strings.TrimSpace(s)); len(v) > 0 {
+	if v := FieldsN(strings.TrimSpace(s), 2); len(v) > 0 {
 		return v[0]
 	}
 
