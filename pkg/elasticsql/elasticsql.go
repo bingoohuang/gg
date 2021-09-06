@@ -52,7 +52,7 @@ func handleSelect(sel *sqlparser.Select) (dsl string, err error) {
 		queryMapStr = `{"bool" : {"must": [{"match_all" : {}}]}}`
 	}
 
-	queryFrom, querySize := "0", "1"
+	queryFrom, querySize := "", ""
 
 	// if the request is to aggregation
 	// then set aggFlag to true, and querySize to 0
@@ -78,10 +78,13 @@ func handleSelect(sel *sqlparser.Select) (dsl string, err error) {
 		orderByArr = append(orderByArr, orderByStr)
 	}
 
-	var resultMap = map[string]interface{}{
-		"query": queryMapStr,
-		"from":  queryFrom,
-		"size":  querySize,
+	resultMap := map[string]interface{}{"query": queryMapStr}
+
+	if querySize != "" {
+		resultMap["size"] = ss.ParseInt(querySize)
+	}
+	if queryFrom != "" {
+		resultMap["from"] = ss.ParseInt(queryFrom)
 	}
 
 	if len(orderByArr) > 0 {
@@ -221,7 +224,7 @@ func handleSelectWhereComparisonExpr(expr *sqlparser.Expr, topLevel bool, parent
 		if missingCheck {
 			resultStr = fmt.Sprintf(`{"missing":{"field":"%v"}}`, colNameStr)
 		} else {
-			resultStr = fmt.Sprintf(`{"match_phrase" : {"%v" : {"query" : "%v"}}}`, colNameStr, rightStr)
+			resultStr = fmt.Sprintf(`{"match" : {"%v" : {"query" : "%v"}}}`, colNameStr, rightStr)
 		}
 	case ">":
 		resultStr = fmt.Sprintf(`{"range" : {"%v" : {"gt" : "%v"}}}`, colNameStr, rightStr)
@@ -231,7 +234,7 @@ func handleSelectWhereComparisonExpr(expr *sqlparser.Expr, topLevel bool, parent
 		if missingCheck {
 			resultStr = fmt.Sprintf(`{"bool" : {"must_not" : [{"missing":{"field":"%v"}}]}}`, colNameStr)
 		} else {
-			resultStr = fmt.Sprintf(`{"bool" : {"must_not" : [{"match_phrase" : {"%v" : {"query" : "%v"}}}]}}`, colNameStr, rightStr)
+			resultStr = fmt.Sprintf(`{"bool" : {"must_not" : [{"match" : {"%v" : {"query" : "%v"}}}]}}`, colNameStr, rightStr)
 		}
 	case "in":
 		// the default valTuple is ('1', '2', '3') like
@@ -242,10 +245,10 @@ func handleSelectWhereComparisonExpr(expr *sqlparser.Expr, topLevel bool, parent
 		resultStr = fmt.Sprintf(`{"terms" : {"%v" : [%v]}}`, colNameStr, rightStr)
 	case "like":
 		rightStr = strings.Replace(rightStr, `%`, ``, -1)
-		resultStr = fmt.Sprintf(`{"match_phrase" : {"%v" : {"query" : "%v"}}}`, colNameStr, rightStr)
+		resultStr = fmt.Sprintf(`{"match" : {"%v" : {"query" : "%v"}}}`, colNameStr, rightStr)
 	case "not like":
 		rightStr = strings.Replace(rightStr, `%`, ``, -1)
-		resultStr = fmt.Sprintf(`{"bool" : {"must_not" : {"match_phrase" : {"%v" : {"query" : "%v"}}}}}`, colNameStr, rightStr)
+		resultStr = fmt.Sprintf(`{"bool" : {"must_not" : {"match" : {"%v" : {"query" : "%v"}}}}}`, colNameStr, rightStr)
 	case "not in":
 		// the default valTuple is ('1', '2', '3') like
 		// so need to drop the () and replace ' to "
