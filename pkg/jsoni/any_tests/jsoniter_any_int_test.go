@@ -1,6 +1,7 @@
 package any_tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -126,7 +127,7 @@ func Test_read_int64_to_any(t *testing.T) {
 	should.Equal(true, any.ToBool())
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(context.Background(), stream)
 	should.Equal("12345", string(stream.Buffer()))
 }
 func Test_read_int32_to_any(t *testing.T) {
@@ -144,7 +145,7 @@ func Test_read_int32_to_any(t *testing.T) {
 	should.Equal(true, any.ToBool())
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(context.Background(), stream)
 	should.Equal("12345", string(stream.Buffer()))
 }
 
@@ -163,7 +164,7 @@ func Test_read_uint32_to_any(t *testing.T) {
 	should.Equal(true, any.ToBool())
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(context.Background(), stream)
 	should.Equal("12345", string(stream.Buffer()))
 }
 
@@ -182,7 +183,7 @@ func Test_read_uint64_to_any(t *testing.T) {
 	should.Equal(true, any.ToBool())
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(context.Background(), stream)
 	should.Equal("12345", string(stream.Buffer()))
 	stream = jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
 	stream.WriteUint(uint(123))

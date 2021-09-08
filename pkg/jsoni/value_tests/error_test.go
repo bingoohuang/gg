@@ -28,7 +28,7 @@ func Test_errorInput(t *testing.T) {
 			} {
 				ptrVal := reflect.New(valType)
 				ptr := ptrVal.Interface()
-				err := jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal([]byte(data), ptr)
+				err := jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(nil, []byte(data), ptr)
 				require.Error(t, err, "on input %q", data)
 			}
 		})

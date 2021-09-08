@@ -1,6 +1,7 @@
 package jsoni_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -10,8 +11,100 @@ import (
 	"github.com/bingoohuang/gg/pkg/strcase"
 	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
+
+type MapStringBytes map[string][]byte
+
+type ContextKey int
+
+const (
+	Converting ContextKey = iota
+)
+
+func (m *MapStringBytes) UnmarshalJSONContext(ctx context.Context, data []byte) error {
+	api := ctx.Value(jsoni.ContextCfg).(jsoni.API)
+	if ctx.Value(Converting) == "go" {
+		var mm map[string]string
+		if err := api.Unmarshal(ctx, data, &mm); err != nil {
+			return err
+		}
+
+		*m = revertMap(mm)
+		return nil
+	}
+
+	r := make(map[string][]byte)
+	err := api.Unmarshal(ctx, data, &r)
+	if err != nil {
+		return err
+	}
+	*m = r
+	return nil
+}
+
+func (m *MapStringBytes) MarshalJSONContext(ctx context.Context) ([]byte, error) {
+	api := ctx.Value(jsoni.ContextCfg).(jsoni.API)
+	if ctx.Value(Converting) == "go" {
+		return api.Marshal(ctx, convertMap(m))
+	}
+
+	return api.Marshal(ctx, (map[string][]byte)(*m))
+}
+
+func convertMap(m *MapStringBytes) map[string]string {
+	mm := make(map[string]string, len(*m))
+	for k, v := range *m {
+		mm[k] = string(v)
+	}
+	return mm
+}
+
+func revertMap(mm map[string]string) map[string][]byte {
+	r := make(map[string][]byte, len(mm))
+	for k, v := range mm {
+		r[k] = []byte(v)
+	}
+	return r
+}
+
+func TestContext(t *testing.T) {
+	m := make(MapStringBytes)
+	m["name"] = []byte("bingoohuang")
+	m["addr"] = []byte("中华人民共和国")
+
+	jmc := reflect.TypeOf((*jsoni.MarshalerContext)(nil)).Elem()
+	mt := reflect.ValueOf(m).Type()
+	assert.False(t, mt.Implements(jmc))
+	assert.False(t, mt.ConvertibleTo(jmc))
+	pmt := reflect.PtrTo(mt)
+	assert.True(t, pmt.Implements(jmc))
+	assert.True(t, pmt.ConvertibleTo(jmc))
+
+	api := jsoni.ConfigCompatibleWithStandardLibrary
+
+	bytes, _ := api.Marshal(nil, &m)
+	assert.Equal(t, `{"addr":"5Lit5Y2O5Lq65rCR5YWx5ZKM5Zu9","name":"YmluZ29vaHVhbmc="}`, string(bytes))
+
+	ctx := context.WithValue(context.Background(), Converting, "go")
+	bytes, _ = api.Marshal(ctx, &m)
+	assert.Equal(t, `{"addr":"中华人民共和国","name":"bingoohuang"}`, string(bytes))
+
+	bytes, _ = api.Marshal(nil, m)
+	assert.Equal(t, `{"addr":"5Lit5Y2O5Lq65rCR5YWx5ZKM5Zu9","name":"YmluZ29vaHVhbmc="}`, string(bytes))
+
+	bytes, _ = api.Marshal(ctx, m)
+	assert.Equal(t, `{"addr":"中华人民共和国","name":"bingoohuang"}`, string(bytes))
+
+	m = make(MapStringBytes)
+	assert.Nil(t, jsoni.Unmarshal([]byte(`{"addr":"5Lit5Y2O5Lq65rCR5YWx5ZKM5Zu9","name":"YmluZ29vaHVhbmc="}`), &m))
+	expect := MapStringBytes{"name": []byte("bingoohuang"), "addr": []byte("中华人民共和国")}
+	assert.Equal(t, expect, m)
+
+	assert.Nil(t, api.Unmarshal(ctx, []byte(`{"addr":"中华人民共和国","name":"bingoohuang"}`), &m))
+	assert.Equal(t, expect, m)
+}
 
 func TestMarshalJSON(t *testing.T) {
 	f := struct {
@@ -47,16 +140,17 @@ func TestInt64(t *testing.T) {
 	c := jsoni.Config{EscapeHTML: true, Int64AsString: true}.Froze()
 	c.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})
 
-	c.Unmarshal([]byte(`{"Foo":"12341"}`), &f)
+	ctx := context.Background()
+	c.Unmarshal(ctx, []byte(`{"Foo":"12341"}`), &f)
 	assert.Equal(t, int64(12341), f.Foo)
-	c.Unmarshal([]byte(`{"Foo":12342}`), &f)
+	c.Unmarshal(ctx, []byte(`{"Foo":12342}`), &f)
 	assert.Equal(t, int64(12342), f.Foo)
-	c.Unmarshal([]byte(`{"foo":12343}`), &f)
+	c.Unmarshal(ctx, []byte(`{"foo":12343}`), &f)
 	assert.Equal(t, int64(12343), f.Foo)
-	c.Unmarshal([]byte(`{"foo":"12344"}`), &f)
+	c.Unmarshal(ctx, []byte(`{"foo":"12344"}`), &f)
 	assert.Equal(t, int64(12344), f.Foo)
 
-	s, _ := c.MarshalToString(f)
+	s, _ := c.MarshalToString(ctx, f)
 	assert.Equal(t, `{"foo":"12344"}`, s)
 }
 func TestUInt64(t *testing.T) {
@@ -66,17 +160,17 @@ func TestUInt64(t *testing.T) {
 
 	c := jsoni.Config{EscapeHTML: true, Int64AsString: true}.Froze()
 	c.RegisterExtension(&extra.NamingStrategyExtension{Translate: extra.LowerCaseWithUnderscores})
-
-	c.Unmarshal([]byte(`{"Foo":"12341"}`), &f)
+	ctx := context.Background()
+	c.Unmarshal(ctx, []byte(`{"Foo":"12341"}`), &f)
 	assert.Equal(t, uint64(12341), f.Foo)
-	c.Unmarshal([]byte(`{"Foo":12342}`), &f)
+	c.Unmarshal(ctx, []byte(`{"Foo":12342}`), &f)
 	assert.Equal(t, uint64(12342), f.Foo)
-	c.Unmarshal([]byte(`{"foo":12343}`), &f)
+	c.Unmarshal(ctx, []byte(`{"foo":12343}`), &f)
 	assert.Equal(t, uint64(12343), f.Foo)
-	c.Unmarshal([]byte(`{"foo":"12344"}`), &f)
+	c.Unmarshal(ctx, []byte(`{"foo":"12344"}`), &f)
 	assert.Equal(t, uint64(12344), f.Foo)
 
-	s, _ := c.MarshalToString(f)
+	s, _ := c.MarshalToString(ctx, f)
 	assert.Equal(t, `{"foo":"12344"}`, s)
 }
 

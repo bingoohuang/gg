@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"github.com/modern-go/reflect2"
 	"io"
@@ -24,7 +25,7 @@ type sliceEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (e *sliceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *sliceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if e.sliceType.UnsafeIsNil(ptr) {
 		stream.WriteNil()
 		return
@@ -35,11 +36,11 @@ func (e *sliceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		return
 	}
 	stream.WriteArrayStart()
-	e.elemEncoder.Encode(e.sliceType.UnsafeGetIndex(ptr, 0), stream)
+	e.elemEncoder.Encode(ctx, e.sliceType.UnsafeGetIndex(ptr, 0), stream)
 	for i := 1; i < length; i++ {
 		stream.WriteMore()
 		elemPtr := e.sliceType.UnsafeGetIndex(ptr, i)
-		e.elemEncoder.Encode(elemPtr, stream)
+		e.elemEncoder.Encode(ctx, elemPtr, stream)
 	}
 	stream.WriteArrayEnd()
 	if stream.Error != nil && stream.Error != io.EOF {
@@ -47,7 +48,7 @@ func (e *sliceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (e *sliceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *sliceEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	return e.sliceType.UnsafeLengthOf(ptr) == 0
 }
 
@@ -56,14 +57,14 @@ type sliceDecoder struct {
 	elemDecoder ValDecoder
 }
 
-func (d *sliceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	d.doDecode(ptr, iter)
+func (d *sliceDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
+	d.doDecode(ctx, ptr, iter)
 	if iter.Error != nil && iter.Error != io.EOF {
 		iter.Error = fmt.Errorf("%v: %s", d.sliceType, iter.Error.Error())
 	}
 }
 
-func (d *sliceDecoder) doDecode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *sliceDecoder) doDecode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	c := iter.nextToken()
 	sliceType := d.sliceType
 	if c == 'n' {
@@ -83,14 +84,14 @@ func (d *sliceDecoder) doDecode(ptr unsafe.Pointer, iter *Iterator) {
 	iter.unreadByte()
 	sliceType.UnsafeGrow(ptr, 1)
 	elemPtr := sliceType.UnsafeGetIndex(ptr, 0)
-	d.elemDecoder.Decode(elemPtr, iter)
+	d.elemDecoder.Decode(ctx, elemPtr, iter)
 	length := 1
 	for c = iter.nextToken(); c == ','; c = iter.nextToken() {
 		idx := length
 		length += 1
 		sliceType.UnsafeGrow(ptr, length)
 		elemPtr = sliceType.UnsafeGetIndex(ptr, idx)
-		d.elemDecoder.Decode(elemPtr, iter)
+		d.elemDecoder.Decode(ctx, elemPtr, iter)
 	}
 	if c != ']' {
 		iter.ReportError("decode slice", "expect ], but found "+string([]byte{c}))

@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"reflect"
 	"unsafe"
 )
@@ -26,10 +27,10 @@ func (any *objectLazyAny) ToFloat32() float32   { return 0 }
 func (any *objectLazyAny) ToFloat64() float64   { return 0 }
 func (any *objectLazyAny) ToString() string     { return *(*string)(unsafe.Pointer(&any.buf)) }
 
-func (any *objectLazyAny) ToVal(obj interface{}) {
+func (any *objectLazyAny) ToVal(ctx context.Context, obj interface{}) {
 	iter := any.cfg.BorrowIterator(any.buf)
 	defer any.cfg.ReturnIterator(iter)
-	iter.ReadVal(obj)
+	iter.ReadVal(ctx, obj)
 }
 
 func (any *objectLazyAny) Get(path ...interface{}) Any {
@@ -90,14 +91,14 @@ func (any *objectLazyAny) Size() int {
 	return size
 }
 
-func (any *objectLazyAny) WriteTo(stream *Stream) {
+func (any *objectLazyAny) WriteTo(_ context.Context, stream *Stream) {
 	stream.Write(any.buf)
 }
 
-func (any *objectLazyAny) GetInterface() interface{} {
+func (any *objectLazyAny) GetInterface(ctx context.Context) interface{} {
 	iter := any.cfg.BorrowIterator(any.buf)
 	defer any.cfg.ReturnIterator(iter)
-	return iter.Read()
+	return iter.Read(ctx)
 }
 
 type objectAny struct {
@@ -173,11 +174,11 @@ func (any *objectAny) Size() int {
 	return any.val.NumField()
 }
 
-func (any *objectAny) WriteTo(stream *Stream) {
-	stream.WriteVal(any.val)
+func (any *objectAny) WriteTo(ctx context.Context, stream *Stream) {
+	stream.WriteVal(ctx, any.val)
 }
 
-func (any *objectAny) GetInterface() interface{} {
+func (any *objectAny) GetInterface(context.Context) interface{} {
 	return any.val.Interface()
 }
 
@@ -244,6 +245,6 @@ func (any *mapAny) Keys() []string {
 	return keys
 }
 
-func (any *mapAny) Size() int                 { return any.val.Len() }
-func (any *mapAny) WriteTo(stream *Stream)    { stream.WriteVal(any.val) }
-func (any *mapAny) GetInterface() interface{} { return any.val.Interface() }
+func (any *mapAny) Size() int                                   { return any.val.Len() }
+func (any *mapAny) WriteTo(ctx context.Context, stream *Stream) { stream.WriteVal(ctx, any.val) }
+func (any *mapAny) GetInterface(context.Context) interface{}    { return any.val.Interface() }

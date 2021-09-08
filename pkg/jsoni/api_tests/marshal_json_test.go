@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
@@ -27,7 +28,7 @@ func TestEncodeMarshalJSON(t *testing.T) {
 	should := require.New(t)
 	var buf, stdbuf bytes.Buffer
 	enc := jsoni.ConfigCompatibleWithStandardLibrary.NewEncoder(&buf)
-	enc.Encode(foo)
+	enc.Encode(context.Background(), foo)
 	stdenc := json.NewEncoder(&stdbuf)
 	stdenc.Encode(foo)
 	should.Equal(stdbuf.Bytes(), buf.Bytes())

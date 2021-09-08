@@ -1,6 +1,7 @@
 package misc_tests
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"testing"
@@ -28,7 +29,8 @@ func Test_read_big_int(t *testing.T) {
 func Test_read_float_as_interface(t *testing.T) {
 	should := require.New(t)
 	iter := jsoni.ParseString(jsoni.ConfigDefault, `12.3`)
-	should.Equal(float64(12.3), iter.Read())
+
+	should.Equal(12.3, iter.Read(context.Background()))
 }
 
 func Test_wrap_float(t *testing.T) {
@@ -40,11 +42,12 @@ func Test_wrap_float(t *testing.T) {
 
 func Test_read_float64_cursor(t *testing.T) {
 	should := require.New(t)
+	ctx := context.Background()
 	iter := jsoni.ParseString(jsoni.ConfigDefault, "[1.23456789\n,2,3]")
 	should.True(iter.ReadArray())
-	should.Equal(1.23456789, iter.Read())
+	should.Equal(1.23456789, iter.Read(ctx))
 	should.True(iter.ReadArray())
-	should.Equal(float64(2), iter.Read())
+	should.Equal(float64(2), iter.Read(ctx))
 }
 
 func Test_read_float_scientific(t *testing.T) {
@@ -62,11 +65,12 @@ func Test_read_float_scientific(t *testing.T) {
 
 func Test_lossy_float_marshal(t *testing.T) {
 	should := require.New(t)
+	ctx := context.Background()
 	api := jsoni.Config{MarshalFloatWith6Digits: true}.Froze()
-	output, err := api.MarshalToString(float64(0.1234567))
+	output, err := api.MarshalToString(ctx, float64(0.1234567))
 	should.Nil(err)
 	should.Equal("0.123457", output)
-	output, err = api.MarshalToString(float32(0.1234567))
+	output, err = api.MarshalToString(ctx, float32(0.1234567))
 	should.Nil(err)
 	should.Equal("0.123457", output)
 }

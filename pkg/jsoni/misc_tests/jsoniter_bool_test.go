@@ -2,6 +2,7 @@ package misc_tests
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -13,7 +14,7 @@ func Test_true(t *testing.T) {
 	iter := jsoni.ParseString(jsoni.ConfigDefault, `true`)
 	should.True(iter.ReadBool())
 	iter = jsoni.ParseString(jsoni.ConfigDefault, `true`)
-	should.Equal(true, iter.Read())
+	should.Equal(true, iter.Read(context.Background()))
 }
 
 func Test_false(t *testing.T) {
@@ -38,7 +39,7 @@ func Test_write_val_bool(t *testing.T) {
 	should := require.New(t)
 	buf := &bytes.Buffer{}
 	stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-	stream.WriteVal(true)
+	stream.WriteVal(context.Background(), true)
 	should.Equal(stream.Buffered(), 4)
 	stream.Flush()
 	should.Equal(stream.Buffered(), 0)

@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
@@ -30,7 +31,7 @@ func Test_marshal_indent_map(t *testing.T) {
 	output, err = jsoni.MarshalIndent(obj, "", "  ")
 	should.Nil(err)
 	should.Equal("{\n  \"1\": 2\n}", string(output))
-	output, err = jsoni.ConfigCompatibleWithStandardLibrary.MarshalIndent(obj, "", "  ")
+	output, err = jsoni.ConfigCompatibleWithStandardLibrary.MarshalIndent(context.Background(), obj, "", "  ")
 	should.Nil(err)
 	should.Equal("{\n  \"1\": 2\n}", string(output))
 }

@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -281,7 +282,7 @@ func (iter *Iterator) unreadByte() {
 }
 
 // Read reads the next JSON element as generic interface{}.
-func (iter *Iterator) Read() interface{} {
+func (iter *Iterator) Read(ctx context.Context) interface{} {
 	valueType := iter.WhatIsNext()
 	switch valueType {
 	case StringValue:
@@ -300,7 +301,7 @@ func (iter *Iterator) Read() interface{} {
 		var arr []interface{}
 		iter.ReadArrayCB(func(iter *Iterator) bool {
 			var elem interface{}
-			iter.ReadVal(&elem)
+			iter.ReadVal(ctx, &elem)
 			arr = append(arr, elem)
 			return true
 		})
@@ -309,7 +310,7 @@ func (iter *Iterator) Read() interface{} {
 		obj := map[string]interface{}{}
 		iter.ReadMapCB(func(Iter *Iterator, field string) bool {
 			var elem interface{}
-			iter.ReadVal(&elem)
+			iter.ReadVal(ctx, &elem)
 			obj[field] = elem
 			return true
 		})

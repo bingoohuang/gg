@@ -1,6 +1,7 @@
 package misc_tests
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
@@ -36,8 +37,8 @@ func Test_marshal_invalid_json_raw_message(t *testing.T) {
 
 	a := A{}
 	should := require.New(t)
-	should.Nil(jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(message, &a))
-	aout, aouterr := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(&a)
+	should.Nil(jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(context.Background(), message, &a))
+	aout, aouterr := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(context.Background(), &a)
 	should.Equal(`{"raw":null}`, string(aout))
 	should.Nil(aouterr)
 }
@@ -80,7 +81,7 @@ func Test_raw_message_memory_not_copied_issue(t *testing.T) {
 
 	obj := &IteratorObject{}
 	decoder := jsoni.NewDecoder(strings.NewReader(jsonStream))
-	err := decoder.Decode(obj)
+	err := decoder.Decode(context.Background(), obj)
 	should := require.New(t)
 	should.Nil(err)
 	should.Equal(`{"open":true,"type":"day","num":100}`, string(*obj.Freq))

@@ -1,6 +1,7 @@
 package extra
 
 import (
+	"context"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"time"
 	"unsafe"
@@ -16,16 +17,16 @@ type timeAsInt64Codec struct {
 	precision time.Duration
 }
 
-func (codec *timeAsInt64Codec) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (codec *timeAsInt64Codec) Decode(_ context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	nanoseconds := iter.ReadInt64() * codec.precision.Nanoseconds()
 	*((*time.Time)(ptr)) = time.Unix(0, nanoseconds)
 }
 
-func (codec *timeAsInt64Codec) IsEmpty(ptr unsafe.Pointer) bool {
+func (codec *timeAsInt64Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	ts := *((*time.Time)(ptr))
 	return ts.UnixNano() == 0
 }
-func (codec *timeAsInt64Codec) Encode(ptr unsafe.Pointer, stream *jsoni.Stream) {
+func (codec *timeAsInt64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 	ts := *((*time.Time)(ptr))
 	stream.WriteInt64(ts.UnixNano() / codec.precision.Nanoseconds())
 }

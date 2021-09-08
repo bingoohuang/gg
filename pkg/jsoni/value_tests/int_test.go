@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
@@ -159,6 +160,7 @@ func Test_read_int64(t *testing.T) {
 }
 
 func Test_write_uint8(t *testing.T) {
+	ctx := context.Background()
 	vals := []uint8{0, 1, 11, 111, 255}
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
@@ -174,7 +176,7 @@ func Test_write_uint8(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatUint(uint64(val), 10), buf.String())
@@ -191,6 +193,7 @@ func Test_write_uint8(t *testing.T) {
 }
 
 func Test_write_int8(t *testing.T) {
+	ctx := context.Background()
 	vals := []int8{0, 1, -1, 99, 0x7f, -0x80}
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
@@ -206,7 +209,7 @@ func Test_write_int8(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatInt(int64(val), 10), buf.String())
@@ -224,6 +227,7 @@ func Test_write_int8(t *testing.T) {
 
 func Test_write_uint16(t *testing.T) {
 	vals := []uint16{0, 1, 11, 111, 255, 0xfff, 0xffff}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -238,7 +242,7 @@ func Test_write_uint16(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatUint(uint64(val), 10), buf.String())
@@ -255,6 +259,7 @@ func Test_write_uint16(t *testing.T) {
 }
 
 func Test_write_int16(t *testing.T) {
+	ctx := context.Background()
 	vals := []int16{0, 1, 11, 111, 255, 0xfff, 0x7fff, -0x8000}
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
@@ -270,7 +275,7 @@ func Test_write_int16(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatInt(int64(val), 10), buf.String())
@@ -288,6 +293,7 @@ func Test_write_int16(t *testing.T) {
 
 func Test_write_uint32(t *testing.T) {
 	vals := []uint32{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -302,7 +308,7 @@ func Test_write_uint32(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatUint(uint64(val), 10), buf.String())
@@ -320,6 +326,7 @@ func Test_write_uint32(t *testing.T) {
 
 func Test_write_int32(t *testing.T) {
 	vals := []int32{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0x7fffffff, -0x80000000}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -334,7 +341,7 @@ func Test_write_int32(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatInt(int64(val), 10), buf.String())
@@ -354,6 +361,7 @@ func Test_write_uint64(t *testing.T) {
 	vals := []uint64{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
 		0xfffffffff, 0xffffffffff, 0xfffffffffff, 0xffffffffffff, 0xfffffffffffff, 0xffffffffffffff,
 		0xfffffffffffffff, 0xffffffffffffffff}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -368,7 +376,7 @@ func Test_write_uint64(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatUint(uint64(val), 10), buf.String())
@@ -388,6 +396,7 @@ func Test_write_int64(t *testing.T) {
 	vals := []int64{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
 		0xfffffffff, 0xffffffffff, 0xfffffffffff, 0xffffffffffff, 0xfffffffffffff, 0xffffffffffffff,
 		0xfffffffffffffff, 0x7fffffffffffffff, -0x8000000000000000}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -402,7 +411,7 @@ func Test_write_int64(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatInt(val, 10), buf.String())

@@ -1,9 +1,11 @@
-//+build go1.8
+//go:build go1.8
+// +build go1.8
 
 package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"testing"
 	"unicode/utf8"
@@ -22,13 +24,14 @@ func Test_new_encoder(t *testing.T) {
 	buf2 := &bytes.Buffer{}
 	encoder2 := jsoni.NewEncoder(buf2)
 	encoder2.SetEscapeHTML(false)
-	encoder2.Encode([]int{1})
+	encoder2.Encode(context.Background(), []int{1})
 	should.Equal("[1]\n", buf2.String())
 }
 
 func Test_string_encode_with_std_without_html_escape(t *testing.T) {
 	api := jsoni.Config{EscapeHTML: false}.Froze()
 	should := require.New(t)
+	ctx := context.Background()
 	for i := 0; i < utf8.RuneSelf; i++ {
 		input := string([]byte{byte(i)})
 		buf := &bytes.Buffer{}
@@ -38,7 +41,7 @@ func Test_string_encode_with_std_without_html_escape(t *testing.T) {
 		should.Nil(err)
 		stdOutput := buf.String()
 		stdOutput = stdOutput[:len(stdOutput)-1]
-		jsoniterOutputBytes, err := api.Marshal(input)
+		jsoniterOutputBytes, err := api.Marshal(ctx, input)
 		should.Nil(err)
 		jsoniterOutput := string(jsoniterOutputBytes)
 		should.Equal(stdOutput, jsoniterOutput)

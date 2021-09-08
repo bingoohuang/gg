@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"unsafe"
@@ -19,19 +20,19 @@ import (
 // 3. assignment to map, both key and value will be reflect.Value
 // For a simple struct binding, it will be reflect.Value free and allocation free
 type ValDecoder interface {
-	Decode(ptr unsafe.Pointer, iter *Iterator)
+	Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator)
 }
 
 // ValEncoder is an internal type registered to cache as needed.
 // Don't confuse jsoni.ValEncoder with json.Encoder.
 // For json.Encoder's adapter, refer to jsoni.AdapterEncoder(todo godoc link).
 type ValEncoder interface {
-	IsEmpty(ptr unsafe.Pointer) bool
-	Encode(ptr unsafe.Pointer, stream *Stream)
+	IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool
+	Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream)
 }
 
 type checkIsEmpty interface {
-	IsEmpty(ptr unsafe.Pointer) bool
+	IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool
 }
 
 type ctx struct {
@@ -59,7 +60,7 @@ func (b *ctx) append(prefix string) *ctx {
 }
 
 // ReadVal copy the underlying JSON into go interface, same as json.Unmarshal
-func (iter *Iterator) ReadVal(obj interface{}) {
+func (iter *Iterator) ReadVal(ctx context.Context, obj interface{}) {
 	depth := iter.depth
 	cacheKey := reflect2.RTypeOf(obj)
 	decoder := iter.cfg.getDecoderFromCache(cacheKey)
@@ -76,7 +77,7 @@ func (iter *Iterator) ReadVal(obj interface{}) {
 		iter.ReportError("ReadVal", "can not read into nil pointer")
 		return
 	}
-	decoder.Decode(ptr, iter)
+	decoder.Decode(ctx, ptr, iter)
 	if iter.depth != depth {
 		iter.ReportError("ReadVal", "unexpected mismatched nesting")
 		return
@@ -84,7 +85,7 @@ func (iter *Iterator) ReadVal(obj interface{}) {
 }
 
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
-func (s *Stream) WriteVal(val interface{}) {
+func (s *Stream) WriteVal(ctx context.Context, val interface{}) {
 	if nil == val {
 		s.WriteNil()
 		return
@@ -95,7 +96,7 @@ func (s *Stream) WriteVal(val interface{}) {
 		typ := reflect2.TypeOf(val)
 		encoder = s.cfg.EncoderOf(typ)
 	}
-	encoder.Encode(reflect2.PtrOf(val), s)
+	encoder.Encode(ctx, reflect2.PtrOf(val), s)
 }
 
 func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
@@ -105,7 +106,6 @@ func (c *frozenConfig) DecoderOf(typ reflect2.Type) ValDecoder {
 	}
 	ct := &ctx{
 		frozenConfig: c,
-		prefix:       "",
 		decoders:     map[reflect2.Type]ValDecoder{},
 		encoders:     map[reflect2.Type]ValEncoder{},
 	}
@@ -181,7 +181,6 @@ func (c *frozenConfig) EncoderOf(typ reflect2.Type) ValEncoder {
 	}
 	encoder := encoderOfType(&ctx{
 		frozenConfig: c,
-		prefix:       "",
 		decoders:     map[reflect2.Type]ValDecoder{},
 		encoders:     map[reflect2.Type]ValEncoder{},
 	}, typ)
@@ -196,8 +195,12 @@ type onePtrEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *onePtrEncoder) IsEmpty(p unsafe.Pointer) bool      { return e.encoder.IsEmpty(unsafe.Pointer(&p)) }
-func (e *onePtrEncoder) Encode(p unsafe.Pointer, s *Stream) { e.encoder.Encode(unsafe.Pointer(&p), s) }
+func (e *onePtrEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
+	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p))
+}
+func (e *onePtrEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
+	e.encoder.Encode(ctx, unsafe.Pointer(&p), s)
+}
 
 func encoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	if encoder := getTypeEncoderFromExtension(ctx, typ); encoder != nil {
@@ -260,7 +263,7 @@ type lazyErrorDecoder struct {
 	err error
 }
 
-func (d *lazyErrorDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
+func (d *lazyErrorDecoder) Decode(_ context.Context, _ unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() != NilValue {
 		if iter.Error == nil {
 			iter.Error = d.err
@@ -274,7 +277,7 @@ type lazyErrorEncoder struct {
 	err error
 }
 
-func (e *lazyErrorEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *lazyErrorEncoder) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if ptr == nil {
 		stream.WriteNil()
 	} else if stream.Error == nil {
@@ -282,19 +285,23 @@ func (e *lazyErrorEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (e *lazyErrorEncoder) IsEmpty(unsafe.Pointer) bool { return false }
+func (e *lazyErrorEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
 
 type placeholderDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *placeholderDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	d.decoder.Decode(ptr, iter)
+func (d *placeholderDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
+	d.decoder.Decode(ctx, ptr, iter)
 }
 
 type placeholderEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *placeholderEncoder) Encode(p unsafe.Pointer, s *Stream) { e.encoder.Encode(p, s) }
-func (e *placeholderEncoder) IsEmpty(p unsafe.Pointer) bool      { return e.encoder.IsEmpty(p) }
+func (e *placeholderEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
+	e.encoder.Encode(ctx, p, s)
+}
+func (e *placeholderEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
+	return e.encoder.IsEmpty(ctx, p)
+}

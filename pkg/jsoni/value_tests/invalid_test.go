@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func Test_invalid_any(t *testing.T) {
 	any := jsoni.Get([]byte("[]"))
 	should.Equal(jsoni.InvalidValue, any.Get(0.3).ValueType())
 	// is nil correct ?
-	should.Equal(nil, any.Get(0.3).GetInterface())
+	should.Equal(nil, any.Get(0.3).GetInterface(nil))
 
 	any = any.Get(0.3)
 	should.Equal(false, any.ToBool())
@@ -119,7 +120,7 @@ func Test_chan(t *testing.T) {
 
 	t.Run("Encode channel using compatible configuration", func(t *testing.T) {
 		should := require.New(t)
-		str, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(obj)
+		str, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(context.Background(), obj)
 		should.NotNil(err)
 		should.Nil(str)
 	})
@@ -137,7 +138,7 @@ func Test_invalid_in_map(t *testing.T) {
 
 	t.Run("Encode map with invalid content using compatible configuration", func(t *testing.T) {
 		should := require.New(t)
-		str, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(testMap)
+		str, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(context.Background(), testMap)
 		should.NotNil(err)
 		should.Nil(str)
 	})
@@ -148,10 +149,11 @@ func Test_invalid_number(t *testing.T) {
 		Number int `json:"number"`
 	}
 	obj := Message{}
+	ctx := context.Background()
 	decoder := jsoni.ConfigCompatibleWithStandardLibrary.NewDecoder(bytes.NewBufferString(`{"number":"5"}`))
-	err := decoder.Decode(&obj)
+	err := decoder.Decode(ctx, &obj)
 	invalidStr := err.Error()
-	result, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(invalidStr)
+	result, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(ctx, invalidStr)
 	should := require.New(t)
 	should.Nil(err)
 	result2, err := json.Marshal(invalidStr)
@@ -215,7 +217,7 @@ func Test_func_pointer_type(t *testing.T) {
 
 func TestEOF(t *testing.T) {
 	var s string
-	err := jsoni.ConfigCompatibleWithStandardLibrary.NewDecoder(&bytes.Buffer{}).Decode(&s)
+	err := jsoni.ConfigCompatibleWithStandardLibrary.NewDecoder(&bytes.Buffer{}).Decode(context.Background(), &s)
 	assert.Equal(t, io.EOF, err)
 }
 

@@ -2,6 +2,7 @@ package misc_tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -43,7 +44,7 @@ func Test_two_elements(t *testing.T) {
 	should.Equal(int64(2), iter.ReadInt64())
 	should.False(iter.ReadArray())
 	iter = jsoni.ParseString(jsoni.ConfigDefault, `[1,2]`)
-	should.Equal([]interface{}{float64(1), float64(2)}, iter.Read())
+	should.Equal([]interface{}{float64(1), float64(2)}, iter.Read(context.Background()))
 }
 
 func Test_whitespace_in_head(t *testing.T) {

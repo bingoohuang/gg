@@ -1,6 +1,7 @@
 package extra
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"math"
@@ -160,26 +161,26 @@ type tolerateEmptyArrayDecoder struct {
 	valDecoder jsoni.ValDecoder
 }
 
-func (decoder *tolerateEmptyArrayDecoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (decoder *tolerateEmptyArrayDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	if iter.WhatIsNext() == jsoni.ArrayValue {
 		iter.Skip()
 		newIter := iter.Pool().BorrowIterator([]byte("{}"))
 		defer iter.Pool().ReturnIterator(newIter)
-		decoder.valDecoder.Decode(ptr, newIter)
+		decoder.valDecoder.Decode(ctx, ptr, newIter)
 	} else {
-		decoder.valDecoder.Decode(ptr, iter)
+		decoder.valDecoder.Decode(ctx, ptr, iter)
 	}
 }
 
 type fuzzyStringDecoder struct {
 }
 
-func (decoder *fuzzyStringDecoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (decoder *fuzzyStringDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
 	switch valueType {
 	case jsoni.NumberValue:
 		var number json.Number
-		iter.ReadVal(&number)
+		iter.ReadVal(ctx, &number)
 		*((*string)(ptr)) = string(number)
 	case jsoni.StringValue:
 		*((*string)(ptr)) = iter.ReadString()
@@ -195,13 +196,13 @@ type fuzzyIntegerDecoder struct {
 	fun func(isFloat bool, ptr unsafe.Pointer, iter *jsoni.Iterator)
 }
 
-func (decoder *fuzzyIntegerDecoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (decoder *fuzzyIntegerDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
 	var str string
 	switch valueType {
 	case jsoni.NumberValue:
 		var number json.Number
-		iter.ReadVal(&number)
+		iter.ReadVal(ctx, &number)
 		str = string(number)
 	case jsoni.StringValue:
 		str = iter.ReadString()
@@ -232,7 +233,7 @@ func (decoder *fuzzyIntegerDecoder) Decode(ptr unsafe.Pointer, iter *jsoni.Itera
 type fuzzyFloat32Decoder struct {
 }
 
-func (decoder *fuzzyFloat32Decoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (decoder *fuzzyFloat32Decoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
 	var str string
 	switch valueType {
@@ -264,7 +265,7 @@ func (decoder *fuzzyFloat32Decoder) Decode(ptr unsafe.Pointer, iter *jsoni.Itera
 type fuzzyFloat64Decoder struct {
 }
 
-func (decoder *fuzzyFloat64Decoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (decoder *fuzzyFloat64Decoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
 	var str string
 	switch valueType {

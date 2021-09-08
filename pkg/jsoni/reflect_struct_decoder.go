@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -78,13 +79,13 @@ type generalStructDecoder struct {
 	disallowUnknownFields bool
 }
 
-func (d *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *generalStructDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if !iter.readObjectStart() || !iter.incrementDepth() {
 		return
 	}
 	var c byte
 	for c = ','; c == ','; c = iter.nextToken() {
-		d.decodeOneField(ptr, iter)
+		d.decodeOneField(ctx, ptr, iter)
 	}
 	if iter.Error != nil && iter.Error != io.EOF && len(d.typ.Type1().Name()) != 0 {
 		iter.Error = fmt.Errorf("%v.%s", d.typ, iter.Error.Error())
@@ -95,7 +96,7 @@ func (d *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	iter.decrementDepth()
 }
 
-func (d *generalStructDecoder) decodeOneField(ptr unsafe.Pointer, iter *Iterator) {
+func (d *generalStructDecoder) decodeOneField(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	var field string
 	var fieldDecoder *structFieldDecoder
 	if iter.cfg.objectFieldMustBeSimpleString {
@@ -126,12 +127,12 @@ func (d *generalStructDecoder) decodeOneField(ptr unsafe.Pointer, iter *Iterator
 	if c := iter.nextToken(); c != ':' {
 		iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
 	}
-	fieldDecoder.Decode(ptr, iter)
+	fieldDecoder.Decode(ctx, ptr, iter)
 }
 
 type skipObjectDecoder struct{}
 
-func (d *skipObjectDecoder) Decode(_ unsafe.Pointer, iter *Iterator) {
+func (d *skipObjectDecoder) Decode(_ context.Context, _ unsafe.Pointer, iter *Iterator) {
 	valueType := iter.WhatIsNext()
 	if valueType != ObjectValue && valueType != NilValue {
 		iter.ReportError("skipObjectDecoder", "expect object or null")
@@ -145,14 +146,14 @@ type fieldsStructDecoder struct {
 	HashDecoders map[int64]*structFieldDecoder
 }
 
-func (d *fieldsStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *fieldsStructDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if !iter.readObjectStart() || !iter.incrementDepth() {
 		return
 	}
 	for {
 		fieldHash := iter.readFieldHash()
 		if decoder, ok := d.HashDecoders[fieldHash]; ok {
-			decoder.Decode(ptr, iter)
+			decoder.Decode(ctx, ptr, iter)
 		} else {
 			iter.Skip()
 		}
@@ -172,9 +173,9 @@ type structFieldDecoder struct {
 	fieldDecoder ValDecoder
 }
 
-func (d *structFieldDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *structFieldDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	fieldPtr := d.field.UnsafeGet(ptr)
-	d.fieldDecoder.Decode(fieldPtr, iter)
+	d.fieldDecoder.Decode(ctx, fieldPtr, iter)
 	if iter.Error != nil && iter.Error != io.EOF {
 		iter.Error = fmt.Errorf("%s: %s", d.field.Name(), iter.Error.Error())
 	}
@@ -185,8 +186,8 @@ type stringModeStringDecoder struct {
 	cfg         *frozenConfig
 }
 
-func (d *stringModeStringDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	d.elemDecoder.Decode(ptr, iter)
+func (d *stringModeStringDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
+	d.elemDecoder.Decode(ctx, ptr, iter)
 	str := *((*string)(ptr))
 	tempIter := d.cfg.BorrowIterator([]byte(str))
 	defer d.cfg.ReturnIterator(tempIter)
@@ -197,9 +198,9 @@ type stringModeNumberDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *stringModeNumberDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() == NilValue {
-		d.decoder.Decode(ptr, iter)
+		d.decoder.Decode(ctx, ptr, iter)
 		return
 	}
 
@@ -207,7 +208,7 @@ func (d *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 		iter.ReportError("stringModeNumberDecoder", `expect ", but found `+string([]byte{c}))
 		return
 	}
-	d.decoder.Decode(ptr, iter)
+	d.decoder.Decode(ctx, ptr, iter)
 	if iter.Error != nil {
 		return
 	}
@@ -221,9 +222,9 @@ type stringModeNumberCompatibleDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *stringModeNumberCompatibleDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *stringModeNumberCompatibleDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if iter.WhatIsNext() == NilValue {
-		d.decoder.Decode(ptr, iter)
+		d.decoder.Decode(ctx, ptr, iter)
 		return
 	}
 
@@ -231,7 +232,7 @@ func (d *stringModeNumberCompatibleDecoder) Decode(ptr unsafe.Pointer, iter *Ite
 	if !isString {
 		iter.unreadByte()
 	}
-	d.decoder.Decode(ptr, iter)
+	d.decoder.Decode(ctx, ptr, iter)
 	if iter.Error != nil {
 		return
 	}

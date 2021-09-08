@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -66,7 +67,7 @@ func ExampleUnmarshal() {
 
 	var a A
 	c := Config{EscapeHTML: true, CaseSensitive: true}.Froze()
-	c.Unmarshal([]byte(`{"Bar": "1", "bar": "2" }`), &a)
+	c.Unmarshal(context.Background(), []byte(`{"Bar": "1", "bar": "2" }`), &a)
 	fmt.Println(a.Bar)
 
 	// Output:
@@ -87,7 +88,7 @@ func ExampleConfigFastest_Marshal() {
 	}
 	stream := ConfigFastest.BorrowStream(nil)
 	defer ConfigFastest.ReturnStream(stream)
-	stream.WriteVal(group)
+	stream.WriteVal(context.Background(), group)
 	if stream.Error != nil {
 		fmt.Println("error:", stream.Error)
 	}
@@ -108,7 +109,7 @@ func ExampleConfigFastest_Unmarshal() {
 	var animals []Animal
 	iter := ConfigFastest.BorrowIterator(jsonBlob)
 	defer ConfigFastest.ReturnIterator(iter)
-	iter.ReadVal(&animals)
+	iter.ReadVal(context.Background(), &animals)
 	if iter.Error != nil {
 		fmt.Println("error:", iter.Error)
 	}

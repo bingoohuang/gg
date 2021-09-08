@@ -1,6 +1,7 @@
 package any_tests
 
 import (
+	"context"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"testing"
 
@@ -32,18 +33,19 @@ func Test_read_one_element_array_as_any(t *testing.T) {
 }
 
 func Test_read_two_element_array_as_any(t *testing.T) {
+	ctx := context.Background()
 	should := require.New(t)
 	any := jsoni.Get([]byte("[1,2]"))
 	should.Equal(1, any.Get(0).ToInt())
 	should.Equal(2, any.Size())
 	should.True(any.ToBool())
 	should.Equal(1, any.ToInt())
-	should.Equal([]interface{}{float64(1), float64(2)}, any.GetInterface())
+	should.Equal([]interface{}{float64(1), float64(2)}, any.GetInterface(nil))
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(ctx, stream)
 	should.Equal("[1,2]", string(stream.Buffer()))
 	arr := []int{}
-	any.ToVal(&arr)
+	any.ToVal(ctx, &arr)
 	should.Equal([]int{1, 2}, arr)
 }
 
@@ -76,7 +78,7 @@ func Test_wrap_array_and_convert_to_any(t *testing.T) {
 	should.Equal(0, any2.Size())
 
 	var i interface{} = []int{1, 2, 3}
-	should.Equal(i, any.GetInterface())
+	should.Equal(i, any.GetInterface(nil))
 }
 
 func Test_array_lazy_any_get(t *testing.T) {

@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -27,12 +28,12 @@ type Any interface {
 	ToFloat32() float32
 	ToFloat64() float64
 	ToString() string
-	ToVal(val interface{})
+	ToVal(ctx context.Context, val interface{})
 	Get(path ...interface{}) Any
 	Size() int
 	Keys() []string
-	GetInterface() interface{}
-	WriteTo(stream *Stream)
+	GetInterface(ctx context.Context) interface{}
+	WriteTo(ctx context.Context, stream *Stream)
 }
 
 type baseAny struct{}
@@ -41,9 +42,9 @@ func (any *baseAny) Get(path ...interface{}) Any {
 	return &invalidAny{baseAny{}, fmt.Errorf("GetIndex %v from simple value", path)}
 }
 
-func (any *baseAny) Size() int             { return 0 }
-func (any *baseAny) Keys() []string        { return []string{} }
-func (any *baseAny) ToVal(obj interface{}) { panic("not implemented") }
+func (any *baseAny) Size() int                          { return 0 }
+func (any *baseAny) Keys() []string                     { return []string{} }
+func (any *baseAny) ToVal(context.Context, interface{}) { panic("not implemented") }
 
 // WrapInt32 turn int32 into Any interface
 func WrapInt32(val int32) Any { return &int32Any{baseAny{}, val} }
@@ -264,15 +265,15 @@ type anyCodec struct {
 	valType reflect2.Type
 }
 
-func (c *anyCodec) Decode(unsafe.Pointer, *Iterator) { panic("not implemented") }
+func (c *anyCodec) Decode(context.Context, unsafe.Pointer, *Iterator) { panic("not implemented") }
 
-func (c *anyCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (c *anyCodec) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	obj := c.valType.UnsafeIndirect(ptr)
 	any := obj.(Any)
-	any.WriteTo(stream)
+	any.WriteTo(ctx, stream)
 }
 
-func (c *anyCodec) IsEmpty(ptr unsafe.Pointer) bool {
+func (c *anyCodec) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
 	obj := c.valType.UnsafeIndirect(ptr)
 	any := obj.(Any)
 	return any.Size() == 0
@@ -280,20 +281,20 @@ func (c *anyCodec) IsEmpty(ptr unsafe.Pointer) bool {
 
 type directAnyCodec struct{}
 
-func (c *directAnyCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (c *directAnyCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	*(*Any)(ptr) = iter.readAny()
 }
 
-func (c *directAnyCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (c *directAnyCodec) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	any := *(*Any)(ptr)
 	if any == nil {
 		stream.WriteNil()
 		return
 	}
-	any.WriteTo(stream)
+	any.WriteTo(ctx, stream)
 }
 
-func (c *directAnyCodec) IsEmpty(ptr unsafe.Pointer) bool {
+func (c *directAnyCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	any := *(*Any)(ptr)
 	return any.Size() == 0
 }

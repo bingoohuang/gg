@@ -2,6 +2,7 @@ package misc_tests
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
@@ -129,7 +130,7 @@ func Test_reader_and_load_more(t *testing.T) {
 	`)
 	decoder := jsoni.ConfigCompatibleWithStandardLibrary.NewDecoder(reader)
 	obj := TestObject{}
-	should.Nil(decoder.Decode(&obj))
+	should.Nil(decoder.Decode(context.Background(), &obj))
 }
 
 func Test_unmarshal_into_existing_value(t *testing.T) {
@@ -142,7 +143,7 @@ func Test_unmarshal_into_existing_value(t *testing.T) {
 	m := map[string]interface{}{}
 	obj.Field2 = &m
 	cfg := jsoni.Config{UseNumber: true}.Froze()
-	err := cfg.Unmarshal([]byte(`{"Field1":1,"Field2":{"k":"v"}}`), &obj)
+	err := cfg.Unmarshal(context.Background(), []byte(`{"Field1":1,"Field2":{"k":"v"}}`), &obj)
 	should.NoError(err)
 	should.Equal(map[string]interface{}{
 		"k": "v",
@@ -157,7 +158,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 	}{}
 
 	cfg := jsoni.ConfigCompatibleWithStandardLibrary
-	err := cfg.UnmarshalFromString(`{"Field1":`, &t0)
+	err := cfg.UnmarshalFromString(context.Background(), `{"Field1":`, &t0)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t0).String())
 
@@ -171,7 +172,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t1 := TestObject1{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field1":{"InnerField1"`, &t1)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field1":{"InnerField1"`, &t1)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t1.Field1).String())
 	should.Contains(err.Error(), reflect.TypeOf(t1).String())
@@ -184,7 +185,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t2 := TestObject2{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field2":{"InnerField2"`, &t2)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field2":{"InnerField2"`, &t2)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t2.Field2).String())
 	should.Contains(err.Error(), reflect.TypeOf(t2).String())
@@ -199,7 +200,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t3 := TestObject3{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field3":{"InnerField3"`, &t3)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field3":{"InnerField3"`, &t3)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t3.Field3).String())
 	should.Contains(err.Error(), reflect.TypeOf(t3).String())
@@ -216,7 +217,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t4 := TestObject4{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field4":{"InnerField4"`, &t4)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field4":{"InnerField4"`, &t4)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t4.Field4).String())
 	should.Contains(err.Error(), reflect.TypeOf(t4).String())
@@ -235,7 +236,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t5 := TestObject5{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field5":{"InnerField5"`, &t5)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field5":{"InnerField5"`, &t5)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t5.Field5).String())
 	should.Contains(err.Error(), reflect.TypeOf(t5).String())
@@ -256,7 +257,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t6 := TestObject6{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field6":{"InnerField6"`, &t6)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field6":{"InnerField6"`, &t6)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t6.Field6).String())
 	should.Contains(err.Error(), reflect.TypeOf(t6).String())
@@ -279,7 +280,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t7 := TestObject7{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field7":{"InnerField7"`, &t7)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field7":{"InnerField7"`, &t7)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t7.Field7).String())
 	should.Contains(err.Error(), reflect.TypeOf(t7).String())
@@ -304,7 +305,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t8 := TestObject8{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field8":{"InnerField8"`, &t8)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field8":{"InnerField8"`, &t8)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t8.Field8).String())
 	should.Contains(err.Error(), reflect.TypeOf(t8).String())
@@ -331,7 +332,7 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t9 := TestObject9{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field9":{"InnerField9"`, &t9)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field9":{"InnerField9"`, &t9)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t9.Field9).String())
 	should.Contains(err.Error(), reflect.TypeOf(t9).String())
@@ -360,12 +361,12 @@ func Test_unmarshal_anonymous_struct_invalid(t *testing.T) {
 		}
 	}
 	t10 := TestObject10{}
-	err = cfgCaseSensitive.UnmarshalFromString(`{"Field10":{"InnerField10"`, &t10)
+	err = cfgCaseSensitive.UnmarshalFromString(context.Background(), `{"Field10":{"InnerField10"`, &t10)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t10.Field10).String())
 	should.Contains(err.Error(), reflect.TypeOf(t10).String())
 
-	err = cfg.UnmarshalFromString(`{"Field10":{"InnerField10"`, &t10)
+	err = cfg.UnmarshalFromString(context.Background(), `{"Field10":{"InnerField10"`, &t10)
 	should.NotNil(err)
 	should.NotContains(err.Error(), reflect.TypeOf(t10.Field10).String())
 	should.Contains(err.Error(), reflect.TypeOf(t10).String())

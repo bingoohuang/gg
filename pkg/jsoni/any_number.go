@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"io"
 	"unsafe"
 )
@@ -67,10 +68,10 @@ func (a *numberLazyAny) ToFloat64() (val float64) {
 	return
 }
 
-func (a *numberLazyAny) ToString() string       { return *(*string)(unsafe.Pointer(&a.buf)) }
-func (a *numberLazyAny) WriteTo(stream *Stream) { stream.Write(a.buf) }
+func (a *numberLazyAny) ToString() string                          { return *(*string)(unsafe.Pointer(&a.buf)) }
+func (a *numberLazyAny) WriteTo(_ context.Context, stream *Stream) { stream.Write(a.buf) }
 
-func (a *numberLazyAny) GetInterface() (val interface{}) {
-	a.iterFunc(func(i *Iterator) { val = i.Read() })
+func (a *numberLazyAny) GetInterface(ctx context.Context) (val interface{}) {
+	a.iterFunc(func(i *Iterator) { val = i.Read(ctx) })
 	return
 }

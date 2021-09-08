@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"github.com/modern-go/reflect2"
 	"unsafe"
 )
@@ -25,18 +26,18 @@ type OptionalDecoder struct {
 	ValueDecoder ValDecoder
 }
 
-func (d *OptionalDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *OptionalDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if iter.ReadNil() {
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
 		if *((*unsafe.Pointer)(ptr)) == nil {
 			//pointer to null, we have to allocate memory to hold the value
 			newPtr := d.ValueType.UnsafeNew()
-			d.ValueDecoder.Decode(newPtr, iter)
+			d.ValueDecoder.Decode(ctx, newPtr, iter)
 			*((*unsafe.Pointer)(ptr)) = newPtr
 		} else {
 			//reuse existing instance
-			d.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), iter)
+			d.ValueDecoder.Decode(ctx, *((*unsafe.Pointer)(ptr)), iter)
 		}
 	}
 }
@@ -47,15 +48,15 @@ type dereferenceDecoder struct {
 	valueDecoder ValDecoder
 }
 
-func (d *dereferenceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *dereferenceDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		//pointer to null, we have to allocate memory to hold the value
 		newPtr := d.valueType.UnsafeNew()
-		d.valueDecoder.Decode(newPtr, iter)
+		d.valueDecoder.Decode(ctx, newPtr, iter)
 		*((*unsafe.Pointer)(ptr)) = newPtr
 	} else {
 		//reuse existing instance
-		d.valueDecoder.Decode(*((*unsafe.Pointer)(ptr)), iter)
+		d.valueDecoder.Decode(ctx, *((*unsafe.Pointer)(ptr)), iter)
 	}
 }
 
@@ -63,15 +64,15 @@ type OptionalEncoder struct {
 	ValueEncoder ValEncoder
 }
 
-func (e *OptionalEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *OptionalEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		e.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
+		e.ValueEncoder.Encode(ctx, *((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
-func (e *OptionalEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *OptionalEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	return *((*unsafe.Pointer)(ptr)) == nil
 }
 
@@ -79,17 +80,17 @@ type dereferenceEncoder struct {
 	ValueEncoder ValEncoder
 }
 
-func (e *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *dereferenceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		e.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
+		e.ValueEncoder.Encode(ctx, *((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
-func (e *dereferenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *dereferenceEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
 	if dePtr := *((*unsafe.Pointer)(ptr)); dePtr != nil {
-		return e.ValueEncoder.IsEmpty(dePtr)
+		return e.ValueEncoder.IsEmpty(ctx, dePtr)
 
 	}
 	return true
@@ -112,18 +113,18 @@ type referenceEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *referenceEncoder) Encode(p unsafe.Pointer, s *Stream) {
-	e.encoder.Encode(unsafe.Pointer(&p), s)
+func (e *referenceEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
+	e.encoder.Encode(ctx, unsafe.Pointer(&p), s)
 }
 
-func (e *referenceEncoder) IsEmpty(p unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(unsafe.Pointer(&p))
+func (e *referenceEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
+	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p))
 }
 
 type referenceDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *referenceDecoder) Decode(p unsafe.Pointer, i *Iterator) {
-	d.decoder.Decode(unsafe.Pointer(&p), i)
+func (d *referenceDecoder) Decode(ctx context.Context, p unsafe.Pointer, i *Iterator) {
+	d.decoder.Decode(ctx, unsafe.Pointer(&p), i)
 }

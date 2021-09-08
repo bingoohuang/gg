@@ -1,9 +1,11 @@
+//go:build go1.8
 // +build go1.8
 
 package misc_tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -49,7 +51,7 @@ func Test_write_val_int(t *testing.T) {
 	should := require.New(t)
 	buf := &bytes.Buffer{}
 	stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-	stream.WriteVal(1001)
+	stream.WriteVal(context.Background(), 1001)
 	stream.Flush()
 	should.Nil(stream.Error)
 	should.Equal("1001", buf.String())
@@ -60,7 +62,7 @@ func Test_write_val_int_ptr(t *testing.T) {
 	buf := &bytes.Buffer{}
 	stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
 	val := 1001
-	stream.WriteVal(&val)
+	stream.WriteVal(context.Background(), &val)
 	stream.Flush()
 	should.Nil(stream.Error)
 	should.Equal("1001", buf.String())
@@ -146,7 +148,7 @@ func jsonFloatIntArray(t *testing.T, numberOfItems int) []byte {
 		}
 	}
 
-	fixture, err := jsoni.ConfigFastest.Marshal(numbers)
+	fixture, err := jsoni.ConfigFastest.Marshal(context.Background(), numbers)
 	if err != nil {
 		panic(err)
 	}

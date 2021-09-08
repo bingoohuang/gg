@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"github.com/modern-go/reflect2"
 	"reflect"
@@ -187,21 +188,29 @@ type funcDecoder struct {
 	fun DecoderFunc
 }
 
-func (f *funcDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) { f.fun(ptr, iter) }
+func (f *funcDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
+	f.fun(ctx, ptr, iter)
+}
 
 type funcEncoder struct {
 	fn        EncoderFunc
-	isEmptyFn func(ptr unsafe.Pointer) bool
+	isEmptyFn IsEmptyFn
 }
 
-func (e *funcEncoder) Encode(p unsafe.Pointer, stream *Stream) { e.fn(p, stream) }
-func (e *funcEncoder) IsEmpty(p unsafe.Pointer) bool           { return e.isEmptyFn != nil && e.isEmptyFn(p) }
+func (e *funcEncoder) Encode(ctx context.Context, p unsafe.Pointer, stream *Stream) {
+	e.fn(ctx, p, stream)
+}
+func (e *funcEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
+	return e.isEmptyFn != nil && e.isEmptyFn(ctx, p)
+}
+
+type IsEmptyFn func(ctx context.Context, ptr unsafe.Pointer) bool
 
 // DecoderFunc the function form of TypeDecoder
-type DecoderFunc func(ptr unsafe.Pointer, iter *Iterator)
+type DecoderFunc func(ctx context.Context, ptr unsafe.Pointer, iter *Iterator)
 
 // EncoderFunc the function form of TypeEncoder
-type EncoderFunc func(ptr unsafe.Pointer, stream *Stream)
+type EncoderFunc func(ctx context.Context, ptr unsafe.Pointer, stream *Stream)
 
 // RegisterTypeDecoderFunc register TypeDecoder for a type with function
 func RegisterTypeDecoderFunc(typ string, fun DecoderFunc) { typeDecoders[typ] = &funcDecoder{fun} }
@@ -220,7 +229,7 @@ func RegisterFieldDecoder(typ string, field string, decoder ValDecoder) {
 }
 
 // RegisterTypeEncoderFunc register TypeEncoder for a type with encode/isEmpty function
-func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc func(unsafe.Pointer) bool) {
+func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc func(context.Context, unsafe.Pointer) bool) {
 	typeEncoders[typ] = &funcEncoder{fun, isEmptyFunc}
 }
 
@@ -228,7 +237,7 @@ func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc func(unsaf
 func RegisterTypeEncoder(typ string, encoder ValEncoder) { typeEncoders[typ] = encoder }
 
 // RegisterFieldEncoderFunc register TypeEncoder for a struct field with encode/isEmpty function
-func RegisterFieldEncoderFunc(typ string, field string, fun EncoderFunc, isEmptyFunc func(unsafe.Pointer) bool) {
+func RegisterFieldEncoderFunc(typ string, field string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
 	RegisterFieldEncoder(typ, field, &funcEncoder{fun, isEmptyFunc})
 }
 

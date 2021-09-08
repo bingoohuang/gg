@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 )
@@ -128,6 +129,6 @@ func (a *stringAny) ToFloat64() float64 {
 	return parsed
 }
 
-func (a *stringAny) ToString() string          { return a.val }
-func (a *stringAny) WriteTo(stream *Stream)    { stream.WriteString(a.val) }
-func (a *stringAny) GetInterface() interface{} { return a.val }
+func (a *stringAny) ToString() string                          { return a.val }
+func (a *stringAny) WriteTo(_ context.Context, stream *Stream) { stream.WriteString(a.val) }
+func (a *stringAny) GetInterface(context.Context) interface{}  { return a.val }

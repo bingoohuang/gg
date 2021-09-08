@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"reflect"
 	"unsafe"
 )
@@ -37,10 +38,10 @@ func (a *arrayLazyAny) ToFloat32() float32 { return float32(a.ToInt()) }
 func (a *arrayLazyAny) ToFloat64() float64 { return float64(a.ToInt()) }
 func (a *arrayLazyAny) ToString() string   { return *(*string)(unsafe.Pointer(&a.buf)) }
 
-func (a *arrayLazyAny) ToVal(val interface{}) {
+func (a *arrayLazyAny) ToVal(ctx context.Context, val interface{}) {
 	iter := a.cfg.BorrowIterator(a.buf)
 	defer a.cfg.ReturnIterator(iter)
-	iter.ReadVal(val)
+	iter.ReadVal(ctx, val)
 }
 
 func (a *arrayLazyAny) Get(path ...interface{}) Any {
@@ -89,12 +90,12 @@ func (a *arrayLazyAny) Size() int {
 	return size
 }
 
-func (a *arrayLazyAny) WriteTo(stream *Stream) { stream.Write(a.buf) }
+func (a *arrayLazyAny) WriteTo(ctx context.Context, stream *Stream) { stream.Write(a.buf) }
 
-func (a *arrayLazyAny) GetInterface() interface{} {
+func (a *arrayLazyAny) GetInterface(ctx context.Context) interface{} {
 	iter := a.cfg.BorrowIterator(a.buf)
 	defer a.cfg.ReturnIterator(iter)
-	return iter.Read()
+	return iter.Read(ctx)
 }
 
 type arrayAny struct {
@@ -157,6 +158,6 @@ func (a *arrayAny) Get(path ...interface{}) Any {
 	}
 }
 
-func (a *arrayAny) Size() int                 { return a.val.Len() }
-func (a *arrayAny) WriteTo(stream *Stream)    { stream.WriteVal(a.val) }
-func (a *arrayAny) GetInterface() interface{} { return a.val.Interface() }
+func (a *arrayAny) Size() int                                   { return a.val.Len() }
+func (a *arrayAny) WriteTo(ctx context.Context, stream *Stream) { stream.WriteVal(ctx, a.val) }
+func (a *arrayAny) GetInterface(context.Context) interface{}    { return a.val.Interface() }

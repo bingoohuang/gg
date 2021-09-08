@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -12,14 +13,14 @@ func Test_use_number_for_unmarshal(t *testing.T) {
 	should := require.New(t)
 	api := jsoni.Config{UseNumber: true}.Froze()
 	var obj interface{}
-	should.Nil(api.UnmarshalFromString("123", &obj))
+	should.Nil(api.UnmarshalFromString(nil, "123", &obj))
 	should.Equal(json.Number("123"), obj)
 }
 
 func Test_customize_float_marshal(t *testing.T) {
 	should := require.New(t)
 	json := jsoni.Config{MarshalFloatWith6Digits: true}.Froze()
-	str, err := json.MarshalToString(float32(1.23456789))
+	str, err := json.MarshalToString(nil, float32(1.23456789))
 	should.Nil(err)
 	should.Equal("1.234568", str)
 }
@@ -32,7 +33,7 @@ func Test_customize_tag_key(t *testing.T) {
 
 	should := require.New(t)
 	json := jsoni.Config{TagKey: "orm"}.Froze()
-	str, err := json.MarshalToString(TestObject{"hello"})
+	str, err := json.MarshalToString(nil, TestObject{"hello"})
 	should.Nil(err)
 	should.Equal(`{"field":"hello"}`, str)
 }
@@ -40,7 +41,7 @@ func Test_customize_tag_key(t *testing.T) {
 func Test_read_large_number_as_interface(t *testing.T) {
 	should := require.New(t)
 	var val interface{}
-	err := jsoni.Config{UseNumber: true}.Froze().UnmarshalFromString(`123456789123456789123456789`, &val)
+	err := jsoni.Config{UseNumber: true}.Froze().UnmarshalFromString(context.Background(), `123456789123456789123456789`, &val)
 	should.Nil(err)
 	output, err := jsoni.MarshalToString(val)
 	should.Nil(err)
@@ -111,10 +112,9 @@ func Test_CaseSensitive(t *testing.T) {
 			caseSensitive:  false,
 		},
 	}
-
 	for _, tc := range testCases {
 		val := caseSensitiveStruct{}
-		err := jsoni.Config{CaseSensitive: tc.caseSensitive}.Froze().UnmarshalFromString(tc.input, &val)
+		err := jsoni.Config{CaseSensitive: tc.caseSensitive}.Froze().UnmarshalFromString(nil, tc.input, &val)
 		should.Nil(err)
 
 		output, err := jsoni.MarshalToString(val)
@@ -161,10 +161,9 @@ func Test_CaseSensitive_MoreThanTenFields(t *testing.T) {
 			caseSensitive:  true,
 		},
 	}
-
 	for _, tc := range testCases {
 		val := structWithElevenFields{}
-		err := jsoni.Config{CaseSensitive: tc.caseSensitive}.Froze().UnmarshalFromString(tc.input, &val)
+		err := jsoni.Config{CaseSensitive: tc.caseSensitive}.Froze().UnmarshalFromString(nil, tc.input, &val)
 		should.Nil(err)
 
 		output, err := jsoni.MarshalToString(val)
@@ -207,8 +206,7 @@ func Test_OnlyTaggedField(t *testing.T) {
 		F:      F{G: "g", H: "h"},
 		I:      &I{J: "j", K: "k"},
 	}
-
-	output, err := jsoni.Config{OnlyTaggedField: true}.Froze().Marshal(obj)
+	output, err := jsoni.Config{OnlyTaggedField: true}.Froze().Marshal(nil, obj)
 	should.Nil(err)
 
 	m := make(map[string]interface{})

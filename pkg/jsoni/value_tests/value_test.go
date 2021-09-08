@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -33,6 +34,7 @@ func Test_unmarshal(t *testing.T) {
 			break
 		}
 	}
+	ctx := context.Background()
 	for i, testCase := range unmarshalCases {
 		t.Run(fmt.Sprintf("[%v]%s", i, testCase.input), func(t *testing.T) {
 			should := require.New(t)
@@ -48,7 +50,7 @@ func Test_unmarshal(t *testing.T) {
 			}
 			err1 := json.Unmarshal([]byte(testCase.input), obj1)
 			should.NoError(err1, "json")
-			err2 := jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal([]byte(testCase.input), obj2)
+			err2 := jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(ctx, []byte(testCase.input), obj2)
 			should.NoError(err2, "jsoniter")
 			should.Equal(obj1, obj2)
 		})
@@ -63,6 +65,7 @@ func Test_marshal(t *testing.T) {
 			break
 		}
 	}
+	ctx := context.Background()
 	for i, testCase := range marshalCases {
 		var name string
 		if testCase != nil {
@@ -72,7 +75,7 @@ func Test_marshal(t *testing.T) {
 			should := require.New(t)
 			output1, err1 := json.Marshal(testCase)
 			should.NoError(err1, "json")
-			output2, err2 := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(testCase)
+			output2, err2 := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(ctx, testCase)
 			should.NoError(err2, "jsoniter")
 			should.Equal(string(output1), string(output2))
 		})

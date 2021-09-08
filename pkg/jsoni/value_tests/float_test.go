@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -53,6 +54,7 @@ func Test_read_float(t *testing.T) {
 func Test_write_float32(t *testing.T) {
 	vals := []float32{0, 1, -1, 99, 0xff, 0xfff, 0xffff, 0xfffff, 0xffffff, 0x4ffffff, 0xfffffff,
 		-0x4ffffff, -0xfffffff, 1.2345, 1.23456, 1.234567, 1.001}
+	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
 			should := require.New(t)
@@ -69,7 +71,7 @@ func Test_write_float32(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			output, err := json.Marshal(val)
@@ -92,6 +94,7 @@ func Test_write_float32(t *testing.T) {
 }
 
 func Test_write_float64(t *testing.T) {
+	ctx := context.Background()
 	vals := []float64{0, 1, -1, 99, 0xff, 0xfff, 0xffff, 0xfffff, 0xffffff, 0x4ffffff, 0xfffffff,
 		-0x4ffffff, -0xfffffff, 1.2345, 1.23456, 1.234567, 1.001}
 	for _, val := range vals {
@@ -108,7 +111,7 @@ func Test_write_float64(t *testing.T) {
 			should := require.New(t)
 			buf := &bytes.Buffer{}
 			stream := jsoni.NewStream(jsoni.ConfigDefault, buf, 4096)
-			stream.WriteVal(val)
+			stream.WriteVal(ctx, val)
 			stream.Flush()
 			should.Nil(stream.Error)
 			should.Equal(strconv.FormatFloat(val, 'f', -1, 64), buf.String())
@@ -124,6 +127,6 @@ func Test_write_float64(t *testing.T) {
 	should.Equal("abcdefg1.123456", buf.String())
 
 	stream = jsoni.NewStream(jsoni.ConfigDefault, nil, 0)
-	stream.WriteFloat64(float64(0.0000001))
+	stream.WriteFloat64(0.0000001)
 	should.Equal("1e-07", string(stream.Buffer()))
 }

@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
@@ -34,15 +35,15 @@ type Config struct {
 type API interface {
 	IteratorPool
 	StreamPool
-	MarshalToString(v interface{}) (string, error)
-	Marshal(v interface{}) ([]byte, error)
-	MarshalIndent(v interface{}, prefix, indent string) ([]byte, error)
-	UnmarshalFromString(str string, v interface{}) error
-	Unmarshal(data []byte, v interface{}) error
+	MarshalToString(ctx context.Context, v interface{}) (string, error)
+	Marshal(ctx context.Context, v interface{}) ([]byte, error)
+	MarshalIndent(ctx context.Context, v interface{}, prefix, indent string) ([]byte, error)
+	UnmarshalFromString(ctx context.Context, str string, v interface{}) error
+	Unmarshal(ctx context.Context, data []byte, v interface{}) error
 	Get(data []byte, path ...interface{}) Any
 	NewEncoder(writer io.Writer) *Encoder
 	NewDecoder(reader io.Reader) *Decoder
-	Valid(data []byte) bool
+	Valid(ctx context.Context, data []byte) bool
 	RegisterExtension(extension Extension)
 	DecoderOf(typ reflect2.Type) ValDecoder
 	EncoderOf(typ reflect2.Type) ValEncoder
@@ -174,17 +175,17 @@ func (c Config) frozeWithCacheReuse(extraExtensions []Extension) *frozenConfig {
 }
 
 func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
-	encoder := &funcEncoder{fn: func(ptr unsafe.Pointer, stream *Stream) {
+	encoder := &funcEncoder{fn: func(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 		rawMessage := *(*json.RawMessage)(ptr)
 		iter := c.BorrowIterator(rawMessage)
 		defer c.ReturnIterator(iter)
-		iter.Read()
+		iter.Read(ctx)
 		if iter.Error != nil && iter.Error != io.EOF {
 			stream.WriteRaw("null")
 		} else {
 			stream.WriteRaw(string(rawMessage))
 		}
-	}, isEmptyFn: func(ptr unsafe.Pointer) bool {
+	}, isEmptyFn: func(ctx context.Context, ptr unsafe.Pointer) bool {
 		return len(*((*json.RawMessage)(ptr))) == 0
 	}}
 	extension[PtrElem((*json.RawMessage)(nil))] = encoder
@@ -194,16 +195,16 @@ func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
 func PtrElem(obj interface{}) reflect2.Type { return reflect2.TypeOfPtr(obj).Elem() }
 
 func (c *frozenConfig) useNumber(extension DecoderExtension) {
-	extension[PtrElem((*interface{})(nil))] = &funcDecoder{fun: func(ptr unsafe.Pointer, iter *Iterator) {
+	extension[PtrElem((*interface{})(nil))] = &funcDecoder{fun: func(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 		exitingValue := *((*interface{})(ptr))
 		if exitingValue != nil && reflect.TypeOf(exitingValue).Kind() == reflect.Ptr {
-			iter.ReadVal(exitingValue)
+			iter.ReadVal(ctx, exitingValue)
 			return
 		}
 		if iter.WhatIsNext() == NumberValue {
 			*((*interface{})(ptr)) = json.Number(iter.readNumberAsString())
 		} else {
-			*((*interface{})(ptr)) = iter.Read()
+			*((*interface{})(ptr)) = iter.Read(ctx)
 		}
 	}}
 }
@@ -215,19 +216,23 @@ func (c *frozenConfig) RegisterExtension(extension Extension) {
 
 type lossyFloat32Encoder struct{}
 
-func (e *lossyFloat32Encoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *lossyFloat32Encoder) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	stream.WriteFloat32Lossy(*((*float32)(ptr)))
 }
 
-func (e *lossyFloat32Encoder) IsEmpty(ptr unsafe.Pointer) bool { return *((*float32)(ptr)) == 0 }
+func (e *lossyFloat32Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+	return *((*float32)(ptr)) == 0
+}
 
 type lossyFloat64Encoder struct{}
 
-func (e *lossyFloat64Encoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *lossyFloat64Encoder) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	stream.WriteFloat64Lossy(*((*float64)(ptr)))
 }
 
-func (e *lossyFloat64Encoder) IsEmpty(ptr unsafe.Pointer) bool { return *((*float64)(ptr)) == 0 }
+func (e *lossyFloat64Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+	return *((*float64)(ptr)) == 0
+}
 
 // EnableLossyFloatMarshalling keeps 10**(-6) precision
 // for float variables for better performance.
@@ -239,12 +244,14 @@ func (c *frozenConfig) marshalFloatWith6Digits(extension EncoderExtension) {
 
 type htmlEscapedStringEncoder struct{}
 
-func (e *htmlEscapedStringEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *htmlEscapedStringEncoder) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	str := *((*string)(ptr))
 	stream.WriteStringWithHTMLEscaped(str)
 }
 
-func (e *htmlEscapedStringEncoder) IsEmpty(ptr unsafe.Pointer) bool { return *((*string)(ptr)) == "" }
+func (e *htmlEscapedStringEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+	return *((*string)(ptr)) == ""
+}
 
 func (c *frozenConfig) escapeHTML(encoderExtension EncoderExtension) {
 	encoderExtension[PtrElem((*string)(nil))] = &htmlEscapedStringEncoder{}
@@ -262,20 +269,20 @@ func (c *frozenConfig) cleanEncoders() {
 	*c = *(c.configBeforeFrozen.Froze().(*frozenConfig))
 }
 
-func (c *frozenConfig) MarshalToString(v interface{}) (string, error) {
+func (c *frozenConfig) MarshalToString(parent context.Context, v interface{}) (string, error) {
 	stream := c.BorrowStream(nil)
 	defer c.ReturnStream(stream)
-	stream.WriteVal(v)
+	stream.WriteVal(createCfgContext(parent, c), v)
 	if stream.Error != nil {
 		return "", stream.Error
 	}
 	return string(stream.Buffer()), nil
 }
 
-func (c *frozenConfig) Marshal(v interface{}) ([]byte, error) {
+func (c *frozenConfig) Marshal(parent context.Context, v interface{}) ([]byte, error) {
 	stream := c.BorrowStream(nil)
 	defer c.ReturnStream(stream)
-	stream.WriteVal(v)
+	stream.WriteVal(createCfgContext(parent, c), v)
 	if stream.Error != nil {
 		return nil, stream.Error
 	}
@@ -285,7 +292,14 @@ func (c *frozenConfig) Marshal(v interface{}) ([]byte, error) {
 	return copied, nil
 }
 
-func (c *frozenConfig) MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
+func createCfgContext(parent context.Context, c *frozenConfig) context.Context {
+	if parent == nil {
+		parent = context.Background()
+	}
+	return context.WithValue(parent, ContextCfg, c)
+}
+
+func (c *frozenConfig) MarshalIndent(parent context.Context, v interface{}, prefix, indent string) ([]byte, error) {
 	if prefix != "" {
 		panic("prefix is not supported")
 	}
@@ -296,14 +310,14 @@ func (c *frozenConfig) MarshalIndent(v interface{}, prefix, indent string) ([]by
 	}
 	newCfg := c.configBeforeFrozen
 	newCfg.IndentionStep = len(indent)
-	return newCfg.frozeWithCacheReuse(c.extraExtensions).Marshal(v)
+	return newCfg.frozeWithCacheReuse(c.extraExtensions).Marshal(createCfgContext(parent, c), v)
 }
 
-func (c *frozenConfig) UnmarshalFromString(str string, v interface{}) error {
+func (c *frozenConfig) UnmarshalFromString(parent context.Context, str string, v interface{}) error {
 	data := []byte(str)
 	iter := c.BorrowIterator(data)
 	defer c.ReturnIterator(iter)
-	iter.ReadVal(v)
+	iter.ReadVal(createCfgContext(parent, c), v)
 	if t := iter.nextToken(); t == 0 {
 		if iter.Error == io.EOF {
 			return nil
@@ -320,10 +334,10 @@ func (c *frozenConfig) Get(data []byte, path ...interface{}) Any {
 	return locatePath(iter, path)
 }
 
-func (c *frozenConfig) Unmarshal(data []byte, v interface{}) error {
+func (c *frozenConfig) Unmarshal(parent context.Context, data []byte, v interface{}) error {
 	iter := c.BorrowIterator(data)
 	defer c.ReturnIterator(iter)
-	iter.ReadVal(v)
+	iter.ReadVal(createCfgContext(parent, c), v)
 	if t := iter.nextToken(); t == 0 {
 		if iter.Error == io.EOF {
 			return nil
@@ -342,7 +356,7 @@ func (c *frozenConfig) NewDecoder(reader io.Reader) *Decoder {
 	return &Decoder{iter: Parse(c, reader, 512)}
 }
 
-func (c *frozenConfig) Valid(data []byte) bool {
+func (c *frozenConfig) Valid(_ context.Context, data []byte) bool {
 	iter := c.BorrowIterator(data)
 	defer c.ReturnIterator(iter)
 	iter.Skip()

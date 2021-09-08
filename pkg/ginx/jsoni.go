@@ -61,7 +61,7 @@ func init() {
 }
 
 func decodeJSON(r io.Reader, obj interface{}) error {
-	if err := JsoniConfig.NewDecoder(r).Decode(obj); err != nil {
+	if err := JsoniConfig.NewDecoder(r).Decode(nil, obj); err != nil {
 		return err
 	}
 	return validate(obj)
@@ -91,7 +91,7 @@ func (r JSONRender) WriteContentType(w http.ResponseWriter) { writeContentType(w
 // WriteJSON marshals the given interface object and writes it with custom ContentType.
 func WriteJSON(w http.ResponseWriter, obj interface{}) error {
 	writeContentType(w, jsonContentType)
-	jsonBytes, err := JsoniConfig.Marshal(obj)
+	jsonBytes, err := JsoniConfig.Marshal(nil, obj)
 	if err != nil {
 		return err
 	}

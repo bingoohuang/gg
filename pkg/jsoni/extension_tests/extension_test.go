@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/require"
@@ -23,12 +24,12 @@ func (extension *testExtension) UpdateStructDescriptor(structDescriptor *jsoni.S
 		return
 	}
 	binding := structDescriptor.GetField("Field1")
-	binding.Encoder = &funcEncoder{fun: func(ptr unsafe.Pointer, stream *jsoni.Stream) {
+	binding.Encoder = &funcEncoder{fun: func(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 		str := *((*string)(ptr))
 		val, _ := strconv.Atoi(str)
 		stream.WriteInt(val)
 	}}
-	binding.Decoder = &funcDecoder{func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	binding.Decoder = &funcDecoder{func(_ context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		*((*string)(ptr)) = strconv.Itoa(iter.ReadInt())
 	}}
 	binding.ToNames = []string{"field-1"}
@@ -40,10 +41,11 @@ func Test_customize_field_by_extension(t *testing.T) {
 	cfg := jsoni.Config{}.Froze()
 	cfg.RegisterExtension(&testExtension{})
 	obj := TestObject1{}
-	err := cfg.UnmarshalFromString(`{"field-1": 100}`, &obj)
+	ctx := context.Background()
+	err := cfg.UnmarshalFromString(ctx, `{"field-1": 100}`, &obj)
 	should.Nil(err)
 	should.Equal("100", obj.Field1)
-	str, err := cfg.MarshalToString(obj)
+	str, err := cfg.MarshalToString(ctx, obj)
 	should.Nil(err)
 	should.Equal(`{"field-1":100}`, str)
 }
@@ -53,11 +55,12 @@ func Test_customize_map_key_encoder(t *testing.T) {
 	cfg := jsoni.Config{}.Froze()
 	cfg.RegisterExtension(&testMapKeyExtension{})
 	m := map[int]int{1: 2}
-	output, err := cfg.MarshalToString(m)
+	ctx := context.Background()
+	output, err := cfg.MarshalToString(ctx, m)
 	should.NoError(err)
 	should.Equal(`{"2":2}`, output)
 	m = map[int]int{}
-	should.NoError(cfg.UnmarshalFromString(output, &m))
+	should.NoError(cfg.UnmarshalFromString(ctx, output, &m))
 	should.Equal(map[int]int{1: 2}, m)
 }
 
@@ -68,7 +71,7 @@ type testMapKeyExtension struct {
 func (extension *testMapKeyExtension) CreateMapKeyEncoder(typ reflect2.Type) jsoni.ValEncoder {
 	if typ.Kind() == reflect.Int {
 		return &funcEncoder{
-			fun: func(ptr unsafe.Pointer, stream *jsoni.Stream) {
+			fun: func(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 				stream.WriteRaw(`"`)
 				stream.WriteInt(*(*int)(ptr) + 1)
 				stream.WriteRaw(`"`)
@@ -81,7 +84,7 @@ func (extension *testMapKeyExtension) CreateMapKeyEncoder(typ reflect2.Type) jso
 func (extension *testMapKeyExtension) CreateMapKeyDecoder(typ reflect2.Type) jsoni.ValDecoder {
 	if typ.Kind() == reflect.Int {
 		return &funcDecoder{
-			fun: func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+			fun: func(_ context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 				i, err := strconv.Atoi(iter.ReadString())
 				if err != nil {
 					iter.ReportError("read map key", err.Error())
@@ -99,8 +102,8 @@ type funcDecoder struct {
 	fun jsoni.DecoderFunc
 }
 
-func (decoder *funcDecoder) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
-	decoder.fun(ptr, iter)
+func (decoder *funcDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	decoder.fun(ctx, ptr, iter)
 }
 
 type funcEncoder struct {
@@ -108,11 +111,11 @@ type funcEncoder struct {
 	isEmptyFunc func(ptr unsafe.Pointer) bool
 }
 
-func (encoder *funcEncoder) Encode(ptr unsafe.Pointer, stream *jsoni.Stream) {
-	encoder.fun(ptr, stream)
+func (encoder *funcEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
+	encoder.fun(ctx, ptr, stream)
 }
 
-func (encoder *funcEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (encoder *funcEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
 	if encoder.isEmptyFunc == nil {
 		return false
 	}

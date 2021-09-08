@@ -1,6 +1,7 @@
 package any_tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -49,16 +50,17 @@ func Test_read_bool_as_any(t *testing.T) {
 }
 
 func Test_write_bool_to_stream(t *testing.T) {
+	ctx := context.Background()
 	should := require.New(t)
 	any := jsoni.Get([]byte("true"))
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(ctx, stream)
 	should.Equal("true", string(stream.Buffer()))
 	should.Equal(any.ValueType(), jsoni.BoolValue)
 
 	any = jsoni.Get([]byte("false"))
 	stream = jsoni.NewStream(jsoni.ConfigDefault, nil, 32)
-	any.WriteTo(stream)
+	any.WriteTo(ctx, stream)
 	should.Equal("false", string(stream.Buffer()))
 
 	should.Equal(any.ValueType(), jsoni.BoolValue)

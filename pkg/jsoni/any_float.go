@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"strconv"
 )
 
@@ -45,5 +46,5 @@ func (a *floatAny) ToString() string {
 	return strconv.FormatFloat(a.val, 'E', -1, 64)
 }
 
-func (a *floatAny) WriteTo(stream *Stream)    { stream.WriteFloat64(a.val) }
-func (a *floatAny) GetInterface() interface{} { return a.val }
+func (a *floatAny) WriteTo(_ context.Context, stream *Stream) { stream.WriteFloat64(a.val) }
+func (a *floatAny) GetInterface(context.Context) interface{}  { return a.val }

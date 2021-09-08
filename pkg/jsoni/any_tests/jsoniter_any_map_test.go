@@ -1,6 +1,7 @@
 package any_tests
 
 import (
+	"context"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,7 +23,7 @@ func Test_map_wrapper_any_get_all(t *testing.T) {
 
 	// map write to
 	stream := jsoni.NewStream(jsoni.ConfigDefault, nil, 0)
-	any.WriteTo(stream)
+	any.WriteTo(context.Background(), stream)
 	// TODO cannot pass
 	//should.Equal(string(stream.buf), "")
 }

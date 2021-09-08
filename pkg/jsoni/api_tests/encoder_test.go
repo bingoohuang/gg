@@ -13,7 +13,7 @@ func TestEncoderHasTrailingNewline(t *testing.T) {
 	should := require.New(t)
 	var buf, stdbuf bytes.Buffer
 	enc := jsoni.ConfigCompatibleWithStandardLibrary.NewEncoder(&buf)
-	enc.Encode(1)
+	enc.Encode(nil, 1)
 	stdenc := json.NewEncoder(&stdbuf)
 	stdenc.Encode(1)
 	should.Equal(stdbuf.Bytes(), buf.Bytes())

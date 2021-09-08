@@ -2,6 +2,7 @@ package misc_tests
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"testing"
 
@@ -14,9 +15,10 @@ func Test_read_null(t *testing.T) {
 	iter := jsoni.ParseString(jsoni.ConfigDefault, `null`)
 	should.True(iter.ReadNil())
 	iter = jsoni.ParseString(jsoni.ConfigDefault, `null`)
-	should.Nil(iter.Read())
+	ctx := context.Background()
+	should.Nil(iter.Read(ctx))
 	iter = jsoni.ParseString(jsoni.ConfigDefault, `navy`)
-	iter.Read()
+	iter.Read(ctx)
 	should.True(iter.Error != nil && iter.Error != io.EOF)
 	iter = jsoni.ParseString(jsoni.ConfigDefault, `navy`)
 	iter.ReadNil()

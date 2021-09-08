@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -20,7 +21,7 @@ type Container struct {
 }
 
 func (c *Container) MarshalJSON() ([]byte, error) {
-	return marshalConfig.Marshal(&c.Bar)
+	return marshalConfig.Marshal(context.Background(), &c.Bar)
 }
 
 func TestEncodeEscape(t *testing.T) {
@@ -29,7 +30,7 @@ func TestEncodeEscape(t *testing.T) {
 	container := &Container{
 		Bar: []string{"123<ab>", "ooo"},
 	}
-	out, err := marshalConfig.Marshal(container)
+	out, err := marshalConfig.Marshal(context.Background(), container)
 	should.Nil(err)
 	bufout := string(out)
 

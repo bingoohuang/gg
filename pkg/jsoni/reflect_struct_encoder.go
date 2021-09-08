@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"github.com/modern-go/reflect2"
 	"io"
@@ -101,17 +102,17 @@ type structFieldEncoder struct {
 	omitempty    bool
 }
 
-func (e *structFieldEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *structFieldEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	fieldPtr := e.field.UnsafeGet(ptr)
-	e.fieldEncoder.Encode(fieldPtr, stream)
+	e.fieldEncoder.Encode(ctx, fieldPtr, stream)
 	if stream.Error != nil && stream.Error != io.EOF {
 		stream.Error = fmt.Errorf("%s: %s", e.field.Name(), stream.Error.Error())
 	}
 }
 
-func (e *structFieldEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *structFieldEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
 	fieldPtr := e.field.UnsafeGet(ptr)
-	return e.fieldEncoder.IsEmpty(fieldPtr)
+	return e.fieldEncoder.IsEmpty(ctx, fieldPtr)
 }
 
 func (e *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
@@ -137,11 +138,11 @@ type structFieldTo struct {
 	toName  string
 }
 
-func (e *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *structEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range e.fields {
-		if field.encoder.omitempty && field.encoder.IsEmpty(ptr) {
+		if field.encoder.omitempty && field.encoder.IsEmpty(ctx, ptr) {
 			continue
 		}
 		if field.encoder.IsEmbeddedPtrNil(ptr) {
@@ -151,7 +152,7 @@ func (e *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField(field.toName)
-		field.encoder.Encode(ptr, stream)
+		field.encoder.Encode(ctx, ptr, stream)
 		isNotFirst = true
 	}
 	stream.WriteObjectEnd()
@@ -160,36 +161,42 @@ func (e *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (e *structEncoder) IsEmpty(unsafe.Pointer) bool { return false }
+func (e *structEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
 
 type emptyStructEncoder struct{}
 
-func (e *emptyStructEncoder) Encode(_ unsafe.Pointer, stream *Stream) { stream.WriteEmptyObject() }
-func (e *emptyStructEncoder) IsEmpty(unsafe.Pointer) bool             { return false }
+func (e *emptyStructEncoder) Encode(_ context.Context, _ unsafe.Pointer, stream *Stream) {
+	stream.WriteEmptyObject()
+}
+func (e *emptyStructEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
 
 type stringModeNumberEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (e *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *stringModeNumberEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	stream.writeByte('"')
-	e.elemEncoder.Encode(ptr, stream)
+	e.elemEncoder.Encode(ctx, ptr, stream)
 	stream.writeByte('"')
 }
 
-func (e *stringModeNumberEncoder) IsEmpty(p unsafe.Pointer) bool { return e.elemEncoder.IsEmpty(p) }
+func (e *stringModeNumberEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
+	return e.elemEncoder.IsEmpty(ctx, p)
+}
 
 type stringModeStringEncoder struct {
 	encoder ValEncoder
 	cfg     *frozenConfig
 }
 
-func (e *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *stringModeStringEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	temp := e.cfg.BorrowStream(nil)
 	temp.Attachment = stream.Attachment
 	defer e.cfg.ReturnStream(temp)
-	e.encoder.Encode(ptr, temp)
+	e.encoder.Encode(ctx, ptr, temp)
 	stream.WriteString(string(temp.Buffer()))
 }
 
-func (e *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool { return e.encoder.IsEmpty(ptr) }
+func (e *stringModeStringEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
+	return e.encoder.IsEmpty(ctx, ptr)
+}

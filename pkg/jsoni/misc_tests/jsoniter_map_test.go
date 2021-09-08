@@ -1,6 +1,7 @@
 package misc_tests
 
 import (
+	"context"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -25,7 +26,7 @@ func Test_read_map_with_reader(t *testing.T) {
 	reader := strings.NewReader(input)
 	decoder := jsoni.ConfigCompatibleWithStandardLibrary.NewDecoder(reader)
 	m1 := map[string]interface{}{}
-	should.Nil(decoder.Decode(&m1))
+	should.Nil(decoder.Decode(context.Background(), &m1))
 	m2 := map[string]interface{}{}
 	should.Nil(json.Unmarshal([]byte(input), &m2))
 	should.Equal(m2, m1)
@@ -35,7 +36,7 @@ func Test_read_map_with_reader(t *testing.T) {
 func Test_map_eface_of_eface(t *testing.T) {
 	should := require.New(t)
 	json := jsoni.ConfigCompatibleWithStandardLibrary
-	output, err := json.MarshalToString(map[interface{}]interface{}{
+	output, err := json.MarshalToString(context.Background(), map[interface{}]interface{}{
 		"1": 2,
 		3:   "4",
 	})

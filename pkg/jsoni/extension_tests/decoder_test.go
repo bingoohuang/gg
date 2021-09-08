@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,7 @@ import (
 
 func Test_customize_type_decoder(t *testing.T) {
 	t.Skip()
-	jsoni.RegisterTypeDecoderFunc("time.Time", func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	jsoni.RegisterTypeDecoderFunc("time.Time", func(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		t, err := time.ParseInLocation("2006-01-02 15:04:05", iter.ReadString(), time.UTC)
 		if err != nil {
 			iter.Error = err
@@ -37,7 +38,7 @@ func Test_customize_byte_array_encoder(t *testing.T) {
 	t.Skip()
 	//jsoni.ConfigDefault.(*frozenConfig).cleanEncoders()
 	should := require.New(t)
-	jsoni.RegisterTypeEncoderFunc("[]uint8", func(ptr unsafe.Pointer, stream *jsoni.Stream) {
+	jsoni.RegisterTypeEncoderFunc("[]uint8", func(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 		t := *((*[]byte)(ptr))
 		stream.WriteString(string(t))
 	}, nil)
@@ -54,14 +55,16 @@ type CustomEncoderAttachmentTestStruct struct {
 
 type CustomEncoderAttachmentTestStructEncoder struct{}
 
-func (c *CustomEncoderAttachmentTestStructEncoder) Encode(_ unsafe.Pointer, stream *jsoni.Stream) {
+func (c *CustomEncoderAttachmentTestStructEncoder) Encode(_ context.Context, _ unsafe.Pointer, stream *jsoni.Stream) {
 	attachVal, ok := stream.Attachment.(int)
 	stream.WriteRaw(`"`)
 	stream.WriteRaw(fmt.Sprintf("%t %d", ok, attachVal))
 	stream.WriteRaw(`"`)
 }
 
-func (c *CustomEncoderAttachmentTestStructEncoder) IsEmpty(unsafe.Pointer) bool { return false }
+func (c *CustomEncoderAttachmentTestStructEncoder) IsEmpty(context.Context, unsafe.Pointer) bool {
+	return false
+}
 
 func Test_custom_encoder_attachment(t *testing.T) {
 
@@ -72,7 +75,7 @@ func Test_custom_encoder_attachment(t *testing.T) {
 	stream := jsoni.NewStream(jsoni.Config{SortMapKeys: true}.Froze(), buf, 4096)
 	stream.Attachment = expectedValue
 	val := map[string]CustomEncoderAttachmentTestStruct{"a": {}}
-	stream.WriteVal(val)
+	stream.WriteVal(context.Background(), val)
 	stream.Flush()
 	should.Nil(stream.Error)
 	should.Equal("{\"a\":\"true 17\"}", buf.String())
@@ -82,7 +85,7 @@ func Test_customize_field_decoder(t *testing.T) {
 	type Tom struct {
 		field1 string
 	}
-	jsoni.RegisterFieldDecoderFunc("jsoni.Tom", "field1", func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	jsoni.RegisterFieldDecoderFunc("jsoni.Tom", "field1", func(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		*((*string)(ptr)) = strconv.Itoa(iter.ReadInt())
 	})
 	//defer jsoni.ConfigDefault.(*frozenConfig).cleanDecoders()
@@ -96,12 +99,12 @@ func Test_customize_field_decoder(t *testing.T) {
 func Test_recursive_empty_interface_customization(t *testing.T) {
 	t.Skip()
 	var obj interface{}
-	jsoni.RegisterTypeDecoderFunc("interface {}", func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	jsoni.RegisterTypeDecoderFunc("interface {}", func(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		switch iter.WhatIsNext() {
 		case jsoni.NumberValue:
 			*(*interface{})(ptr) = iter.ReadInt64()
 		default:
-			*(*interface{})(ptr) = iter.Read()
+			*(*interface{})(ptr) = iter.Read(ctx)
 		}
 	})
 	should := require.New(t)
@@ -123,7 +126,7 @@ func Test_read_custom_interface(t *testing.T) {
 	t.Skip()
 	should := require.New(t)
 	var val MyInterface
-	jsoni.RegisterTypeDecoderFunc("jsoni.MyInterface", func(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+	jsoni.RegisterTypeDecoderFunc("jsoni.MyInterface", func(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		*((*MyInterface)(ptr)) = MyString(iter.ReadString())
 	})
 	err := jsoni.UnmarshalFromString(`"hello"`, &val)
@@ -167,11 +170,11 @@ func (t *Type2) MarshalJSON() ([]byte, error) {
 func TestType1NoFinalLF(t *testing.T) {
 	reader := bytes.NewReader([]byte(flow1))
 	dec := jsoni.NewDecoder(reader)
-
+	ctx := context.Background()
 	i := 0
 	for dec.More() {
 		data := &Type1{}
-		if err := dec.Decode(data); err != nil {
+		if err := dec.Decode(ctx, data); err != nil {
 			t.Errorf("at %v got %v", i, err)
 		}
 		i++
@@ -183,9 +186,10 @@ func TestType1FinalLF(t *testing.T) {
 	dec := jsoni.NewDecoder(reader)
 
 	i := 0
+	ctx := context.Background()
 	for dec.More() {
 		data := &Type1{}
-		if err := dec.Decode(data); err != nil {
+		if err := dec.Decode(ctx, data); err != nil {
 			t.Errorf("at %v got %v", i, err)
 		}
 		i++
@@ -195,11 +199,11 @@ func TestType1FinalLF(t *testing.T) {
 func TestType2NoFinalLF(t *testing.T) {
 	reader := bytes.NewReader([]byte(flow1))
 	dec := jsoni.NewDecoder(reader)
-
+	ctx := context.Background()
 	i := 0
 	for dec.More() {
 		data := &Type2{}
-		if err := dec.Decode(data); err != nil {
+		if err := dec.Decode(ctx, data); err != nil {
 			t.Errorf("at %v got %v", i, err)
 		}
 		i++
@@ -209,11 +213,11 @@ func TestType2NoFinalLF(t *testing.T) {
 func TestType2FinalLF(t *testing.T) {
 	reader := bytes.NewReader([]byte(flow2))
 	dec := jsoni.NewDecoder(reader)
-
+	ctx := context.Background()
 	i := 0
 	for dec.More() {
 		data := &Type2{}
-		if err := dec.Decode(data); err != nil {
+		if err := dec.Decode(ctx, data); err != nil {
 			t.Errorf("at %v got %v", i, err)
 		}
 		i++

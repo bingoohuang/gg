@@ -1,6 +1,7 @@
 package extra
 
 import (
+	"context"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/modern-go/reflect2"
 	"unicode/utf8"
@@ -135,7 +136,7 @@ func (extension *BinaryAsStringExtension) CreateDecoder(typ reflect2.Type) jsoni
 type binaryAsStringCodec struct {
 }
 
-func (codec *binaryAsStringCodec) Decode(ptr unsafe.Pointer, iter *jsoni.Iterator) {
+func (codec *binaryAsStringCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	rawBytes := iter.ReadStringAsSlice()
 	bytes := make([]byte, 0, len(rawBytes))
 	for i := 0; i < len(rawBytes); i++ {
@@ -160,10 +161,10 @@ func (codec *binaryAsStringCodec) Decode(ptr unsafe.Pointer, iter *jsoni.Iterato
 	}
 	*(*[]byte)(ptr) = bytes
 }
-func (codec *binaryAsStringCodec) IsEmpty(ptr unsafe.Pointer) bool {
+func (codec *binaryAsStringCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	return len(*((*[]byte)(ptr))) == 0
 }
-func (codec *binaryAsStringCodec) Encode(ptr unsafe.Pointer, stream *jsoni.Stream) {
+func (codec *binaryAsStringCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 	newBuffer := writeBytes(stream.Buffer(), *(*[]byte)(ptr))
 	stream.SetBuffer(newBuffer)
 }

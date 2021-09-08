@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"testing"
@@ -33,10 +34,15 @@ func Test_read_string(t *testing.T) {
 		badInputs = append(badInputs, string([]byte{'"', byte(i), '"'}))
 	}
 
+	ctx := context.Background()
 	for _, input := range badInputs {
 		testReadString(t, input, "", true, "json.Unmarshal", json.Unmarshal)
 		testReadString(t, input, "", true, "jsoni.Unmarshal", jsoni.Unmarshal)
-		testReadString(t, input, "", true, "jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal", jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal)
+		testReadString(t, input, "", true, "jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal",
+			func(data []byte, v interface{}) error {
+				return jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(ctx, data, v)
+			},
+		)
 	}
 
 	goodInputs := []struct {
@@ -70,7 +76,10 @@ func Test_read_string(t *testing.T) {
 	for _, tc := range goodInputs {
 		testReadString(t, tc.input, tc.expectValue, false, "json.Unmarshal", json.Unmarshal)
 		testReadString(t, tc.input, tc.expectValue, false, "jsoni.Unmarshal", jsoni.Unmarshal)
-		testReadString(t, tc.input, tc.expectValue, false, "jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal", jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal)
+		testReadString(t, tc.input, tc.expectValue, false, "jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal",
+			func(data []byte, v interface{}) error {
+				return jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(ctx, data, v)
+			})
 	}
 }
 

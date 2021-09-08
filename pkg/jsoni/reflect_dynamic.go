@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"github.com/modern-go/reflect2"
 	"reflect"
 	"unsafe"
@@ -10,27 +11,27 @@ type dynamicEncoder struct {
 	valType reflect2.Type
 }
 
-func (e *dynamicEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *dynamicEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	obj := e.valType.UnsafeIndirect(ptr)
-	stream.WriteVal(obj)
+	stream.WriteVal(ctx, obj)
 }
 
-func (e *dynamicEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *dynamicEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	return e.valType.UnsafeIndirect(ptr) == nil
 }
 
 type efaceDecoder struct{}
 
-func (d *efaceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *efaceDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	pObj := (*interface{})(ptr)
 	obj := *pObj
 	if obj == nil {
-		*pObj = iter.Read()
+		*pObj = iter.Read(ctx)
 		return
 	}
 	typ := reflect2.TypeOf(obj)
 	if typ.Kind() != reflect.Ptr {
-		*pObj = iter.Read()
+		*pObj = iter.Read(ctx)
 		return
 	}
 	ptrType := typ.(*reflect2.UnsafePtrType)
@@ -44,18 +45,18 @@ func (d *efaceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	}
 	if reflect2.IsNil(obj) {
 		obj := ptrElemType.New()
-		iter.ReadVal(obj)
+		iter.ReadVal(ctx, obj)
 		*pObj = obj
 		return
 	}
-	iter.ReadVal(obj)
+	iter.ReadVal(ctx, obj)
 }
 
 type ifaceDecoder struct {
 	valType *reflect2.UnsafeIFaceType
 }
 
-func (d *ifaceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *ifaceDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if iter.ReadNil() {
 		d.valType.UnsafeSet(ptr, d.valType.UnsafeNew())
 		return
@@ -65,5 +66,5 @@ func (d *ifaceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 		iter.ReportError("decode non empty interface", "can not unmarshal into nil")
 		return
 	}
-	iter.ReadVal(obj)
+	iter.ReadVal(ctx, obj)
 }

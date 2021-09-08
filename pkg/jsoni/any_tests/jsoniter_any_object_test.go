@@ -1,6 +1,7 @@
 package any_tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -26,7 +27,7 @@ func Test_read_object_as_any(t *testing.T) {
 	obj := struct {
 		A string
 	}{}
-	any.ToVal(&obj)
+	any.ToVal(context.Background(), &obj)
 	should.Equal("stream", obj.A)
 }
 

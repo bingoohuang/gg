@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -28,6 +29,7 @@ func Test_symmetric(t *testing.T) {
 			break
 		}
 	}
+	ctx := context.Background()
 	for _, testCase := range testCases {
 		valType := reflect.TypeOf(testCase).Elem()
 		t.Run(valType.String(), func(t *testing.T) {
@@ -45,7 +47,7 @@ func Test_symmetric(t *testing.T) {
 				if len(strings.TrimSpace(string(jbStd))) == 0 {
 					t.Fatal("stdlib marshal produced empty result and no error")
 				}
-				jbIter, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(before)
+				jbIter, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(ctx, before)
 				if err != nil {
 					t.Fatalf("failed to marshal with jsoniter: %v", err)
 				}
@@ -66,7 +68,7 @@ func Test_symmetric(t *testing.T) {
 				}
 				afterIterPtrVal := reflect.New(valType)
 				afterIterPtr := afterIterPtrVal.Interface()
-				err = jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(jbIter, afterIterPtr)
+				err = jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(ctx, jbIter, afterIterPtr)
 				if err != nil {
 					t.Fatalf("failed to unmarshal with jsoniter: %v\nvia:\n    %s",
 						err, indent(jbIter, "    "))
@@ -83,6 +85,7 @@ func Test_symmetric(t *testing.T) {
 }
 
 func Test_asymmetric(t *testing.T) {
+	ctx := context.Background()
 	for _, testCase := range asymmetricTestCases {
 		fromType := reflect.TypeOf(testCase[0]).Elem()
 		toType := reflect.TypeOf(testCase[1]).Elem()
@@ -100,7 +103,7 @@ func Test_asymmetric(t *testing.T) {
 			if len(strings.TrimSpace(string(jbStd))) == 0 {
 				t.Fatal("stdlib marshal produced empty result and no error")
 			}
-			jbIter, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(before)
+			jbIter, err := jsoni.ConfigCompatibleWithStandardLibrary.Marshal(ctx, before)
 			if err != nil {
 				t.Fatalf("failed to marshal with jsoniter: %v", err)
 			}
@@ -121,7 +124,7 @@ func Test_asymmetric(t *testing.T) {
 			}
 			afterIterPtrVal := reflect.New(toType)
 			afterIterPtr := afterIterPtrVal.Interface()
-			err = jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(jbIter, afterIterPtr)
+			err = jsoni.ConfigCompatibleWithStandardLibrary.Unmarshal(ctx, jbIter, afterIterPtr)
 			if err != nil {
 				t.Fatalf("failed to unmarshal with jsoniter: %v\nvia:\n    %s",
 					err, indent(jbIter, "    "))

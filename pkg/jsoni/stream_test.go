@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,9 +32,10 @@ func Test_writeBytes_should_grow_buffer(t *testing.T) {
 }
 
 func Test_writeIndention_should_grow_buffer(t *testing.T) {
+	ctx := context.Background()
 	should := require.New(t)
 	stream := NewStream(Config{IndentionStep: 2}.Froze(), nil, 1)
-	stream.WriteVal([]int{1, 2, 3})
+	stream.WriteVal(ctx, []int{1, 2, 3})
 	should.Equal("[\n  1,\n  2,\n  3\n]", string(stream.Buffer()))
 }
 

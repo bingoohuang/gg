@@ -2,6 +2,7 @@ package jsoni
 
 import (
 	"bytes"
+	"context"
 	"io"
 )
 
@@ -12,11 +13,21 @@ type RawMessage []byte
 //
 // Unmarshal parses the JSON-encoded data and stores the result in the value pointed to by v.
 // Refer to https://godoc.org/encoding/json#Unmarshal for more information
-func Unmarshal(data []byte, v interface{}) error { return ConfigDefault.Unmarshal(data, v) }
+func Unmarshal(data []byte, v interface{}) error {
+	return UnmarshalContext(context.Background(), data, v)
+}
+
+func UnmarshalContext(ctx context.Context, data []byte, v interface{}) error {
+	return ConfigDefault.Unmarshal(ctx, data, v)
+}
 
 // UnmarshalFromString is a convenient method to read from string instead of []byte
 func UnmarshalFromString(str string, v interface{}) error {
-	return ConfigDefault.UnmarshalFromString(str, v)
+	return UnmarshalFromStringContext(context.Background(), str, v)
+}
+
+func UnmarshalFromStringContext(ctx context.Context, str string, v interface{}) error {
+	return ConfigDefault.UnmarshalFromString(ctx, str, v)
 }
 
 // Get quick method to get value from deeply nested JSON structure
@@ -29,17 +40,28 @@ func Get(data []byte, path ...interface{}) Any {
 // Marshal returns the JSON encoding of v, adapts to json/encoding Marshal API
 // Refer to https://godoc.org/encoding/json#Marshal for more information
 func Marshal(v interface{}) ([]byte, error) {
-	return ConfigDefault.Marshal(v)
+	return MarshalContext(context.Background(), v)
+}
+
+func MarshalContext(ctx context.Context, v interface{}) ([]byte, error) {
+	return ConfigDefault.Marshal(ctx, v)
 }
 
 // MarshalIndent same as json.MarshalIndent. Prefix is not supported.
 func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
-	return ConfigDefault.MarshalIndent(v, prefix, indent)
+	return MarshalIndentContext(context.Background(), v, prefix, indent)
+}
+func MarshalIndentContext(ctx context.Context, v interface{}, prefix, indent string) ([]byte, error) {
+	return ConfigDefault.MarshalIndent(ctx, v, prefix, indent)
 }
 
 // MarshalToString convenient method to write as string instead of []byte
 func MarshalToString(v interface{}) (string, error) {
-	return ConfigDefault.MarshalToString(v)
+	return MarshalToStringContext(context.Background(), v)
+}
+
+func MarshalToStringContext(ctx context.Context, v interface{}) (string, error) {
+	return ConfigDefault.MarshalToString(ctx, v)
 }
 
 // NewDecoder adapts to json/stream NewDecoder API.
@@ -59,13 +81,13 @@ type Decoder struct {
 }
 
 // Decode decode JSON into interface{}
-func (a *Decoder) Decode(obj interface{}) error {
+func (a *Decoder) Decode(ctx context.Context, obj interface{}) error {
 	if a.iter.head == a.iter.tail && a.iter.reader != nil {
 		if !a.iter.loadMore() {
 			return io.EOF
 		}
 	}
-	a.iter.ReadVal(obj)
+	a.iter.ReadVal(ctx, obj)
 	err := a.iter.Error
 	if err == io.EOF {
 		return nil
@@ -121,8 +143,8 @@ type Encoder struct {
 }
 
 // Encode encode interface{} as JSON to io.Writer
-func (a *Encoder) Encode(val interface{}) error {
-	a.stream.WriteVal(val)
+func (a *Encoder) Encode(ctx context.Context, val interface{}) error {
+	a.stream.WriteVal(ctx, val)
 	a.stream.WriteRaw("\n")
 	a.stream.Flush()
 	return a.stream.Error
@@ -144,5 +166,9 @@ func (a *Encoder) SetEscapeHTML(escapeHTML bool) {
 
 // Valid reports whether data is a valid JSON encoding.
 func Valid(data []byte) bool {
-	return ConfigDefault.Valid(data)
+	return ValidContext(context.Background(), data)
+}
+
+func ValidContext(ctx context.Context, data []byte) bool {
+	return ConfigDefault.Valid(ctx, data)
 }

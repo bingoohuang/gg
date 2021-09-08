@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/modern-go/reflect2"
 	"strconv"
@@ -57,7 +58,7 @@ func createEncoderOfJsonNumber(_ *ctx, typ reflect2.Type) ValEncoder {
 
 type jsonNumberCodec struct{}
 
-func (c *jsonNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (c *jsonNumberCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	switch iter.WhatIsNext() {
 	case StringValue:
 		*((*json.Number)(ptr)) = json.Number(iter.ReadString())
@@ -65,11 +66,11 @@ func (c *jsonNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
 		iter.skip4Bytes('n', 'u', 'l', 'l')
 		*((*json.Number)(ptr)) = ""
 	default:
-		*((*json.Number)(ptr)) = json.Number([]byte(iter.readNumberAsString()))
+		*((*json.Number)(ptr)) = json.Number(iter.readNumberAsString())
 	}
 }
 
-func (c *jsonNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (c *jsonNumberCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if n := *((*json.Number)(ptr)); len(n) == 0 {
 		stream.writeByte('0')
 	} else {
@@ -77,11 +78,13 @@ func (c *jsonNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (c *jsonNumberCodec) IsEmpty(p unsafe.Pointer) bool { return len(*((*json.Number)(p))) == 0 }
+func (c *jsonNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+	return len(*((*json.Number)(p))) == 0
+}
 
 type jsoniNumberCodec struct{}
 
-func (c *jsoniNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (c *jsoniNumberCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	switch r := (*Number)(ptr); iter.WhatIsNext() {
 	case StringValue:
 		*r = Number(iter.ReadString())
@@ -93,7 +96,7 @@ func (c *jsoniNumberCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	}
 }
 
-func (c *jsoniNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (c *jsoniNumberCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if n := *((*Number)(ptr)); len(n) == 0 {
 		stream.writeByte('0')
 	} else {
@@ -101,4 +104,6 @@ func (c *jsoniNumberCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
 	}
 }
 
-func (c *jsoniNumberCodec) IsEmpty(p unsafe.Pointer) bool { return len(*((*Number)(p))) == 0 }
+func (c *jsoniNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+	return len(*((*Number)(p))) == 0
+}

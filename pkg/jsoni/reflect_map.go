@@ -1,6 +1,7 @@
 package jsoni
 
 import (
+	"context"
 	"fmt"
 	"github.com/modern-go/reflect2"
 	"io"
@@ -8,6 +9,18 @@ import (
 	"sort"
 	"unsafe"
 )
+
+type MapEntryEncoder interface {
+	EntryEncoder() (keyEncoder, elemEncoder ValEncoder)
+}
+
+type MapEntryDecoder interface {
+	EntryDecoder() (keyDecoder, elemDecoder ValDecoder)
+}
+
+func (e *sortKeysMapEncoder) EntryEncoder() (k, v ValEncoder) { return e.keyEncoder, e.elemEncoder }
+func (e *mapEncoder) EntryEncoder() (k, v ValEncoder)         { return e.keyEncoder, e.elemEncoder }
+func (d *mapDecoder) EntryDecoder() (k, v ValDecoder)         { return d.keyDecoder, d.elemDecoder }
 
 func decoderOfMap(ctx *ctx, typ reflect2.Type) ValDecoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
@@ -42,8 +55,14 @@ func decoderOfMapKey(ctx *ctx, typ reflect2.Type) ValDecoder {
 	if ptrType.Implements(unmarshalerType) {
 		return &referenceDecoder{decoder: &unmarshalerDecoder{valType: ptrType}}
 	}
+	if ptrType.Implements(unmarshalerContextType) {
+		return &referenceDecoder{decoder: &unmarshalerContextDecoder{valType: ptrType}}
+	}
 	if typ.Implements(unmarshalerType) {
 		return &unmarshalerDecoder{valType: typ}
+	}
+	if typ.Implements(unmarshalerContextType) {
+		return &unmarshalerContextDecoder{valType: typ}
 	}
 	if ptrType.Implements(textUnmarshalerType) {
 		return &referenceDecoder{decoder: &textUnmarshalerDecoder{valType: ptrType}}
@@ -105,7 +124,7 @@ type mapDecoder struct {
 	elemDecoder ValDecoder
 }
 
-func (d *mapDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *mapDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	mapType := d.mapType
 	c := iter.nextToken()
 	if c == 'n' {
@@ -127,25 +146,25 @@ func (d *mapDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	}
 	iter.unreadByte()
 	key := d.keyType.UnsafeNew()
-	d.keyDecoder.Decode(key, iter)
+	d.keyDecoder.Decode(ctx, key, iter)
 	c = iter.nextToken()
 	if c != ':' {
 		iter.ReportError("ReadMapCB", "expect : after object field, but found "+string([]byte{c}))
 		return
 	}
 	elem := d.elemType.UnsafeNew()
-	d.elemDecoder.Decode(elem, iter)
+	d.elemDecoder.Decode(ctx, elem, iter)
 	d.mapType.UnsafeSetIndex(ptr, key, elem)
 	for c = iter.nextToken(); c == ','; c = iter.nextToken() {
 		key := d.keyType.UnsafeNew()
-		d.keyDecoder.Decode(key, iter)
+		d.keyDecoder.Decode(ctx, key, iter)
 		c = iter.nextToken()
 		if c != ':' {
 			iter.ReportError("ReadMapCB", "expect : after object field, but found "+string([]byte{c}))
 			return
 		}
 		elem := d.elemType.UnsafeNew()
-		d.elemDecoder.Decode(elem, iter)
+		d.elemDecoder.Decode(ctx, elem, iter)
 		d.mapType.UnsafeSetIndex(ptr, key, elem)
 	}
 	if c != '}' {
@@ -157,13 +176,13 @@ type numericMapKeyDecoder struct {
 	decoder ValDecoder
 }
 
-func (d *numericMapKeyDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
+func (d *numericMapKeyDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	c := iter.nextToken()
 	if c != '"' {
 		iter.ReportError("ReadMapCB", `expect ", but found `+string([]byte{c}))
 		return
 	}
-	d.decoder.Decode(ptr, iter)
+	d.decoder.Decode(ctx, ptr, iter)
 	c = iter.nextToken()
 	if c != '"' {
 		iter.ReportError("ReadMapCB", `expect ", but found `+string([]byte{c}))
@@ -175,27 +194,27 @@ type numericMapKeyEncoder struct {
 	encoder ValEncoder
 }
 
-func (u *numericMapKeyEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (u *numericMapKeyEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	stream.writeByte('"')
-	u.encoder.Encode(ptr, stream)
+	u.encoder.Encode(ctx, ptr, stream)
 	stream.writeByte('"')
 }
 
-func (u *numericMapKeyEncoder) IsEmpty(unsafe.Pointer) bool { return false }
+func (u *numericMapKeyEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
 
 type dynamicMapKeyEncoder struct {
 	ctx     *ctx
 	valType reflect2.Type
 }
 
-func (e *dynamicMapKeyEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *dynamicMapKeyEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	obj := e.valType.UnsafeIndirect(ptr)
-	encoderOfMapKey(e.ctx, reflect2.TypeOf(obj)).Encode(reflect2.PtrOf(obj), stream)
+	encoderOfMapKey(e.ctx, reflect2.TypeOf(obj)).Encode(ctx, reflect2.PtrOf(obj), stream)
 }
 
-func (e *dynamicMapKeyEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *dynamicMapKeyEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
 	obj := e.valType.UnsafeIndirect(ptr)
-	return encoderOfMapKey(e.ctx, reflect2.TypeOf(obj)).IsEmpty(reflect2.PtrOf(obj))
+	return encoderOfMapKey(e.ctx, reflect2.TypeOf(obj)).IsEmpty(ctx, reflect2.PtrOf(obj))
 }
 
 type mapEncoder struct {
@@ -204,7 +223,7 @@ type mapEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (e *mapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *mapEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if *(*unsafe.Pointer)(ptr) == nil {
 		stream.WriteNil()
 		return
@@ -216,18 +235,18 @@ func (e *mapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 			stream.WriteMore()
 		}
 		key, elem := iter.UnsafeNext()
-		e.keyEncoder.Encode(key, stream)
+		e.keyEncoder.Encode(ctx, key, stream)
 		if stream.indention > 0 {
 			stream.write2Bytes(':', ' ')
 		} else {
 			stream.writeByte(':')
 		}
-		e.elemEncoder.Encode(elem, stream)
+		e.elemEncoder.Encode(ctx, elem, stream)
 	}
 	stream.WriteObjectEnd()
 }
 
-func (e *mapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *mapEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	iter := e.mapType.UnsafeIterate(ptr)
 	return !iter.HasNext()
 }
@@ -238,7 +257,7 @@ type sortKeysMapEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+func (e *sortKeysMapEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if *(*unsafe.Pointer)(ptr) == nil {
 		stream.WriteNil()
 		return
@@ -252,7 +271,7 @@ func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	for mapIter.HasNext() {
 		key, elem := mapIter.UnsafeNext()
 		subStreamIndex := subStream.Buffered()
-		e.keyEncoder.Encode(key, subStream)
+		e.keyEncoder.Encode(ctx, key, subStream)
 		if subStream.Error != nil && subStream.Error != io.EOF && stream.Error == nil {
 			stream.Error = subStream.Error
 		}
@@ -264,7 +283,7 @@ func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		} else {
 			subStream.writeByte(':')
 		}
-		e.elemEncoder.Encode(elem, subStream)
+		e.elemEncoder.Encode(ctx, elem, subStream)
 		keyValues = append(keyValues, encodedKv{
 			key: decodedKey,
 			val: subStream.Buffer()[subStreamIndex:],
@@ -275,7 +294,7 @@ func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		if i != 0 {
 			stream.WriteMore()
 		}
-		stream.Write(keyValue.val)
+		_, _ = stream.Write(keyValue.val)
 	}
 	if subStream.Error != nil && stream.Error == nil {
 		stream.Error = subStream.Error
@@ -285,7 +304,7 @@ func (e *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	stream.cfg.ReturnIterator(subIter)
 }
 
-func (e *sortKeysMapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (e *sortKeysMapEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
 	iter := e.mapType.UnsafeIterate(ptr)
 	return !iter.HasNext()
 }
