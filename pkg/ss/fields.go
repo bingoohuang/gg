@@ -429,6 +429,10 @@ func FieldsFuncN(s string, n int, f func(rune) bool) []string {
 }
 
 func fixLastFieldFunc(a []string, f func(rune) bool) []string {
+	if len(a) == 0 {
+		return nil
+	}
+
 	lastIndex := len(a) - 1 // nolint gomnd
 	last := a[lastIndex]
 	stopPos := 0
