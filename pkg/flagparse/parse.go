@@ -1,8 +1,10 @@
 package flagparse
 
 import (
+	"embed"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/cast"
+	"github.com/bingoohuang/gg/pkg/ctl"
 	flag "github.com/bingoohuang/gg/pkg/fla9"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"log"
@@ -35,9 +37,16 @@ type requiredVar struct {
 type Options struct {
 	flagName, defaultCnf string
 	cnf                  *string
+	initFiles            *embed.FS
 }
 
 type OptionsFn func(*Options)
+
+func ProcessInit(initFiles *embed.FS) OptionsFn {
+	return func(o *Options) {
+		o.initFiles = initFiles
+	}
+}
 
 func AutoLoadYaml(flagName, defaultCnf string) OptionsFn {
 	return func(o *Options) {
@@ -58,6 +67,7 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 	requiredVars := make([]requiredVar, 0)
 
 	var pprof *string
+	initing := false
 
 	ra := reflect.ValueOf(a).Elem()
 	rt := ra.Type()
@@ -121,9 +131,13 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 				f.IntVar(p.(*int), name, cast.ToInt(val), usage)
 			}
 		case reflect.Bool:
-			pp := p.(*bool)
-			checkVersionShow = checkVersion(checkVersionShow, a, fi.Name, pp)
-			f.BoolVar(pp, name, cast.ToBool(val), usage)
+			if fi.Name == "Init" {
+				f.BoolVar(&initing, name, false, usage)
+			} else {
+				pp := p.(*bool)
+				checkVersionShow = checkVersion(checkVersionShow, a, fi.Name, pp)
+				f.BoolVar(pp, name, cast.ToBool(val), usage)
+			}
 		case reflect.Float64:
 			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
 		case reflect.Float32:
@@ -155,6 +169,10 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 	_ = f.Parse(args[1:])
 	if checkVersionShow != nil {
 		checkVersionShow()
+	}
+
+	if options.initFiles != nil && initing {
+		ctl.Config{Initing: true, InitFiles: options.initFiles}.ProcessInit()
 	}
 
 	checkRequired(requiredVars, f)

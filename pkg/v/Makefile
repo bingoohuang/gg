@@ -13,9 +13,10 @@ gitCommit := $(shell git rev-list --oneline --format=format:'%h@%aI' --max-count
 #gitCommit := $(shell git rev-list -1 HEAD)
 # https://stackoverflow.com/a/47510909
 pkg := github.com/bingoohuang/gg/pkg/v
+appVersion := 1.0.0
 #static := -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
-flags = "-extldflags $(static) -s -w -X '$(pkg).buildTime=$(buildTime)' -X $(pkg).gitCommit=$(gitCommit) -X '$(pkg).goVersion=$(goVersion2)'"
+flags = "-extldflags $(static) -w -X '$(pkg).buildTime=$(buildTime)' -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X '$(pkg).goVersion=$(goVersion2)'"
 
 tool:
 	go get github.com/securego/gosec/cmd/gosec
@@ -34,8 +35,7 @@ lint:
 	golangci-lint run ./...
 
 fmt:
-	gofumports -w .
-	gofumpt -w .
+	gofumpt -l -w .
 	gofmt -s -w .
 	go mod tidy
 	go fmt ./...

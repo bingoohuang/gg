@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Initing      bool
 	PrintVersion bool
-	InitFiles    embed.FS
+	InitFiles    *embed.FS
 }
 
 // ProcessInit generates ctl and conf.yml files for -init argument.
