@@ -12,7 +12,7 @@ var (
 // Version returns the full version information for the application.
 func Version() string {
 	return fmt.Sprintf("version: %s\n", appVersion) +
-		fmt.Sprintf("build:\t%s\n", buildTime) +
-		fmt.Sprintf("git:\t%s\n", gitCommit) +
-		fmt.Sprintf("go:\t%s\n", goVersion)
+		fmt.Sprintf("build  : %s\n", buildTime) +
+		fmt.Sprintf("git    : %s\n", gitCommit) +
+		fmt.Sprintf("go     : %s", goVersion)
 }
