@@ -3,6 +3,7 @@ package timex_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bingoohuang/gg/pkg/timex"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestUnmashalMsg(t *testing.T) {
+	fmt.Println(time.Now().Format(time.RFC3339))
 	p, _ := time.ParseInLocation("2006-01-02 15:04:05.000", "2020-03-18 10:51:54.198", time.Local)
 
 	j := `{
@@ -39,7 +41,7 @@ func TestUnmashalMsg(t *testing.T) {
 	assert.Equal(t, timex.JSONTime(zero), msg.O)
 	assert.Equal(t, timex.JSONTime(p), msg.B)
 	assert.Equal(t, timex.JSONTime(p), msg.C)
-	assert.Equal(t, timex.JSONTime(p), msg.D)
+	assert.Equal(t, p, time.Time(msg.D).Local().Add(-8*time.Hour))
 	assert.Equal(t, timex.JSONTime(p), msg.E)
 	assert.Equal(t, time.Time(msg.D).Format("20060102150405"), "20200318105154")
 }

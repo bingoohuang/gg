@@ -28,14 +28,29 @@ func (t *JSONTime) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
+	v = strings.ReplaceAll(v, "/", "-")
 	v = strings.ReplaceAll(v, ",", ".")
 	v = strings.ReplaceAll(v, "T", " ")
-	v = strings.ReplaceAll(v, "-", "")
-	v = strings.ReplaceAll(v, ":", "")
-	v = strings.TrimSuffix(v, "Z")
 
-	for _, f := range []string{"20060102 150405.000000", "20060102 150405.000"} {
-		if tt, err := time.ParseInLocation(f, v, time.Local); err == nil {
+	parser := func(layout, value string) (time.Time, error) {
+		return time.ParseInLocation(layout, value, time.Local)
+	}
+
+	if strings.Contains(v, "Z") {
+		if strings.HasSuffix(v, "Z") {
+			v = strings.TrimSuffix(v, "Z")
+		}
+		parser = func(layout, value string) (time.Time, error) {
+			return time.Parse(layout, value)
+		}
+	}
+
+	for _, f := range []string{
+		"2006-01-02 15:04:05.999999999Z07:00", // time.RFC3339Nano,
+		"2006-01-02 15:04:05Z07:00",           // time.RFC3339,
+		"2006-01-02 15:04:05.000000",
+		"2006-01-02 15:04:05.000"} {
+		if tt, err := parser(f, v); err == nil {
 			*t = JSONTime(tt)
 			return nil
 		}
