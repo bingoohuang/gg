@@ -62,7 +62,7 @@ func (c *CustomEncoderAttachmentTestStructEncoder) Encode(_ context.Context, _ u
 	stream.WriteRaw(`"`)
 }
 
-func (c *CustomEncoderAttachmentTestStructEncoder) IsEmpty(context.Context, unsafe.Pointer) bool {
+func (c *CustomEncoderAttachmentTestStructEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool {
 	return false
 }
 

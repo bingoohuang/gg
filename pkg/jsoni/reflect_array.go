@@ -28,7 +28,7 @@ type emptyArrayEncoder struct{}
 func (e emptyArrayEncoder) Encode(_ context.Context, _ unsafe.Pointer, stream *Stream) {
 	stream.WriteEmptyArray()
 }
-func (e emptyArrayEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return true }
+func (e emptyArrayEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool { return true }
 
 type arrayEncoder struct {
 	arrayType   *reflect2.UnsafeArrayType
@@ -50,7 +50,7 @@ func (e *arrayEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *S
 	}
 }
 
-func (e *arrayEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
+func (e *arrayEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool { return false }
 
 type arrayDecoder struct {
 	arrayType   *reflect2.UnsafeArrayType

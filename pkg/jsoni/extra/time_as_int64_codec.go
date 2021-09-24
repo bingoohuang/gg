@@ -22,7 +22,7 @@ func (codec *timeAsInt64Codec) Decode(_ context.Context, ptr unsafe.Pointer, ite
 	*((*time.Time)(ptr)) = time.Unix(0, nanoseconds)
 }
 
-func (codec *timeAsInt64Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (codec *timeAsInt64Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	ts := *((*time.Time)(ptr))
 	return ts.UnixNano() == 0
 }

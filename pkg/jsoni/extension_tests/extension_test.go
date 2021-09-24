@@ -115,7 +115,7 @@ func (encoder *funcEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stre
 	encoder.fun(ctx, ptr, stream)
 }
 
-func (encoder *funcEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
+func (encoder *funcEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	if encoder.isEmptyFunc == nil {
 		return false
 	}

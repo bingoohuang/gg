@@ -50,7 +50,7 @@ func (c *jsonRawMessageCodec) Encode(_ context.Context, ptr unsafe.Pointer, stre
 	}
 }
 
-func (c *jsonRawMessageCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *jsonRawMessageCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return len(*((*json.RawMessage)(p))) == 0
 }
 
@@ -72,6 +72,6 @@ func (c *jsoniRawMessageCodec) Encode(_ context.Context, ptr unsafe.Pointer, str
 	}
 }
 
-func (c *jsoniRawMessageCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *jsoniRawMessageCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return len(*((*RawMessage)(p))) == 0
 }

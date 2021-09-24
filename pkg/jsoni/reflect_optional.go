@@ -72,7 +72,7 @@ func (e *OptionalEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream
 	}
 }
 
-func (e *OptionalEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (e *OptionalEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return *((*unsafe.Pointer)(ptr)) == nil
 }
 
@@ -88,9 +88,9 @@ func (e *dereferenceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, str
 	}
 }
 
-func (e *dereferenceEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
+func (e *dereferenceEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
 	if dePtr := *((*unsafe.Pointer)(ptr)); dePtr != nil {
-		return e.ValueEncoder.IsEmpty(ctx, dePtr)
+		return e.ValueEncoder.IsEmpty(ctx, dePtr, checkZero)
 
 	}
 	return true
@@ -117,8 +117,8 @@ func (e *referenceEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stre
 	e.encoder.Encode(ctx, unsafe.Pointer(&p), s)
 }
 
-func (e *referenceEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p))
+func (e *referenceEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p), checkZero)
 }
 
 type referenceDecoder struct {

@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
-	github.com/modern-go/reflect2 v1.0.1
+	github.com/modern-go/reflect2 v1.0.2
 	github.com/pbnjay/pixfont v0.0.0-20200714042608-33b744692567
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0

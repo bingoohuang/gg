@@ -20,6 +20,7 @@ type Config struct {
 	MarshalFloatWith6Digits       bool
 	EscapeHTML                    bool
 	SortMapKeys                   bool
+	OmitEmptyMapKeys              bool //  omit keys whose value is empty.
 	UseNumber                     bool
 	DisallowUnknownFields         bool
 	TagKey                        string
@@ -71,6 +72,7 @@ var ConfigFastest = Config{
 type frozenConfig struct {
 	configBeforeFrozen            Config
 	sortMapKeys                   bool
+	omitEmptyMapKeys              bool // omit empty keys whose value is empty
 	indentionStep                 int
 	objectFieldMustBeSimpleString bool
 	onlyTaggedField               bool
@@ -131,6 +133,7 @@ func addFrozenConfigToCache(cfg Config, frozenConfig *frozenConfig) {
 func (c Config) Froze() API {
 	api := &frozenConfig{
 		sortMapKeys:                   c.SortMapKeys,
+		omitEmptyMapKeys:              c.OmitEmptyMapKeys,
 		indentionStep:                 c.IndentionStep,
 		objectFieldMustBeSimpleString: c.ObjectFieldMustBeSimpleString,
 		onlyTaggedField:               c.OnlyTaggedField,
@@ -185,7 +188,7 @@ func (c *frozenConfig) validateJsonRawMessage(extension EncoderExtension) {
 		} else {
 			stream.WriteRaw(string(rawMessage))
 		}
-	}, isEmptyFn: func(ctx context.Context, ptr unsafe.Pointer) bool {
+	}, isEmptyFn: func(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
 		return len(*((*json.RawMessage)(ptr))) == 0
 	}}
 	extension[PtrElem((*json.RawMessage)(nil))] = encoder
@@ -220,7 +223,7 @@ func (e *lossyFloat32Encoder) Encode(_ context.Context, ptr unsafe.Pointer, stre
 	stream.WriteFloat32Lossy(*((*float32)(ptr)))
 }
 
-func (e *lossyFloat32Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (e *lossyFloat32Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return *((*float32)(ptr)) == 0
 }
 
@@ -230,7 +233,7 @@ func (e *lossyFloat64Encoder) Encode(_ context.Context, ptr unsafe.Pointer, stre
 	stream.WriteFloat64Lossy(*((*float64)(ptr)))
 }
 
-func (e *lossyFloat64Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (e *lossyFloat64Encoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return *((*float64)(ptr)) == 0
 }
 
@@ -249,7 +252,7 @@ func (e *htmlEscapedStringEncoder) Encode(_ context.Context, ptr unsafe.Pointer,
 	stream.WriteStringWithHTMLEscaped(str)
 }
 
-func (e *htmlEscapedStringEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (e *htmlEscapedStringEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return *((*string)(ptr)) == ""
 }
 

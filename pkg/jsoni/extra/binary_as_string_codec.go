@@ -161,7 +161,7 @@ func (codec *binaryAsStringCodec) Decode(_ context.Context, ptr unsafe.Pointer, 
 	}
 	*(*[]byte)(ptr) = bytes
 }
-func (codec *binaryAsStringCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (codec *binaryAsStringCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return len(*((*[]byte)(ptr))) == 0
 }
 func (codec *binaryAsStringCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {

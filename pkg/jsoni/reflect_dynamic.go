@@ -16,8 +16,9 @@ func (e *dynamicEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream 
 	stream.WriteVal(ctx, obj)
 }
 
-func (e *dynamicEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
-	return e.valType.UnsafeIndirect(ptr) == nil
+func (e *dynamicEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	obj := e.valType.UnsafeIndirect(ptr)
+	return reflect2.IsNil(obj) || checkZero && reflect.ValueOf(obj).IsZero()
 }
 
 type efaceDecoder struct{}

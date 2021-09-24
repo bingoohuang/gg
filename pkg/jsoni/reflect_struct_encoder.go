@@ -41,7 +41,7 @@ func encoderOfStruct(ctx *ctx, typ reflect2.Type) ValEncoder {
 			})
 		}
 	}
-	return &structEncoder{typ, finalOrderedFields}
+	return &structEncoder{typ: typ, fields: finalOrderedFields}
 }
 
 func createCheckIsEmpty(ctx *ctx, typ reflect2.Type) checkIsEmpty {
@@ -110,9 +110,9 @@ func (e *structFieldEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, str
 	}
 }
 
-func (e *structFieldEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
+func (e *structFieldEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
 	fieldPtr := e.field.UnsafeGet(ptr)
-	return e.fieldEncoder.IsEmpty(ctx, fieldPtr)
+	return e.fieldEncoder.IsEmpty(ctx, fieldPtr, checkZero)
 }
 
 func (e *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
@@ -142,7 +142,7 @@ func (e *structEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range e.fields {
-		if field.encoder.omitempty && field.encoder.IsEmpty(ctx, ptr) {
+		if field.encoder.omitempty && field.encoder.IsEmpty(ctx, ptr, true) {
 			continue
 		}
 		if field.encoder.IsEmbeddedPtrNil(ptr) {
@@ -161,14 +161,14 @@ func (e *structEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *
 	}
 }
 
-func (e *structEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
+func (e *structEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool { return false }
 
 type emptyStructEncoder struct{}
 
 func (e *emptyStructEncoder) Encode(_ context.Context, _ unsafe.Pointer, stream *Stream) {
 	stream.WriteEmptyObject()
 }
-func (e *emptyStructEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
+func (e *emptyStructEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool { return false }
 
 type stringModeNumberEncoder struct {
 	elemEncoder ValEncoder
@@ -180,8 +180,8 @@ func (e *stringModeNumberEncoder) Encode(ctx context.Context, ptr unsafe.Pointer
 	stream.writeByte('"')
 }
 
-func (e *stringModeNumberEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.elemEncoder.IsEmpty(ctx, p)
+func (e *stringModeNumberEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.elemEncoder.IsEmpty(ctx, p, checkZero)
 }
 
 type stringModeStringEncoder struct {
@@ -197,6 +197,6 @@ func (e *stringModeStringEncoder) Encode(ctx context.Context, ptr unsafe.Pointer
 	stream.WriteString(string(temp.Buffer()))
 }
 
-func (e *stringModeStringEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(ctx, ptr)
+func (e *stringModeStringEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.encoder.IsEmpty(ctx, ptr, checkZero)
 }

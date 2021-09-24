@@ -2,12 +2,13 @@
 
 A high-performance 100% compatible drop-in replacement of "encoding/json"
 
-1. keep synchronized with [json-iterator](https://github.com/json-iterator/go) at commit `c666182@2021-07-22T09:00:26+08:00`
+1. keep synchronized with [json-iterator](https://github.com/json-iterator/go) at commit `024077e@2021-09-11T10:17:26+08:00`
 
 ## Features enhanced
 
 1. Support converting between int64/uint64 and string values ( used for Javascript lost accuracy for int64/uint64) . eg. `c := jsoni.Config{EscapeHTML: true, Int64AsString: true}.Froze()`
 2. Naming strategies for struct can be set on config. eg. `c.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})`
+3. Config.OmitEmptyMapKeys to omit keys whose value is empty.
 
 You can also use thrift like JSON using [thrift-iterator](https://github.com/thrift-iterator/go)
 

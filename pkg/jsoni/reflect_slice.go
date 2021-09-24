@@ -48,7 +48,7 @@ func (e *sliceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *S
 	}
 }
 
-func (e *sliceEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (e *sliceEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return e.sliceType.UnsafeLengthOf(ptr) == 0
 }
 

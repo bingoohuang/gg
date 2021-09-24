@@ -224,7 +224,9 @@ func (c *stringCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stre
 	stream.WriteString(str)
 }
 
-func (c *stringCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*string)(p)) == "" }
+func (c *stringCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*string)(p)) == ""
+}
 
 type int8Codec struct{}
 
@@ -238,7 +240,9 @@ func (c *int8Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream
 	stream.WriteInt8(*((*int8)(ptr)))
 }
 
-func (c *int8Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*int8)(p)) == 0 }
+func (c *int8Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*int8)(p)) == 0
+}
 
 type int16Codec struct{}
 
@@ -252,7 +256,9 @@ func (c *int16Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Strea
 	stream.WriteInt16(*((*int16)(ptr)))
 }
 
-func (c *int16Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*int16)(p)) == 0 }
+func (c *int16Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*int16)(p)) == 0
+}
 
 type int32Codec struct{}
 
@@ -266,7 +272,9 @@ func (c *int32Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Strea
 	stream.WriteInt32(*((*int32)(ptr)))
 }
 
-func (c *int32Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*int32)(p)) == 0 }
+func (c *int32Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*int32)(p)) == 0
+}
 
 type int64Codec struct{}
 
@@ -280,7 +288,9 @@ func (c *int64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Strea
 	stream.WriteInt64(*((*int64)(ptr)))
 }
 
-func (c *int64Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*int64)(p)) == 0 }
+func (c *int64Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*int64)(p)) == 0
+}
 
 type uint8Codec struct{}
 
@@ -294,7 +304,7 @@ func (c *uint8Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Strea
 	stream.WriteUint8(*((*uint8)(ptr)))
 }
 
-func (c *uint8Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (c *uint8Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return *((*uint8)(ptr)) == 0
 }
 
@@ -310,7 +320,9 @@ func (c *uint16Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stre
 	stream.WriteUint16(*((*uint16)(ptr)))
 }
 
-func (c *uint16Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*uint16)(p)) == 0 }
+func (c *uint16Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*uint16)(p)) == 0
+}
 
 type uint32Codec struct{}
 
@@ -324,7 +336,9 @@ func (c *uint32Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stre
 	stream.WriteUint32(*((*uint32)(ptr)))
 }
 
-func (c *uint32Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*uint32)(p)) == 0 }
+func (c *uint32Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*uint32)(p)) == 0
+}
 
 type uint64Codec struct{}
 
@@ -338,7 +352,9 @@ func (c *uint64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stre
 	stream.WriteUint64(*((*uint64)(ptr)))
 }
 
-func (c *uint64Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return *((*uint64)(p)) == 0 }
+func (c *uint64Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return *((*uint64)(p)) == 0
+}
 
 type float32Codec struct{}
 
@@ -352,7 +368,7 @@ func (c *float32Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Str
 	stream.WriteFloat32(*((*float32)(ptr)))
 }
 
-func (c *float32Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *float32Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return *((*float32)(p)) == 0
 }
 
@@ -368,7 +384,7 @@ func (c *float64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Str
 	stream.WriteFloat64(*((*float64)(ptr)))
 }
 
-func (c *float64Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *float64Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return *((*float64)(p)) == 0
 }
 
@@ -384,7 +400,9 @@ func (c *boolCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream
 	stream.WriteBool(*((*bool)(ptr)))
 }
 
-func (c *boolCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool { return !(*((*bool)(p))) }
+func (c *boolCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
+	return !(*((*bool)(p)))
+}
 
 type base64Codec struct {
 	sliceType    *reflect2.UnsafeSliceType
@@ -429,6 +447,6 @@ func (c *base64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stre
 	stream.writeByte('"')
 }
 
-func (c *base64Codec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *base64Codec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return len(*((*[]byte)(p))) == 0
 }

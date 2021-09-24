@@ -95,8 +95,8 @@ func (e *marshalerEncoder) Encode(_ context.Context, ptr unsafe.Pointer, stream 
 	stream.Write(bytes)
 }
 
-func (e *marshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, ptr)
+func (e *marshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, ptr, checkZero)
 }
 
 type marshalerContextEncoder struct {
@@ -123,8 +123,8 @@ func (e *marshalerContextEncoder) Encode(ctx context.Context, ptr unsafe.Pointer
 	stream.Write(bytes)
 }
 
-func (e *marshalerContextEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, ptr)
+func (e *marshalerContextEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, ptr, checkZero)
 }
 
 type directMarshalerEncoder struct {
@@ -144,8 +144,8 @@ func (e *directMarshalerEncoder) Encode(_ context.Context, ptr unsafe.Pointer, s
 	}
 }
 
-func (e *directMarshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, ptr)
+func (e *directMarshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, ptr, checkZero)
 }
 
 type directMarshalerContextEncoder struct {
@@ -165,8 +165,8 @@ func (e *directMarshalerContextEncoder) Encode(ctx context.Context, ptr unsafe.P
 	}
 }
 
-func (e *directMarshalerContextEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, ptr)
+func (e *directMarshalerContextEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, ptr, checkZero)
 }
 
 type textMarshalerEncoder struct {
@@ -190,8 +190,8 @@ func (e *textMarshalerEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, s
 	}
 }
 
-func (e *textMarshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, ptr)
+func (e *textMarshalerEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, ptr, checkZero)
 }
 
 type directTextMarshalerEncoder struct {
@@ -213,8 +213,8 @@ func (e *directTextMarshalerEncoder) Encode(ctx context.Context, ptr unsafe.Poin
 	}
 }
 
-func (e *directTextMarshalerEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.checkIsEmpty.IsEmpty(ctx, p)
+func (e *directTextMarshalerEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.checkIsEmpty.IsEmpty(ctx, p, checkZero)
 }
 
 type unmarshalerDecoder struct{ valType reflect2.Type }

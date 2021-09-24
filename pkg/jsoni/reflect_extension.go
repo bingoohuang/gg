@@ -200,11 +200,11 @@ type funcEncoder struct {
 func (e *funcEncoder) Encode(ctx context.Context, p unsafe.Pointer, stream *Stream) {
 	e.fn(ctx, p, stream)
 }
-func (e *funcEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.isEmptyFn != nil && e.isEmptyFn(ctx, p)
+func (e *funcEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.isEmptyFn != nil && e.isEmptyFn(ctx, p, checkZero)
 }
 
-type IsEmptyFn func(ctx context.Context, ptr unsafe.Pointer) bool
+type IsEmptyFn func(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool
 
 // DecoderFunc the function form of TypeDecoder
 type DecoderFunc func(ctx context.Context, ptr unsafe.Pointer, iter *Iterator)
@@ -229,7 +229,7 @@ func RegisterFieldDecoder(typ string, field string, decoder ValDecoder) {
 }
 
 // RegisterTypeEncoderFunc register TypeEncoder for a type with encode/isEmpty function
-func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc func(context.Context, unsafe.Pointer) bool) {
+func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
 	typeEncoders[typ] = &funcEncoder{fun, isEmptyFunc}
 }
 
@@ -340,8 +340,8 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 				for _, b := range structDescriptor.Fields {
 					b.levels = append([]int{i}, b.levels...)
 					omitempty := b.Encoder.(*structFieldEncoder).omitempty
-					b.Encoder = &structFieldEncoder{field, b.Encoder, omitempty}
-					b.Decoder = &structFieldDecoder{field, b.Decoder}
+					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty}
+					b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 					embeddedBindings = append(embeddedBindings, b)
 				}
 				continue
@@ -352,10 +352,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 					for _, b := range structDescriptor.Fields {
 						b.levels = append([]int{i}, b.levels...)
 						omitempty := b.Encoder.(*structFieldEncoder).omitempty
-						b.Encoder = &dereferenceEncoder{b.Encoder}
-						b.Encoder = &structFieldEncoder{field, b.Encoder, omitempty}
-						b.Decoder = &dereferenceDecoder{ptrType.Elem(), b.Decoder}
-						b.Decoder = &structFieldDecoder{field, b.Decoder}
+						b.Encoder = &dereferenceEncoder{ValueEncoder: b.Encoder}
+						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty}
+						b.Decoder = &dereferenceDecoder{valueType: ptrType.Elem(), valueDecoder: b.Decoder}
+						b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 						embeddedBindings = append(embeddedBindings, b)
 					}
 					continue

@@ -78,7 +78,7 @@ func (c *jsonNumberCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *
 	}
 }
 
-func (c *jsonNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *jsonNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return len(*((*json.Number)(p))) == 0
 }
 
@@ -104,6 +104,6 @@ func (c *jsoniNumberCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream 
 	}
 }
 
-func (c *jsoniNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer) bool {
+func (c *jsoniNumberCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {
 	return len(*((*Number)(p))) == 0
 }

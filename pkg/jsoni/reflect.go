@@ -27,12 +27,12 @@ type ValDecoder interface {
 // Don't confuse jsoni.ValEncoder with json.Encoder.
 // For json.Encoder's adapter, refer to jsoni.AdapterEncoder(todo godoc link).
 type ValEncoder interface {
-	IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool
+	IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool
 	Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream)
 }
 
 type checkIsEmpty interface {
-	IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool
+	IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool
 }
 
 type ctx struct {
@@ -195,8 +195,8 @@ type onePtrEncoder struct {
 	encoder ValEncoder
 }
 
-func (e *onePtrEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p))
+func (e *onePtrEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p), checkZero)
 }
 func (e *onePtrEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
 	e.encoder.Encode(ctx, unsafe.Pointer(&p), s)
@@ -285,7 +285,7 @@ func (e *lazyErrorEncoder) Encode(_ context.Context, ptr unsafe.Pointer, stream 
 	}
 }
 
-func (e *lazyErrorEncoder) IsEmpty(context.Context, unsafe.Pointer) bool { return false }
+func (e *lazyErrorEncoder) IsEmpty(context.Context, unsafe.Pointer, bool) bool { return false }
 
 type placeholderDecoder struct {
 	decoder ValDecoder
@@ -302,6 +302,6 @@ type placeholderEncoder struct {
 func (e *placeholderEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
 	e.encoder.Encode(ctx, p, s)
 }
-func (e *placeholderEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer) bool {
-	return e.encoder.IsEmpty(ctx, p)
+func (e *placeholderEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
+	return e.encoder.IsEmpty(ctx, p, checkZero)
 }

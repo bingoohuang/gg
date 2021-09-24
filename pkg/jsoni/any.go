@@ -273,7 +273,7 @@ func (c *anyCodec) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Strea
 	any.WriteTo(ctx, stream)
 }
 
-func (c *anyCodec) IsEmpty(ctx context.Context, ptr unsafe.Pointer) bool {
+func (c *anyCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	obj := c.valType.UnsafeIndirect(ptr)
 	any := obj.(Any)
 	return any.Size() == 0
@@ -294,7 +294,7 @@ func (c *directAnyCodec) Encode(ctx context.Context, ptr unsafe.Pointer, stream 
 	any.WriteTo(ctx, stream)
 }
 
-func (c *directAnyCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer) bool {
+func (c *directAnyCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	any := *(*Any)(ptr)
 	return any.Size() == 0
 }
