@@ -16,6 +16,7 @@ extldflags := -extldflags -static
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
 flags1 = "-s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
 flags2 = "$(extldflags) -s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
+gobin := $(shell go env GOBIN)
 
 tool:
 	go get github.com/securego/gosec/cmd/gosec
@@ -44,22 +45,22 @@ fmt:
 
 install: init
 	go install -trimpath -ldflags=${flags2}  ./...
-	upx ~/go/bin/${app}
+	upx ${gobin}/${app}
 
 linux: init
 	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags1}  ./...
-	upx ~/go/bin/linux_amd64/${app}
+	upx ${gobin}/linux_amd64/${app}
 linux-arm64: init
 	GOOS=linux GOARCH=arm64 go install -trimpath -ldflags=${flags1}  ./...
-	upx ~/go/bin/linux_arm64/${app}
+	upx ${gobin}/linux_arm64/${app}
 
 upx:
-	ls -lh ~/go/bin/${app}
-	upx ~/go/bin/${app}
-	ls -lh ~/go/bin/${app}
-	ls -lh ~/go/bin/linux_amd64/${app}
-	upx ~/go/bin/linux_amd64/${app}
-	ls -lh ~/go/bin/linux_amd64/${app}
+	ls -lh ${gobin}/${app}
+	upx ${gobin}/${app}
+	ls -lh ${gobin}/${app}
+	ls -lh ${gobin}/linux_amd64/${app}
+	upx ${gobin}/linux_amd64/${app}
+	ls -lh ${gobin}/linux_amd64/${app}
 
 test: init
 	#go test -v ./...
