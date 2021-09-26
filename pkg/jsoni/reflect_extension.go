@@ -413,7 +413,7 @@ func (b sortableBindings) Less(i, j int) bool {
 
 func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 	for _, b := range structDescriptor.Fields {
-		shouldOmitEmpty := false
+		shouldOmitEmpty := cfg.omitEmptyStructField
 		tagParts := strings.Split(b.Field.Tag().Get(cfg.getTagKey()), ",")
 		for _, tagPart := range tagParts[1:] {
 			switch tagPart {
@@ -434,8 +434,8 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 				}
 			}
 		}
-		b.Decoder = &structFieldDecoder{b.Field, b.Decoder}
-		b.Encoder = &structFieldEncoder{b.Field, b.Encoder, shouldOmitEmpty}
+		b.Decoder = &structFieldDecoder{field: b.Field, fieldDecoder: b.Decoder}
+		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder, omitempty: shouldOmitEmpty}
 	}
 }
 

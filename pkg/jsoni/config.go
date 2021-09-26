@@ -20,7 +20,8 @@ type Config struct {
 	MarshalFloatWith6Digits       bool
 	EscapeHTML                    bool
 	SortMapKeys                   bool
-	OmitEmptyMapKeys              bool //  omit keys whose value is empty.
+	OmitEmptyStructField          bool // omit empty struct field.
+	OmitEmptyMapKeys              bool // omit keys whose value is empty.
 	UseNumber                     bool
 	DisallowUnknownFields         bool
 	TagKey                        string
@@ -72,6 +73,7 @@ var ConfigFastest = Config{
 type frozenConfig struct {
 	configBeforeFrozen            Config
 	sortMapKeys                   bool
+	omitEmptyStructField          bool // omit empty struct field
 	omitEmptyMapKeys              bool // omit empty keys whose value is empty
 	indentionStep                 int
 	objectFieldMustBeSimpleString bool
@@ -133,6 +135,7 @@ func addFrozenConfigToCache(cfg Config, frozenConfig *frozenConfig) {
 func (c Config) Froze() API {
 	api := &frozenConfig{
 		sortMapKeys:                   c.SortMapKeys,
+		omitEmptyStructField:          c.OmitEmptyStructField,
 		omitEmptyMapKeys:              c.OmitEmptyMapKeys,
 		indentionStep:                 c.IndentionStep,
 		objectFieldMustBeSimpleString: c.ObjectFieldMustBeSimpleString,
