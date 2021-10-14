@@ -88,15 +88,18 @@ func TestPrintAll(t *testing.T) {
 
 	id := node.Next()
 
-	t.Logf("Int64    : %#v", id.Int64())
-	t.Logf("String   : %#v", id.String())
-	t.Logf("Base2    : %#v", id.Base2())
-	t.Logf("Base32   : %#v", id.Base32())
-	t.Logf("Base36   : %#v", id.Base36())
-	t.Logf("Base58   : %#v", id.Base58())
-	t.Logf("Base64   : %#v", id.Base64())
-	t.Logf("Bytes    : %#v", id.Bytes())
-	t.Logf("IntBytes : %#v", id.IntBytes())
+	t.Logf("Int32    : %d", id.Int32())
+	t.Logf("Uint32   : %d", id.Uint32())
+	t.Logf("Int64    : %d", id.Int64())
+	t.Logf("Uint64   : %d", id.Uint64())
+	t.Logf("String   : %s", id.String())
+	t.Logf("Base2    : %s", id.Base2())
+	t.Logf("Base32   : %s", id.Base32())
+	t.Logf("Base36   : %s", id.Base36())
+	t.Logf("Base58   : %s", id.Base58())
+	t.Logf("Base64   : %s", id.Base64())
+	t.Logf("Bytes    : %v", id.Bytes())
+	t.Logf("IntBytes : %v", id.IntBytes())
 }
 
 func TestInt64(t *testing.T) {

@@ -37,8 +37,17 @@ func ParseBase36(id string) (ID, error) {
 	return ID(i), err
 }
 
+// Int32 returns an int32 of the snowflake ID
+func (f ID) Int32() int32 { return int32(f) }
+
+// Uint32 returns an uint32 of the snowflake ID
+func (f ID) Uint32() uint32 { return uint32(f) }
+
 // Int64 returns an int64 of the snowflake ID
 func (f ID) Int64() int64 { return int64(f) }
+
+// Uint64 returns an uint64 of the snowflake ID
+func (f ID) Uint64() uint64 { return uint64(f) }
 
 // ParseInt64 converts an int64 into a snowflake ID
 func ParseInt64(id int64) ID { return ID(id) }
