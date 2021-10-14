@@ -2,6 +2,7 @@
 all: default test install
 
 app=$(notdir $(shell pwd))
+appVersion := 1.0.0
 
 goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
 buildTime := $(shell if hash gdate 2>/dev/null; then gdate --rfc-3339=seconds | sed 's/ /T/'; else date --rfc-3339=seconds | sed 's/ /T/'; fi)
@@ -10,7 +11,7 @@ gitCommit := $(shell git rev-list --oneline --format=format:'%h@%aI' --max-count
 #gitCommit := $(shell git rev-list -1 HEAD)
 # https://stackoverflow.com/a/47510909
 pkg := github.com/bingoohuang/gg/pkg/v
-appVersion := 1.0.0
+
 extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
