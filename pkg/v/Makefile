@@ -18,6 +18,8 @@ extldflags := -extldflags -static
 flags1 = "-s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
 flags2 = "$(extldflags) -s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
 gobin := $(shell go env GOBIN)
+# try $GOPATN/bin if $gobin is empty
+gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
 
 tool:
 	go get github.com/securego/gosec/cmd/gosec
