@@ -1,4 +1,4 @@
-package jihe
+package delay
 
 import (
 	"context"
@@ -8,22 +8,22 @@ import (
 
 const defaultKey = "_default"
 
-func NewDelayChan(ctx context.Context, fn func(interface{}), delay time.Duration) *DelayChan {
-	d := &DelayChan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}, stop: make(chan struct{}, 1)}
+func NewChan(ctx context.Context, fn func(interface{}), delay time.Duration) *Chan {
+	d := &Chan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}, stop: make(chan struct{}, 1)}
 	d.Map.Store(defaultKey, make(chan interface{}, 1))
 	d.wg.Add(1)
 	go d.run(ctx, delay)
 	return d
 }
 
-type DelayChan struct {
+type Chan struct {
 	fn   func(interface{})
 	Map  *sync.Map
 	wg   *sync.WaitGroup
 	stop chan struct{}
 }
 
-func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
+func (c *Chan) run(ctx context.Context, delay time.Duration) {
 	defer c.wg.Done()
 	ticker := time.NewTicker(delay)
 	defer ticker.Stop()
@@ -41,13 +41,13 @@ func (c *DelayChan) run(ctx context.Context, delay time.Duration) {
 	}
 }
 
-func (c *DelayChan) Close() error {
+func (c *Chan) Close() error {
 	c.stop <- struct{}{}
 	c.wg.Wait()
 	return nil
 }
 
-func (c *DelayChan) consume() {
+func (c *Chan) consume() {
 	c.Map.Range(func(k, value interface{}) bool {
 		select {
 		case v := <-value.(chan interface{}):
@@ -58,7 +58,7 @@ func (c *DelayChan) consume() {
 	})
 }
 
-func (c *DelayChan) PutKey(k string, v interface{}) {
+func (c *Chan) PutKey(k string, v interface{}) {
 	if ch, ok := c.Map.Load(k); ok {
 		replace(ch.(chan interface{}), v)
 		return
@@ -68,7 +68,7 @@ func (c *DelayChan) PutKey(k string, v interface{}) {
 	replace(ch.(chan interface{}), v)
 }
 
-func (c *DelayChan) Put(v interface{}) { c.PutKey(defaultKey, v) }
+func (c *Chan) Put(v interface{}) { c.PutKey(defaultKey, v) }
 
 func replace(ch chan interface{}, v interface{}) {
 	// try to remove old one.

@@ -3,7 +3,7 @@ package dbsync
 import (
 	"context"
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/jihe"
+	"github.com/bingoohuang/gg/pkg/mapp"
 	"github.com/bingoohuang/gg/pkg/sqx"
 	"log"
 	"time"
@@ -65,7 +65,7 @@ func (s *DbSync) sync(query string) {
 		return
 	}
 
-	current := jihe.CloneMap(s.cache)
+	current := mapp.Clone(s.cache)
 
 	for _, r := range rows {
 		v, ok := s.cache[r.Pk]

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/delay"
 	"github.com/bingoohuang/gg/pkg/iox"
-	"github.com/bingoohuang/gg/pkg/jihe"
 	"github.com/bingoohuang/gg/pkg/man"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
@@ -25,7 +25,7 @@ type QueueWriter struct {
 
 	discarded      uint32
 	config         *Config
-	delayDiscarded *jihe.DelayChan
+	delayDiscarded *delay.Chan
 
 	wg sync.WaitGroup
 }
@@ -69,7 +69,7 @@ func NewQueueWriter(outputPath string, options ...Option) *QueueWriter {
 	}
 
 	if c.AllowDiscarded {
-		p.delayDiscarded = jihe.NewDelayChan(c.Context, func(v interface{}) {
+		p.delayDiscarded = delay.NewChan(c.Context, func(v interface{}) {
 			p.Send(fmt.Sprintf("\n discarded: %d\n", v.(uint32)), false)
 		}, c.FlushLatency)
 	}

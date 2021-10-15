@@ -31,6 +31,14 @@ func FirstWord(s string) string {
 
 func RemoveAll(s, old string) string { return strings.ReplaceAll(s, old, "") }
 
+func Ori(a, b int) int {
+	if a == 0 {
+		return b
+	}
+
+	return a
+}
+
 func Or(a, b string) string {
 	if a == "" {
 		return b

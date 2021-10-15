@@ -113,3 +113,12 @@ func WalkMap(m interface{}, iterFunc interface{}) {
 		funcValue.Call([]reflect.Value{k, v})
 	}
 }
+
+// Clone clones a map[string]string.
+func Clone(m map[string]string) map[string]string {
+	c := make(map[string]string)
+	for k, v := range m {
+		c[k] = v
+	}
+	return c
+}
