@@ -5,6 +5,7 @@ app=$(notdir $(shell pwd))
 appVersion := 1.0.0
 
 goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
+# `brew install coreutils` for gdate
 buildTime := $(shell if hash gdate 2>/dev/null; then gdate --rfc-3339=seconds | sed 's/ /T/'; else date --rfc-3339=seconds | sed 's/ /T/'; fi)
 # https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emaIem
 gitCommit := $(shell git rev-list --oneline --format=format:'%h@%aI' --max-count=1 `git rev-parse HEAD` | tail -1)

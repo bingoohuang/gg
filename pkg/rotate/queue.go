@@ -69,7 +69,7 @@ func NewQueueWriter(outputPath string, options ...Option) *QueueWriter {
 	}
 
 	if c.AllowDiscarded {
-		p.delayDiscarded = delay.NewChan(c.Context, func(v interface{}) {
+		p.delayDiscarded = delay.NewChan(c.Context, func(_, v interface{}) {
 			p.Send(fmt.Sprintf("\n discarded: %d\n", v.(uint32)), false)
 		}, c.FlushLatency)
 	}

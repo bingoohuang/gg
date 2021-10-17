@@ -8,7 +8,7 @@ import (
 
 const defaultKey = "_default"
 
-func NewChan(ctx context.Context, fn func(interface{}), delay time.Duration) *Chan {
+func NewChan(ctx context.Context, fn func(k, v interface{}), delay time.Duration) *Chan {
 	d := &Chan{fn: fn, Map: &sync.Map{}, wg: &sync.WaitGroup{}, stop: make(chan struct{}, 1)}
 	d.Map.Store(defaultKey, make(chan interface{}, 1))
 	d.wg.Add(1)
@@ -17,7 +17,7 @@ func NewChan(ctx context.Context, fn func(interface{}), delay time.Duration) *Ch
 }
 
 type Chan struct {
-	fn   func(interface{})
+	fn   func(k, v interface{})
 	Map  *sync.Map
 	wg   *sync.WaitGroup
 	stop chan struct{}
@@ -51,7 +51,7 @@ func (c *Chan) consume() {
 	c.Map.Range(func(k, value interface{}) bool {
 		select {
 		case v := <-value.(chan interface{}):
-			c.fn(v)
+			c.fn(k, v)
 		default:
 		}
 		return true
