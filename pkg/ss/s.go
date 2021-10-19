@@ -1,8 +1,6 @@
 package ss
 
 import (
-	"bytes"
-	"encoding/json"
 	"strings"
 )
 
@@ -120,18 +118,18 @@ func HasSuffix(s string, ss ...string) bool {
 	return false
 }
 
-func Jsonify(v interface{}) string {
-	b := &bytes.Buffer{}
-	encoder := json.NewEncoder(b)
-	encoder.SetEscapeHTML(false)
-	if err := encoder.Encode(v); err != nil {
-		return err.Error()
-	}
+//func Jsonify(v interface{}) string {
+//	b := &bytes.Buffer{}
+//	encoder := json.NewEncoder(b)
+//	encoder.SetEscapeHTML(false)
+//	if err := encoder.Encode(v); err != nil {
+//		return err.Error()
+//	}
+//
+//	return b.String()
+//}
 
-	return b.String()
-}
-
-func ToMap(v []string) map[string]bool {
+func ToSet(v []string) map[string]bool {
 	m := make(map[string]bool)
 	for _, s := range v {
 		m[s] = true
