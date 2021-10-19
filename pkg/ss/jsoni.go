@@ -30,10 +30,10 @@ func ParseJson(data []byte, v interface{}) error {
 	return JsoniConfig.Unmarshal(context.Background(), data, v)
 }
 
-func Encode(w io.Writer, v interface{}) error {
+func EncodeJson(w io.Writer, v interface{}) error {
 	return JsoniConfig.NewEncoder(w).Encode(context.Background(), v)
 }
 
-func Decode(r io.Reader, obj interface{}) error {
+func DecodeJson(r io.Reader, obj interface{}) error {
 	return JsoniConfig.NewDecoder(r).Decode(context.Background(), obj)
 }
