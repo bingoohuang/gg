@@ -1,12 +1,12 @@
-// nolint gomnd
 package snow
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func TestNewNodeLocalIP(t *testing.T) {
@@ -76,6 +76,15 @@ func TestRace(t *testing.T) {
 	}
 }
 
+func TestUint32(t *testing.T) {
+	start := time.Now()
+	for i := 0; i < 10; i++ {
+		fmt.Println(Next32())
+	}
+
+	fmt.Println(time.Since(start))
+}
+
 //******************************************************************************
 // Converters/Parsers Test funcs
 // We should have funcs here to test conversion both ways for everything
@@ -89,7 +98,12 @@ func TestPrintAll(t *testing.T) {
 	id := node.Next()
 
 	t.Logf("Int32    : %d", id.Int32())
-	t.Logf("Uint32   : %d", id.Uint32())
+	v := node.Next()
+	t.Logf("Uint32   : %d", uint32(v))
+	t.Logf("Uint32   : %d", uint32(v+1))
+	t.Logf("Uint32   : %d", uint32(v+2))
+	t.Logf("Uint32   : %d", uint32(v+3))
+	t.Logf("Uint32   : %d", uint32(v+4))
 	t.Logf("Int64    : %d", id.Int64())
 	t.Logf("Uint64   : %d", id.Uint64())
 	t.Logf("String   : %s", id.String())

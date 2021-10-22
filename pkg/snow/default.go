@@ -1,5 +1,7 @@
 package snow
 
+import "time"
+
 // DefaultNode is the global default snowflake node object.
 // nolint gochecknoglobals
 var DefaultNode, _ = NewNode()
@@ -24,3 +26,11 @@ func GetStep() int64 { return DefaultNode.step }
 // - Make sure your system is keeping accurate system time
 // - Make sure you never have multiple nodes running with the same node ID
 func Next() ID { return DefaultNode.Next() }
+
+var DefaultNode32, _ = NewNode(WithNodeBits(2), WithStepBits(1), WithTimestampUnit(1*time.Second))
+
+// Next32 creates and returns a unique snowflake ID for positive int32.
+// only for low frequency usages.
+// unsigned(1) + timestamp(28) + node ID(2) + step(1)
+// can use 2^28/60/60/24/365 ≈ 8.5 年
+func Next32() ID { return DefaultNode32.Next() }

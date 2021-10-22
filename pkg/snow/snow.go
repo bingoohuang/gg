@@ -2,8 +2,7 @@
 package snow
 
 import (
-	"errors"
-	"strconv"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -17,7 +16,6 @@ type Node struct {
 	stepMask  int64
 	timeShift uint8
 	nodeShift uint8
-	timeFn    func() int64
 
 	time int64
 	step int64
@@ -25,6 +23,9 @@ type Node struct {
 	// epoch is snowflake epoch in milliseconds.
 	epoch    int64
 	nodeMask int64
+
+	epochTime time.Time
+	unit      time.Duration
 }
 
 // GetOption return the option.
@@ -42,37 +43,37 @@ func (n *Node) GetNodeID() int64 { return n.nodeID }
 // GetStep returns an int64 of the snowflake step (or sequence) number
 func (n *Node) GetStep() int64 { return n.step }
 
-// nolint gomnd
 func (n *Node) applyOption(o Option) error {
 	n.option = o
 	n.nodeID = o.NodeID
 
-	var (
-		nodeMax int64 = -1 ^ (-1 << o.NodeBits)
-	)
+	var nodeMax int64 = -1 ^ (-1 << o.NodeBits)
 
 	n.nodeMask = nodeMax << o.StepBits
 	n.stepMask = -1 ^ (-1 << o.StepBits)
-	n.timeShift = o.NodeBits + o.StepBits
-	n.nodeShift = o.StepBits
+	n.timeShift = uint8(o.NodeBits + o.StepBits)
+	n.nodeShift = uint8(o.StepBits)
 
 	curTime := time.Now()
 	// add time.Duration to curTime to make sure we use the monotonic clock if available
-	epoch := curTime.Add(time.Unix(o.Epoch/1000, (o.Epoch%1000)*1000000).Sub(curTime))
+	n.epochTime = curTime.Add(time.Unix(o.Epoch/1e3, (o.Epoch%1000)*1e6).Sub(curTime))
 
-	n.timeFn = func() int64 { return time.Since(epoch).Nanoseconds() / 1000000 /* nolint gomnd*/ }
-	n.epoch = int64(epoch.Nanosecond() / 1000000)
+	n.unit = o.TimestampUnit / time.Millisecond
+	if n.unit == 0 {
+		n.unit = 1
+	}
+	n.epoch = int64(n.epochTime.Nanosecond() / 1e6)
 
 	if o.NodeID >= 0 && o.NodeID <= nodeMax {
 		return nil
 	}
 
-	return errors.New("NodeID must be between 0 and " + strconv.FormatInt(nodeMax, 10))
+	return fmt.Errorf("NodeID %d must be between 0 and %d", o.NodeID, nodeMax)
 }
 
 // NewNode returns a new snowflake node that can be used to generate snowflake IDs.
 func NewNode(optionFns ...OptionFn) (*Node, error) {
-	option := Option{NodeID: -1}
+	option := Option{NodeBits: -1, StepBits: -1, NodeID: -1}
 	option.Apply(optionFns...)
 
 	n := &Node{}
@@ -95,11 +96,12 @@ func (n *Node) Next() ID {
 }
 
 func (n *Node) next() ID {
-	now := n.timeFn()
+	now := n.now()
 	if now == n.time {
 		if n.step = (n.step + 1) & n.stepMask; n.step == 0 {
 			for now <= n.time {
-				now = n.timeFn()
+				n.sleep()
+				now = n.now()
 			}
 		}
 	} else {
@@ -109,4 +111,14 @@ func (n *Node) next() ID {
 	n.time = now
 
 	return ID(now<<n.timeShift | n.nodeID<<n.nodeShift | n.step)
+}
+
+func (n *Node) sleep() {
+	if n.unit > 1 {
+		time.Sleep(n.unit * time.Millisecond)
+	}
+}
+
+func (n *Node) now() int64 {
+	return time.Since(n.epochTime).Nanoseconds() / 1e6 / int64(n.unit)
 }
