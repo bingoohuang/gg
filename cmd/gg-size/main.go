@@ -11,7 +11,7 @@ import (
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Println("usage: mansize 123445 12M")
+		fmt.Println("usage: gg-size 123445 12M")
 	}
 
 	for _, arg := range args {
