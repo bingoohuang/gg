@@ -27,7 +27,12 @@ func GetStep() int64 { return DefaultNode.step }
 // - Make sure you never have multiple nodes running with the same node ID
 func Next() ID { return DefaultNode.Next() }
 
-var DefaultNode32, _ = NewNode(WithNodeBits(2), WithStepBits(1), WithTimestampUnit(1*time.Second))
+var DefaultNode32, _ = NewNode(
+	WithNodeBits(2),
+	WithStepBits(1),
+	WithTimestampUnit(1*time.Second),
+	WithEpoch(1577808000000), // 2020-01-01T00:00:00+08:00
+)
 
 // Next32 creates and returns a unique snowflake ID for positive int32.
 // only for low frequency usages.

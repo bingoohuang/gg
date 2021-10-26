@@ -34,7 +34,7 @@ func (o *Option) Apply(fns ...OptionFn) {
 	}
 
 	if o.Epoch == 0 {
-		o.Epoch = 1577808000000 // 2020-01-01T00:00:00+08:00
+		o.Epoch = 1288834974657 // 2010-11-04T09:42:54+08:00
 	}
 
 	if o.NodeBits < 0 {
