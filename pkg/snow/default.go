@@ -33,4 +33,6 @@ var DefaultNode32, _ = NewNode(WithNodeBits(2), WithStepBits(1), WithTimestampUn
 // only for low frequency usages.
 // unsigned(1) + timestamp(28) + node ID(2) + step(1)
 // can use 2^28/60/60/24/365 ≈ 8.5 年
+// result example： 459260906
+// The range of int32 is [-2147483648, 2147483647] and the uint32 is [0, 4294967295].
 func Next32() ID { return DefaultNode32.Next() }
