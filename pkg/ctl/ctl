@@ -56,7 +56,12 @@ function start() {
     return 1
   fi
 
-  nohup ${app} {{.BinArgs}} ${moreArgs} >/dev/null 2>&1 &
+  local redirectLog="/dev/null"
+  if [[ -n "$NOHUP_LOG" ]]; then
+    redirectLog=${app}.nohup.log
+  fi
+
+  nohup ${app} {{.BinArgs}} ${moreArgs} >$redirectLog 2>&1 &
   sleep 1
   if [[ $(ps -p $! | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
     local pid=$!
@@ -171,6 +176,7 @@ elif [[ "$1" == "log" ]]; then
   tailLog
 else
   echo "$0 start|stop|restart|reload|status|tail|log"
+  echo "NOHUP_LOG=Y $0 start"
   echo "root# LIMIT_MEM=1G $0 start"
   echo "root# LIMIT_CPU=20 $0 start to limit 20% for all cores"
   echo "root# LIMIT_CPU=20 LIMIT_CORES=2 $0 start to limit 20% for only 2 cores"
