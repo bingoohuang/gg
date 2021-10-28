@@ -61,7 +61,7 @@ function start() {
     redirectLog=${app}.nohup.log
   fi
 
-  nohup ${app} {{.BinArgs}} ${moreArgs} >$redirectLog 2>&1 &
+  nohup ${app} {{.BinArgs}} ${moreArgs} >> $redirectLog 2>&1 &
   sleep 1
   if [[ $(ps -p $! | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
     local pid=$!
