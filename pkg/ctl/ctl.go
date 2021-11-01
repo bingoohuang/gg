@@ -46,6 +46,10 @@ func (c Config) ProcessInit() {
 }
 
 func (c Config) initFiles() error {
+	if c.InitFiles == nil {
+		return nil
+	}
+
 	firstDir := false
 	return fs.WalkDir(c.InitFiles, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
