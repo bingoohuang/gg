@@ -3,7 +3,6 @@ all: default test install
 
 app=$(notdir $(shell pwd))
 appVersion := 1.0.0
-
 goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
 # e.g. 2021-10-28T11:49:52+0800
 buildTime := $(shell date +%FT%T%z)
@@ -16,8 +15,8 @@ pkg := github.com/bingoohuang/gg/pkg/v
 extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
-flags1 = "-s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
-flags2 = "$(extldflags) -s -w -X $(pkg).buildTime=$(buildTime) -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
+flags1 = "-s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitCommit) -X $(pkg).GoVersion=$(goVersion)"
+flags2 = "$(extldflags) -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitCommit) -X $(pkg).GoVersion=$(goVersion)"
 gobin := $(shell go env GOBIN)
 # try $GOPATN/bin if $gobin is empty
 gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
