@@ -197,7 +197,7 @@ type ConvertConfig struct {
 type ConvertOption func(*ConvertConfig)
 
 func WithLimit(v int) ConvertOption {
-	return func(c *ConvertConfig) { c.Paging = &Paging{PageSeq: 1, PageSize: 1} }
+	return func(c *ConvertConfig) { c.Paging = &Paging{PageSeq: 1, PageSize: v} }
 }
 func WithPaging(v *Paging) ConvertOption { return func(c *ConvertConfig) { c.Paging = v } }
 func WithAutoIncrement(v string) ConvertOption {
