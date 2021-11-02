@@ -38,7 +38,7 @@ function check_pid() {
   local pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | awk '{print $2}')
   for pid in $pids; do
     # make sure that pid is a number, and have the same current working directory.
-    if [[ ${pid} != $$ ]] && [[ $(ps -o ppid=${pid}) != $$ ]] && [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(pidCwd "$pid") == "$PWD" ]]; then
+    if [[ ${pid} != $$ ]] && [[ $(ps -o ppid= ${pid}) != $$ ]] && [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(pidCwd "$pid") == "$PWD" ]]; then
       echo "${pid}" >${pidFile}
       echo "${pid}"
       return 1
