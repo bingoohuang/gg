@@ -13,7 +13,7 @@ moreArgs="${*:2}"
 
 function pidCwd() {
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    pwdx $1 | awk '{print $2}'
+    pwdx $1 | awk '{print $2}' 2>/dev/null
   elif [[ $OSTYPE == 'darwin'* ]]; then
     lsof -a -d cwd -p $1 -n -Fn | awk '/^n/ {print substr($0,2)}'
   else
@@ -35,7 +35,7 @@ function check_pid() {
 
   # remove prefix ./
   local pureAppName=${app#"./"}
-  local pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | awk '{print $2}')
+  local pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | grep -v systemctl | awk '{print $2}')
   for pid in $pids; do
     # make sure that pid is a number, and have the same current working directory.
     if [[ ${pid} != $$ ]] && [[ $(ps -o ppid= ${pid}) != $$ ]] && [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(pidCwd "$pid") == "$PWD" ]]; then
