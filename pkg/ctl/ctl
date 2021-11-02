@@ -13,7 +13,7 @@ moreArgs="${*:2}"
 
 function pidCwd() {
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    pwdx $1 | awk '{print $2}' 2>/dev/null
+    pwdx $1 2>/dev/null | awk '{print $2}'
   elif [[ $OSTYPE == 'darwin'* ]]; then
     lsof -a -d cwd -p $1 -n -Fn | awk '/^n/ {print substr($0,2)}'
   else
