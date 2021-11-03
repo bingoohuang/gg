@@ -27,20 +27,24 @@ var etagHeaders = []string{
 // copy from https://stackoverflow.com/questions/33880343/go-webserver-dont-cache-files-using-timestamp
 func NoCache(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		// Delete any ETag headers that may have been set
-		for _, v := range etagHeaders {
-			if r.Header.Get(v) != "" {
-				r.Header.Del(v)
-			}
-		}
-
-		// Set our NoCache headers
-		for k, v := range noCacheHeaders {
-			w.Header().Set(k, v)
-		}
+		NoCacheHeaders(w, r)
 
 		h.ServeHTTP(w, r)
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+func NoCacheHeaders(w http.ResponseWriter, r *http.Request) {
+	// Delete any ETag headers that may have been set
+	for _, v := range etagHeaders {
+		if r.Header.Get(v) != "" {
+			r.Header.Del(v)
+		}
+	}
+
+	// Set our NoCache headers
+	for k, v := range noCacheHeaders {
+		w.Header().Set(k, v)
+	}
 }
