@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/md5"
-	"embed"
 	"encoding/hex"
 	"io"
 	"io/fs"
@@ -16,9 +15,9 @@ import (
 // from https://github.com/pyros2097/go-embed
 
 // Asset Gets the file from embed.FS if debug otherwise gets it from the stored
-// data returns the data, the md5 hash of its content and its content type and
+// data returns the data, the md5 hash of its content and its content type
 // and error if it is not found.
-func Asset(f embed.FS, name string) (data []byte, hash, contentType string, err error) {
+func Asset(f fs.FS, name string, useGzip bool) (data []byte, hash, contentType string, err error) {
 	var fn fs.File
 	fn, err = f.Open(name)
 	if err != nil {
@@ -30,7 +29,7 @@ func Asset(f embed.FS, name string) (data []byte, hash, contentType string, err 
 		return nil, "", "", err
 	}
 
-	if len(data) > 0 {
+	if useGzip && len(data) > 0 {
 		var b bytes.Buffer
 		w := gzip.NewWriter(&b)
 		_, _ = w.Write(data)
@@ -43,12 +42,12 @@ func Asset(f embed.FS, name string) (data []byte, hash, contentType string, err 
 	return data, hex.EncodeToString(sum[:]), contentType, nil
 }
 
-func FileHandler(f embed.FS, name string) http.HandlerFunc {
+func FileHandler(f fs.FS, name string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) { ServeFile(f, name, w, r) }
 }
 
-func ServeFile(f embed.FS, name string, w http.ResponseWriter, r *http.Request) {
-	data, hash, contentType, err := Asset(f, name)
+func ServeFile(f fs.FS, name string, w http.ResponseWriter, r *http.Request) {
+	data, hash, contentType, err := Asset(f, name, true)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
