@@ -30,3 +30,20 @@ func Open(f string) *os.File {
 
 	return r
 }
+
+func Append(name string, data []byte) (int, error) {
+	// If the file doesn't exist, create it, or append to the file
+	f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return 0, err
+	}
+	n, err := f.Write([]byte("appended some data\n"))
+	if err != nil {
+		return n, err
+	}
+	if err := f.Close(); err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}
