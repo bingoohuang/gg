@@ -2,6 +2,7 @@ package filex
 
 import (
 	"bufio"
+	"errors"
 	"os"
 )
 
@@ -46,4 +47,21 @@ func Append(name string, data []byte) (int, error) {
 	}
 
 	return n, nil
+}
+
+func Exists(name string) bool {
+	ok, _ := ExistsErr(name)
+	return ok
+}
+
+func ExistsErr(name string) (bool, error) {
+	if _, err := os.Stat(name); err == nil {
+		return true, nil
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else {
+		// Schrodinger: file may or may not exist. See err for details.
+		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
+		return false, err
+	}
 }
