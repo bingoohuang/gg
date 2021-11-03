@@ -37,7 +37,7 @@ func Append(name string, data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := f.Write([]byte("appended some data\n"))
+	n, err := f.Write(data)
 	if err != nil {
 		return n, err
 	}
