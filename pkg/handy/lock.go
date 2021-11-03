@@ -27,3 +27,10 @@ func (l *Lock) LockDeferUnlock() func() {
 	l.Mutex.Lock()
 	return l.Mutex.Unlock
 }
+
+// LockUnlock lock on mutex and return unlock.
+// e.g. defer LockUnlock(mutex)
+func LockUnlock(m *sync.Mutex) func() {
+	m.Lock()
+	return m.Unlock
+}
