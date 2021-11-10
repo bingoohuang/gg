@@ -54,7 +54,7 @@ install: init
 linux: init
 	GOOS=linux GOARCH=amd64 ${goinstall1}
 	upx ${gobin}/linux_amd64/${app}
-arm64: init
+arm: init
 	GOOS=linux GOARCH=arm64 ${goinstall1}
 	upx ${gobin}/linux_arm64/${app}
 
