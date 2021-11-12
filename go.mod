@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/antonmedv/expr v1.8.9
-	github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec
+	github.com/bingoohuang/golog v0.0.0-20211112131923-101b7e1b3d4c
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger/v3 v3.2103.0
 	github.com/fatih/color v1.10.0

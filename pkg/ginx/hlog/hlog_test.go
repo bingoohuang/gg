@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	golog.SetupLogrus()
+	golog.Setup()
 	gin.SetMode(gin.ReleaseMode)
 }
 
