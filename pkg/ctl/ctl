@@ -25,7 +25,8 @@ function pidCwd() {
 function check_pid() {
   # pid文件存在的话，从pid文件中读取pid
   if [[ -f ${pidFile} ]]; then
-    local pid=$(cat ${pidFile})
+    local pid
+    pid=$(cat ${pidFile})
     # 如果pid存在，并且是数字的话，检查改pid的进程是否存在
     if [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(ps -p "${pid}" | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
       echo "${pid}"
@@ -35,13 +36,18 @@ function check_pid() {
 
   # remove prefix ./
   local pureAppName=${app#"./"}
-  local pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | grep -v systemctl | awk '{print $2}')
+  local pids
+  pids=$(ps -ef | grep "\b${pureAppName}\b" | grep -v grep | grep -v systemctl | awk '{print $2}')
   for pid in $pids; do
-    # make sure that pid is a number, and have the same current working directory.
+    # make sure that pid is a number, and have the same current working directory, and etime > 3s.
     if [[ ${pid} != $$ ]] && [[ $(ps -o ppid= ${pid}) != $$ ]] && [[ ${pid} =~ ^[0-9]+$ ]] && [[ $(pidCwd "$pid") == "$PWD" ]]; then
-      echo "${pid}" >${pidFile}
-      echo "${pid}"
-      return 1
+      local etime
+      etime=$(ps -p ${pid} -o etime= | sed 's/:\|-/ /g;' | awk '{print $4" "$3" "$2" "$1}' | awk '{print $1+$2*60+$3*3600+$4*86400}')
+      if [[ ${etime} -gt 3 ]]; then
+        echo "${pid}" >${pidFile}
+        echo "${pid}"
+        return 1
+      fi
     fi
   done
 
@@ -50,7 +56,8 @@ function check_pid() {
 }
 
 function start() {
-  local pid=$(check_pid)
+  local pid
+  pid=$(check_pid)
   if [[ ${pid} -gt 0 ]]; then
     echo -n "$app now is running already, pid=$pid"
     return 1
@@ -63,7 +70,7 @@ function start() {
 
   nohup ${app} {{.BinArgs}} ${moreArgs} >>$redirectLog 2>&1 &
   sleep 1
-  if [[ $(ps -p $! | grep -v "PID TTY" | wc -l) -gt 0 ]]; then
+  if [[ $(ps -p $! | wc -l) -gt 1 ]]; then
     local pid=$!
     echo $pid >${pidFile}
     echo "$app started..., pid=$pid"

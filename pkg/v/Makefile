@@ -1,5 +1,5 @@
-.PHONY: default test install
-all: default test install
+.PHONY: test install
+all: test install
 
 app=$(notdir $(shell pwd))
 appVersion := 1.0.0
@@ -15,8 +15,10 @@ pkg := github.com/bingoohuang/gg/pkg/v
 extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
-flags1 = "-s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitCommit) -X $(pkg).GoVersion=$(goVersion)"
-flags2 = "$(extldflags) -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitCommit) -X $(pkg).GoVersion=$(goVersion)"
+flags1 = -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitCommit) -X $(pkg).GoVersion=$(goVersion)
+flags2 = ${extldflags} ${flags1}
+goinstall1 = go install -trimpath -ldflags='${flags1}' ./...
+goinstall2 = go install -trimpath -ldflags='${flags2}' ./...
 gobin := $(shell go env GOBIN)
 # try $GOPATN/bin if $gobin is empty
 gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
@@ -47,14 +49,13 @@ fmt:
 	gci -w -local github.com/daixiang0/gci
 
 install: init
-	go install -trimpath -ldflags=${flags2}  ./...
+	${goinstall1}
 	upx ${gobin}/${app}
-
 linux: init
-	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags1}  ./...
+	GOOS=linux GOARCH=amd64 ${goinstall1}
 	upx ${gobin}/linux_amd64/${app}
-linux-arm64: init
-	GOOS=linux GOARCH=arm64 go install -trimpath -ldflags=${flags1}  ./...
+arm: init
+	GOOS=linux GOARCH=arm64 ${goinstall1}
 	upx ${gobin}/linux_arm64/${app}
 
 upx:
