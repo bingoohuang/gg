@@ -159,6 +159,8 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 		}
 	}
 
+	_ = f.Parse(args[1:])
+
 	if options.cnf != nil {
 		if err := LoadConfFile(*options.cnf, options.defaultCnf, a); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
@@ -166,7 +168,6 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 		}
 	}
 
-	_ = f.Parse(args[1:])
 	if checkVersionShow != nil {
 		checkVersionShow()
 	}
