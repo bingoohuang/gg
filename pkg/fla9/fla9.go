@@ -458,7 +458,13 @@ func UnquoteUsage(flag *Flag) (name string, usage string) {
 // defined command-line flags in the set. See the documentation for
 // the global function PrintDefaults for more information.
 func (f *FlagSet) PrintDefaults() {
+	visited := map[*Flag]bool{}
 	f.VisitAll(func(flag *Flag) {
+		if visited[flag] {
+			return
+		}
+		visited[flag] = true
+
 		s := fmt.Sprintf("  -%s", flag.Name) // Two spaces before -; see next two comments.
 		if flag.ShortName != "" {
 			s += fmt.Sprintf(" (-%s)", flag.ShortName)
