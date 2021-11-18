@@ -7,7 +7,7 @@ goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
 # e.g. 2021-10-28T11:49:52+0800
 buildTime := $(shell date +%FT%T%z)
 # https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emaIem
-gitCommit := $(shell git rev-list --oneline --format=format:'%h@%aI' --max-count=1 `git rev-parse HEAD` | tail -1)
+gitCommit := $(shell [ -f git.commit ] && cat git.commit || git rev-list --oneline --format=format:'%h@%aI' --max-count=1 `git rev-parse HEAD` | tail -1)
 #gitCommit := $(shell git rev-list -1 HEAD)
 # https://stackoverflow.com/a/47510909
 pkg := github.com/bingoohuang/gg/pkg/v
@@ -22,6 +22,9 @@ goinstall2 = go install -trimpath -ldflags='${flags2}' ./...
 gobin := $(shell go env GOBIN)
 # try $GOPATN/bin if $gobin is empty
 gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
+
+git.commit:
+	echo ${gitCommit} > git.commit
 
 tool:
 	go get github.com/securego/gosec/cmd/gosec
