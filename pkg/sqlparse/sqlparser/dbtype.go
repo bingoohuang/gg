@@ -228,11 +228,16 @@ func (r ConvertResult) PickArgs(args []interface{}) (bindArgs []interface{}) {
 			obj := reflector.New(arg)
 			for _, name := range r.VarNames {
 				name = strings.ToLower(ss.Strip(name, func(r rune) bool { return r == '-' || r == '_' }))
-				if v, err := obj.Field(name).Get(); err != nil {
-					panic(err)
-				} else {
-					bindArgs = append(bindArgs, v)
+				v, err := obj.Field(name).Get()
+				if err != nil {
+					v, err = obj.FieldByTag("db", name).Get()
 				}
+
+				if err != nil {
+					panic(err)
+				}
+
+				bindArgs = append(bindArgs, v)
 			}
 
 		} else if IsMap(arg) {

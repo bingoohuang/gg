@@ -434,6 +434,19 @@ func (o Obj) FindDoubleFields() []string {
 // IsPtr checks if the value is a pointer.
 func (o Obj) IsPtr() bool { return o.objKind == reflect.Ptr }
 
+// FieldByTag get a field by tag=value.
+// Note that the field name can be invalid.
+// You can check the field validity using ObjField.IsValid().
+func (o *Obj) FieldByTag(tag, fieldName string) *ObjField {
+	for _, v := range o.fields {
+		if v.structField.Tag.Get(tag) == fieldName {
+			return newObjField(o, v)
+		}
+	}
+
+	return newObjField(o, &ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
+}
+
 // Field get a field wrapper.
 // Note that the field name can be invalid.
 // You can check the field validity using ObjField.IsValid().
