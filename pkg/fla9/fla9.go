@@ -480,7 +480,7 @@ func (f *FlagSet) PrintDefaults() {
 		} else {
 			// Four spaces before the tab triggers good alignment
 			// for both 4- and 8-space tab stops.
-			s += "\n    \t"
+			s += "\t"
 		}
 		s += usage
 		if !isZeroValue(flag, flag.DefValue) {
@@ -1006,7 +1006,7 @@ func checkCombine(m map[string]*Flag, name string) (*Flag, string) {
 // The return value will be ErrHelp if -help or -h were set but not defined.
 func (f *FlagSet) Parse(arguments []string) error {
 	if _, ok := f.formal[DefaultConFlagName]; !ok {
-		f.String(DefaultConFlagName, "", "config file")
+		f.String(DefaultConFlagName, "", "Flags config file, a scaffold one will created when it does not exist.")
 		defer delete(f.formal, DefaultConFlagName)
 	}
 
@@ -1042,8 +1042,8 @@ func (f *FlagSet) parseConfigFile() error {
 
 	if err := f.ParseFile(cFile, true); err != nil {
 		if os.IsNotExist(err) {
-			f.createSampleFile(cFile + ".sample")
-			fmt.Println(cFile + ".sample created")
+			f.createSampleFile(cFile)
+			fmt.Println("scaffold flags file " + cFile + " created")
 		}
 		switch f.errorHandling {
 		case ContinueOnError:
@@ -1235,7 +1235,7 @@ func NewFlagSetWithEnvPrefix(name string, prefix string, errorHandling ErrorHand
 // DefaultConFlagName defines the flag name of the optional config file
 // path. Used to lookup and parse the config file when a default is set and
 // available on disk.
-var DefaultConFlagName = "conf"
+var DefaultConFlagName = "fla9"
 
 // ParseFile parses flags from the file in path.
 // Same format as commandline arguments, newlines and lines beginning with a
