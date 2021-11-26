@@ -227,8 +227,8 @@ func (r ConvertResult) PickArgs(args []interface{}) (bindArgs []interface{}) {
 		if IsStructOrPtrToStruct(arg) {
 			obj := reflector.New(arg)
 			for _, name := range r.VarNames {
-				name = strings.ToLower(ss.Strip(name, func(r rune) bool { return r == '-' || r == '_' }))
-				v, err := obj.Field(name).Get()
+				name2 := strings.ToLower(ss.Strip(name, func(r rune) bool { return r == '-' || r == '_' }))
+				v, err := obj.Field(name2).Get()
 				if err != nil {
 					v, err = obj.FieldByTag("db", name).Get()
 				}
