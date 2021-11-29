@@ -4,6 +4,15 @@ import (
 	"strings"
 )
 
+func IsDigits(s string) bool {
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // Repeat repeats s with separator seq for n times.
 func Repeat(s, sep string, n int) string {
 	result := ""
