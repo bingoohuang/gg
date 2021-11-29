@@ -320,6 +320,7 @@ type FlagSet struct {
 	formal        map[string]*Flag
 	envPrefix     string   // prefix to all env variable names
 	args          []string // arguments after flags
+	jumpedArgs    []string // arguments after flags
 	errorHandling ErrorHandling
 	output        io.Writer // nil means stderr; use out() accessor
 }
@@ -571,10 +572,10 @@ func NFlag() int { return len(CommandLine.actual) }
 // after flags have been processed. Arg returns an empty string if the
 // requested element does not exist.
 func (f *FlagSet) Arg(i int) string {
-	if i < 0 || i >= len(f.args) {
+	if i < 0 || i >= len(f.jumpedArgs) {
 		return ""
 	}
-	return f.args[i]
+	return f.jumpedArgs[i]
 }
 
 // Arg returns the i'th command-line argument. Arg(0) is the first remaining argument
@@ -583,16 +584,16 @@ func (f *FlagSet) Arg(i int) string {
 func Arg(i int) string { return CommandLine.Arg(i) }
 
 // NArg is the number of arguments remaining after flags have been processed.
-func (f *FlagSet) NArg() int { return len(f.args) }
+func (f *FlagSet) NArg() int { return len(f.jumpedArgs) }
 
 // NArg is the number of arguments remaining after flags have been processed.
-func NArg() int { return len(CommandLine.args) }
+func NArg() int { return CommandLine.NArg() }
 
 // Args returns the non-flag arguments.
-func (f *FlagSet) Args() []string { return f.args }
+func (f *FlagSet) Args() []string { return f.jumpedArgs }
 
 // Args returns the non-flag command-line arguments.
-func Args() []string { return CommandLine.args }
+func Args() []string { return CommandLine.Args() }
 
 // BoolVar defines a bool flag with specified name, default value, and usage string.
 // The argument p points to a bool variable in which to store the value of the flag.
@@ -783,9 +784,9 @@ func (f *FlagSet) String(name, value, usage string) *string {
 // Strings defines a string flag with specified name, default value, and usage string.
 // The return value is the address of a string variable that stores the value of the flag.
 func (f *FlagSet) Strings(name string, value []string, usage string) *[]string {
-	var p *[]string
-	f.StringsVar(p, name, value, usage)
-	return p
+	var p []string
+	f.StringsVar(&p, name, value, usage)
+	return &p
 }
 
 // String defines a string flag with specified name, default value, and usage string.
@@ -952,7 +953,9 @@ func (f *FlagSet) parseOne() (bool, error) {
 	}
 	s := f.args[0]
 	if len(s) < 2 || s[0] != '-' {
-		return false, nil
+		f.jumpedArgs = append(f.jumpedArgs, s)
+		f.args = f.args[1:]
+		return true, nil
 	}
 	numMinuses := 1
 	if s[1] == '-' {
@@ -1148,6 +1151,11 @@ func (f *FlagSet) parseArgs(arguments []string) error {
 		if err == nil {
 			break
 		}
+
+		if err == ErrHelp {
+			os.Exit(0)
+		}
+
 		switch f.errorHandling {
 		case ContinueOnError:
 			return err
