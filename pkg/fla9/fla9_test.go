@@ -18,6 +18,8 @@ import (
 func ExampleFlag() {
 	var (
 		name        string
+		addr        []string
+		xddr        []string
 		age         int
 		length      float64
 		female      bool
@@ -30,7 +32,7 @@ func ExampleFlag() {
 		b4          bool
 	)
 
-	fla9.String("conf", "testdata/test.conf", "help message")
+	fla9.String("fla9", "testdata/test.conf", "help message")
 	fla9.StringVar(&name, "name,n", "", "help message")
 	fla9.IntVar(&age, "age,a", 0, "help message")
 	fla9.IntVar(&connections, "c", 0, "help message")
@@ -43,8 +45,10 @@ func ExampleFlag() {
 	fla9.BoolVar(&b2, "b2", false, "b2")
 	fla9.BoolVar(&b3, "b3", false, "b3")
 	fla9.BoolVar(&b4, "b4", false, "b4")
+	fla9.StringsVar(&addr, "addr", nil, "addr")
+	fla9.StringsVar(&xddr, "xddr", nil, "xddr")
 
-	fla9.CommandLine.Parse([]string{"-v", "-pp", "-b1", "false", "-b2", "true", "-b3", "-b4=true"})
+	fla9.CommandLine.Parse([]string{"-v", "-pp", "-b1", "false", "-b2", "true", "-b3", "-b4=true", "-addr=nj", "-addr=bj"})
 
 	fmt.Println("connections:", connections)
 	fmt.Println("length:", length)
@@ -55,6 +59,8 @@ func ExampleFlag() {
 	fmt.Println("p:", p)
 	fmt.Println("q:", 0)
 	fmt.Println("b:", b1, b2, b3, b4)
+	fmt.Println("addr:", addr)
+	fmt.Println("xddr:", xddr)
 
 	// Output:
 	// connections: 12345
@@ -66,6 +72,8 @@ func ExampleFlag() {
 	// p: 2
 	// q: 0
 	// b: false true true true
+	// addr: [nj bj]
+	// xddr: []
 }
 
 /*

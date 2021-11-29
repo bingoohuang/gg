@@ -202,6 +202,27 @@ func (s *stringValue) Set(val string) error {
 func (s *stringValue) Get() interface{} { return string(*s) }
 func (s *stringValue) String() string   { return fmt.Sprintf("%s", *s) }
 
+type stringsValue struct {
+	arr []string
+	p   *[]string
+}
+
+func newStringsValue(val []string, p *[]string) *stringsValue {
+	*p = val
+	return &stringsValue{
+		arr: val,
+		p:   p,
+	}
+}
+
+func (i *stringsValue) String() string   { return strings.Join(i.arr, ",") }
+func (i *stringsValue) Get() interface{} { return i.arr }
+func (i *stringsValue) Set(value string) error {
+	i.arr = append(i.arr, value)
+	*i.p = i.arr
+	return nil
+}
+
 // -- float32 Value
 type float32Value float32
 
@@ -727,10 +748,22 @@ func Uint64(name string, value uint64, usage string) *uint64 {
 	return CommandLine.Uint64(name, value, usage)
 }
 
+// StringsVar defines a string flag with specified name, default value, and usage string.
+// The argument p points to a string variable in which to store the value of the flag.
+func (f *FlagSet) StringsVar(p *[]string, name string, value []string, usage string) {
+	f.Var(newStringsValue(value, p), name, usage)
+}
+
 // StringVar defines a string flag with specified name, default value, and usage string.
 // The argument p points to a string variable in which to store the value of the flag.
 func (f *FlagSet) StringVar(p *string, name, value, usage string) {
 	f.Var(newStringValue(value, p), name, usage)
+}
+
+// StringsVar defines a string flag with specified name, default value, and usage string.
+// The argument p points to a string variable in which to store the value of the flag.
+func StringsVar(p *[]string, name string, value []string, usage string) {
+	CommandLine.Var(newStringsValue(value, p), name, usage)
 }
 
 // StringVar defines a string flag with specified name, default value, and usage string.
@@ -747,10 +780,24 @@ func (f *FlagSet) String(name, value, usage string) *string {
 	return p
 }
 
+// Strings defines a string flag with specified name, default value, and usage string.
+// The return value is the address of a string variable that stores the value of the flag.
+func (f *FlagSet) Strings(name string, value []string, usage string) *[]string {
+	var p *[]string
+	f.StringsVar(p, name, value, usage)
+	return p
+}
+
 // String defines a string flag with specified name, default value, and usage string.
 // The return value is the address of a string variable that stores the value of the flag.
 func String(name, value, usage string) *string {
 	return CommandLine.String(name, value, usage)
+}
+
+// Strings defines multiple string flag with specified name, default value, and usage string.
+// The return value is the address of a string variable that stores the value of the flag.
+func Strings(name string, value []string, usage string) *[]string {
+	return CommandLine.Strings(name, value, usage)
 }
 
 // Float32Var defines a float32 flag with specified name, default value, and usage string.
