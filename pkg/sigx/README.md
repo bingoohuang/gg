@@ -10,8 +10,7 @@ import (
 )
 
 func init() {
-	ctx, _ := sigx.RegisterSignals(nil)
-	sigx.RegisterSignalProfile(ctx)
+	sigx.RegisterSignalProfile()
 }
 ```
 

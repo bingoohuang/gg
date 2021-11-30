@@ -42,6 +42,10 @@ func RegisterSignalCallback(f func(), signals ...os.Signal) {
 }
 
 func RegisterSignalProfile(signals ...os.Signal) {
+	if len(signals) == 0 {
+		signals = defaultSignals
+	}
+
 	RegisterSignalCallback(func() {
 		if HasCmd("jj.cpu") {
 			if err := CollectCpuProfile("cpu.profile"); err != nil {
