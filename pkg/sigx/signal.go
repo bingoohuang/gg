@@ -31,10 +31,7 @@ func RegisterSignals(c context.Context, signals ...os.Signal) (context.Context, 
 	return cc, cancel
 }
 
-func RegisterSignalCallback(c context.Context, f func(), signals ...os.Signal) {
-	if c == nil {
-		c = context.Background()
-	}
+func RegisterSignalCallback(f func(), signals ...os.Signal) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, signals...)
 	go func() {
@@ -44,12 +41,8 @@ func RegisterSignalCallback(c context.Context, f func(), signals ...os.Signal) {
 	}()
 }
 
-func RegisterSignalProfile(c context.Context, signals ...os.Signal) {
-	if len(signals) == 0 {
-		signals = defaultSignals
-	}
-
-	RegisterSignalCallback(c, func() {
+func RegisterSignalProfile(signals ...os.Signal) {
+	RegisterSignalCallback(func() {
 		if HasCmd("jj.cpu") {
 			if err := CollectCpuProfile("cpu.profile"); err != nil {
 				log.Printf("failed to collect profile: %v", err)
