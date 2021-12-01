@@ -19,5 +19,5 @@ func ParseFileArg(arg string) (file string, data []byte) {
 		}
 	}
 
-	return arg, []byte(arg)
+	return "", []byte(arg)
 }
