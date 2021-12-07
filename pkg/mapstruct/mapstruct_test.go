@@ -1157,8 +1157,8 @@ func TestDecode_TypeConversion(t *testing.T) {
 	var resultWeak TypeConversionResult
 
 	config := &Config{
-		WeaklyTypedInput: true,
-		Result:           &resultWeak,
+		WeakType: true,
+		Result:   &resultWeak,
 	}
 
 	decoder, err = NewDecoder(config)
@@ -1530,7 +1530,7 @@ func TestSliceCornerCases(t *testing.T) {
 	input := map[string]interface{}{}
 	var resultWeak []Basic
 
-	err := WeakDecode(input, &resultWeak)
+	err := Decode(input, &resultWeak, WithWeakType(true))
 	if err != nil {
 		t.Fatalf("got unexpected error: %s", err)
 	}
@@ -1544,7 +1544,7 @@ func TestSliceCornerCases(t *testing.T) {
 	}
 
 	resultWeak = nil
-	err = WeakDecode(input, &resultWeak)
+	err = Decode(input, &resultWeak, WithWeakType(true))
 	if err != nil {
 		t.Fatalf("got unexpected error: %s", err)
 	}
@@ -1567,7 +1567,7 @@ func TestSliceToMap(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	err := WeakDecode(input, &result)
+	err := Decode(input, &result, WithWeakType(true))
 	if err != nil {
 		t.Fatalf("got an error: %s", err)
 	}
@@ -1660,7 +1660,7 @@ func TestArrayToMap(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	err := WeakDecode(input, &result)
+	err := Decode(input, &result, WithWeakType(true))
 	if err != nil {
 		t.Fatalf("got an error: %s", err)
 	}
@@ -2128,7 +2128,7 @@ func TestDecodeMetadata(t *testing.T) {
 	var md Metadata
 	var result Nested
 
-	err := DecodeMetadata(input, &result, &md)
+	err := Decode(input, &result, WithMetadata(&md))
 	if err != nil {
 		t.Fatalf("err: %s", err.Error())
 	}
@@ -2282,7 +2282,7 @@ func TestWeakDecode(t *testing.T) {
 		Bar string
 	}
 
-	if err := WeakDecode(input, &result); err != nil {
+	if err := Decode(input, &result, WithWeakType(true)); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 	if result.Foo != 4 {
@@ -2310,7 +2310,7 @@ func TestWeakDecodeMetadata(t *testing.T) {
 		unexported string
 	}
 
-	if err := WeakDecodeMetadata(input, &result, &md); err != nil {
+	if err := Decode(input, &result, WithWeakType(true), WithMetadata(&md)); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 	if result.Foo != 4 {

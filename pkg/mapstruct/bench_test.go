@@ -211,8 +211,8 @@ func Benchmark_DecodeWeaklyTypedInput(b *testing.B) {
 
 	var result Person
 	config := &Config{
-		WeaklyTypedInput: true,
-		Result:           &result,
+		WeakType: true,
+		Result:   &result,
 	}
 
 	decoder, err := NewDecoder(config)

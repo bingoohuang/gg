@@ -201,7 +201,7 @@ type HookFuncValue func(from, to reflect.Value) (interface{}, error)
 // and allows customization of various aspects of decoding.
 type Config struct {
 	// Hook, if set, will be called before any decoding and any
-	// type conversion (if WeaklyTypedInput is on). This lets you modify
+	// type conversion (if WeakType is on). This lets you modify
 	// the values before they're set down onto the resulting struct. The
 	// Hook is called for every map and value in the input. This means
 	// that if a struct has embedded fields with squash tags the decode hook
@@ -221,7 +221,7 @@ type Config struct {
 	// it. If this is false, a map will be merged.
 	ZeroFields bool
 
-	// If WeaklyTypedInput is true, the decoder will make the following
+	// If WeakType is true, the decoder will make the following
 	// "weak" conversions:
 	//
 	//   - bools to string (true = "1", false = "0")
@@ -238,7 +238,7 @@ type Config struct {
 	//     element is weakly decoded. For example: "4" can become []int{4}
 	//     if the target type is an int slice.
 	//
-	WeaklyTypedInput bool
+	WeakType bool
 
 	// Squash will squash embedded structs.  A squash tag may also be
 	// added to an individual struct field using a tag.  For example:
@@ -282,62 +282,36 @@ type Metadata struct {
 	Unused []string
 }
 
+type ConfigFn func(*Config)
+
+func WithWeakType(v bool) ConfigFn {
+	return func(c *Config) { c.WeakType = v }
+}
+
+func WithMetadata(v *Metadata) ConfigFn {
+	return func(c *Config) { c.Metadata = v }
+}
+
+func WithTagNames(v ...string) ConfigFn {
+	return func(c *Config) { c.TagNames = v }
+}
+
+func WithSquash(v bool) ConfigFn {
+	return func(c *Config) { c.Squash = v }
+}
+
 // Decode takes an input structure and uses reflection to translate it to
 // the output structure. output must be a pointer to a map or struct.
-func Decode(input interface{}, output interface{}) error {
+func Decode(input interface{}, output interface{}, fns ...ConfigFn) error {
 	config := &Config{
-		Metadata: nil,
-		Result:   output,
+		Result: output,
+	}
+
+	for _, fn := range fns {
+		fn(config)
 	}
 
 	decoder, err := NewDecoder(config)
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(input)
-}
-
-// WeakDecode is the same as Decode but is shorthand to enable
-// WeaklyTypedInput. See Config for more info.
-func WeakDecode(input, output interface{}) error {
-	config := &Config{
-		Metadata:         nil,
-		Result:           output,
-		WeaklyTypedInput: true,
-	}
-
-	decoder, err := NewDecoder(config)
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(input)
-}
-
-// DecodeMetadata is the same as Decode, but is shorthand to
-// enable metadata collection. See Config for more info.
-func DecodeMetadata(input interface{}, output interface{}, metadata *Metadata) error {
-	decoder, err := NewDecoder(&Config{
-		Metadata: metadata,
-		Result:   output,
-	})
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(input)
-}
-
-// WeakDecodeMetadata is the same as Decode, but is shorthand to
-// enable both WeaklyTypedInput and metadata collection. See
-// Config for more info.
-func WeakDecodeMetadata(input interface{}, output interface{}, metadata *Metadata) error {
-	decoder, err := NewDecoder(&Config{
-		Metadata:         metadata,
-		Result:           output,
-		WeaklyTypedInput: true,
-	})
 	if err != nil {
 		return err
 	}
@@ -557,20 +531,20 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 	switch {
 	case dataKind == reflect.String:
 		val.SetString(dataVal.String())
-	case dataKind == reflect.Bool && d.WeaklyTypedInput:
+	case dataKind == reflect.Bool && d.WeakType:
 		if dataVal.Bool() {
 			val.SetString("1")
 		} else {
 			val.SetString("0")
 		}
-	case dataKind == reflect.Int && d.WeaklyTypedInput:
+	case dataKind == reflect.Int && d.WeakType:
 		val.SetString(strconv.FormatInt(dataVal.Int(), 10))
-	case dataKind == reflect.Uint && d.WeaklyTypedInput:
+	case dataKind == reflect.Uint && d.WeakType:
 		val.SetString(strconv.FormatUint(dataVal.Uint(), 10))
-	case dataKind == reflect.Float32 && d.WeaklyTypedInput:
+	case dataKind == reflect.Float32 && d.WeakType:
 		val.SetString(strconv.FormatFloat(dataVal.Float(), 'f', -1, 64))
-	case dataKind == reflect.Slice && d.WeaklyTypedInput,
-		dataKind == reflect.Array && d.WeaklyTypedInput:
+	case dataKind == reflect.Slice && d.WeakType,
+		dataKind == reflect.Array && d.WeakType:
 		dataType := dataVal.Type()
 		elemKind := dataType.Elem().Kind()
 		switch elemKind {
@@ -612,13 +586,13 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 		val.SetInt(int64(dataVal.Uint()))
 	case dataKind == reflect.Float32:
 		val.SetInt(int64(dataVal.Float()))
-	case dataKind == reflect.Bool && d.WeaklyTypedInput:
+	case dataKind == reflect.Bool && d.WeakType:
 		if dataVal.Bool() {
 			val.SetInt(1)
 		} else {
 			val.SetInt(0)
 		}
-	case dataKind == reflect.String && d.WeaklyTypedInput:
+	case dataKind == reflect.String && d.WeakType:
 		str := dataVal.String()
 		if str == "" {
 			str = "0"
@@ -655,7 +629,7 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 	switch {
 	case dataKind == reflect.Int:
 		i := dataVal.Int()
-		if i < 0 && !d.WeaklyTypedInput {
+		if i < 0 && !d.WeakType {
 			return fmt.Errorf("cannot parse '%s', %d overflows uint",
 				name, i)
 		}
@@ -664,18 +638,18 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 		val.SetUint(dataVal.Uint())
 	case dataKind == reflect.Float32:
 		f := dataVal.Float()
-		if f < 0 && !d.WeaklyTypedInput {
+		if f < 0 && !d.WeakType {
 			return fmt.Errorf("cannot parse '%s', %f overflows uint",
 				name, f)
 		}
 		val.SetUint(uint64(f))
-	case dataKind == reflect.Bool && d.WeaklyTypedInput:
+	case dataKind == reflect.Bool && d.WeakType:
 		if dataVal.Bool() {
 			val.SetUint(1)
 		} else {
 			val.SetUint(0)
 		}
-	case dataKind == reflect.String && d.WeaklyTypedInput:
+	case dataKind == reflect.String && d.WeakType:
 		str := dataVal.String()
 		if str == "" {
 			str = "0"
@@ -694,7 +668,7 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 			return fmt.Errorf(
 				"error decoding json.Number into %s: %s", name, err)
 		}
-		if i < 0 && !d.WeaklyTypedInput {
+		if i < 0 && !d.WeakType {
 			return fmt.Errorf("cannot parse '%s', %d overflows uint",
 				name, i)
 		}
@@ -714,13 +688,13 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 	switch {
 	case dataKind == reflect.Bool:
 		val.SetBool(dataVal.Bool())
-	case dataKind == reflect.Int && d.WeaklyTypedInput:
+	case dataKind == reflect.Int && d.WeakType:
 		val.SetBool(dataVal.Int() != 0)
-	case dataKind == reflect.Uint && d.WeaklyTypedInput:
+	case dataKind == reflect.Uint && d.WeakType:
 		val.SetBool(dataVal.Uint() != 0)
-	case dataKind == reflect.Float32 && d.WeaklyTypedInput:
+	case dataKind == reflect.Float32 && d.WeakType:
 		val.SetBool(dataVal.Float() != 0)
-	case dataKind == reflect.String && d.WeaklyTypedInput:
+	case dataKind == reflect.String && d.WeakType:
 		b, err := strconv.ParseBool(dataVal.String())
 		if err == nil {
 			val.SetBool(b)
@@ -750,13 +724,13 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 		val.SetFloat(float64(dataVal.Uint()))
 	case dataKind == reflect.Float32:
 		val.SetFloat(dataVal.Float())
-	case dataKind == reflect.Bool && d.WeaklyTypedInput:
+	case dataKind == reflect.Bool && d.WeakType:
 		if dataVal.Bool() {
 			val.SetFloat(1)
 		} else {
 			val.SetFloat(0)
 		}
-	case dataKind == reflect.String && d.WeaklyTypedInput:
+	case dataKind == reflect.String && d.WeakType:
 		str := dataVal.String()
 		if str == "" {
 			str = "0"
@@ -808,7 +782,7 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	case reflect.Struct:
 		return d.decodeMapFromStruct(dataVal, val, valMap)
 	case reflect.Array, reflect.Slice:
-		if d.WeaklyTypedInput {
+		if d.WeakType {
 			return d.decodeMapFromSlice(name, dataVal, val, valMap)
 		}
 		fallthrough
@@ -1066,7 +1040,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 	// If we have a non array/slice type then we first attempt to convert.
 	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-		if d.WeaklyTypedInput {
+		if d.WeakType {
 			switch {
 			// Slice and array we use the normal logic
 			case dataValKind == reflect.Slice, dataValKind == reflect.Array:
@@ -1146,7 +1120,7 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 	if valArray.Interface() == reflect.Zero(valArray.Type()).Interface() || d.ZeroFields {
 		// Check input type
 		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-			if d.WeaklyTypedInput {
+			if d.WeakType {
 				switch {
 				// Empty maps turn into empty arrays
 				case dataValKind == reflect.Map:

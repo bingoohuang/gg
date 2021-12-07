@@ -555,7 +555,7 @@ func TestDecode_weakEmptyStringToInt(t *testing.T) {
 
 	// Test weak type conversion
 	var resultWeak TypeConversionResult
-	err := WeakDecode(input, &resultWeak)
+	err := Decode(input, &resultWeak, WithWeakType(true))
 	if err != nil {
 		t.Fatalf("got an err: %s", err)
 	}

@@ -153,8 +153,8 @@ func ExampleDecode_weaklyTypedInput() {
 
 	var result Person
 	config := &Config{
-		WeaklyTypedInput: true,
-		Result:           &result,
+		WeakType: true,
+		Result:   &result,
 	}
 
 	decoder, err := NewDecoder(config)
@@ -207,8 +207,8 @@ func ExampleDecode_embeddedStruct() {
 		City string
 	}
 	type Person struct {
-		Family    `mapstruct:",squash"`
-		Location  `mapstruct:",squash"`
+		Family
+		Location
 		FirstName string
 	}
 
@@ -219,7 +219,7 @@ func ExampleDecode_embeddedStruct() {
 	}
 
 	var result Person
-	err := Decode(input, &result)
+	err := Decode(input, &result, WithSquash(true))
 	if err != nil {
 		panic(err)
 	}

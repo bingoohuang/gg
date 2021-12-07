@@ -178,7 +178,7 @@ func StringToTimeHookFunc(layout string) HookFunc {
 // WeaklyTypedHook is a HookFunc which adds support for weak typing to
 // the decoder.
 //
-// Note that this is significantly different from the WeaklyTypedInput option
+// Note that this is significantly different from the WeakType option
 // of the Config.
 func WeaklyTypedHook(
 	f reflect.Kind,

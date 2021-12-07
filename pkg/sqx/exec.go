@@ -190,10 +190,10 @@ func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) err
 	}
 
 	decoder, err := mapstruct.NewDecoder(&mapstruct.Config{
-		Result:           result,
-		TagNames:         option.TagNames,
-		Squash:           true,
-		WeaklyTypedInput: true,
+		Result:   result,
+		TagNames: option.TagNames,
+		Squash:   true,
+		WeakType: true,
 	})
 	if err != nil {
 		return err
