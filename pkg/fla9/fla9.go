@@ -1043,7 +1043,7 @@ func (f *FlagSet) parseOne() (bool, error) {
 
 func checkCombine(m map[string]*Flag, name string) (*Flag, string) {
 	for i := len(name) - 1; i > 0; i-- {
-		if flag, ok := m[name[:i]]; ok && flag.ShortName == "" {
+		if flag, ok := m[name[:i]]; ok {
 			return flag, name[i:]
 		}
 	}
