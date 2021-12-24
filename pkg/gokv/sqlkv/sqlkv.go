@@ -140,7 +140,8 @@ func (c *Client) All() (kvs map[string]string, er error) {
 			return false, err
 		}
 
-		kvs[cols[0]] = fmt.Sprintf("%v", rowValues[1])
+		k := fmt.Sprintf("%v", rowValues[0])
+		kvs[k] = fmt.Sprintf("%v", rowValues[1])
 		return true, nil
 	}))
 
