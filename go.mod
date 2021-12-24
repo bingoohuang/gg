@@ -3,6 +3,7 @@ module github.com/bingoohuang/gg
 go 1.16
 
 require (
+	gitee.com/chunanyong/dm v1.8.4 // indirect
 	github.com/antonmedv/expr v1.8.9
 	github.com/bingoohuang/golog v0.0.0-20211112131923-101b7e1b3d4c
 	github.com/davecgh/go-spew v1.1.1

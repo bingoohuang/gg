@@ -80,7 +80,7 @@ func (p SQLParsed) replaceQuery(db *sql.DB, query string) (string, error) {
 		return query, nil
 	}
 
-	dbType := sqlparser.ToDBType(DriverName(db))
+	dbType := sqlparser.ToDBType(DriverName(db.Driver()))
 	q, _, err := dbType.Convert(query)
 	return q, err
 }

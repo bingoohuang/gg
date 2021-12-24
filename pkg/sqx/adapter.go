@@ -1,6 +1,7 @@
 package sqx
 
 import (
+	"context"
 	"database/sql"
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"go.uber.org/multierr"
@@ -11,7 +12,8 @@ import (
 type Sqx struct {
 	*sql.DB
 	sqlparser.DBType
-	dbExec ExecFn
+	dbExec  ExecFn
+	dbQuery QueryFn
 }
 
 func LogSqlResultDesc(desc string, lastResult sql.Result) {
@@ -56,34 +58,68 @@ func logQuery(desc, query string, args []interface{}) {
 }
 
 type Executable interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-type ExecFn func(query string, args ...interface{}) (sql.Result, error)
+type ExecFn func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 
-func (f ExecFn) Exec(query string, args ...interface{}) (sql.Result, error) { return f(query, args...) }
+func (f ExecFn) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return f(ctx, query, args...)
+}
+
+type Queryable interface {
+	Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+}
+
+type QueryFn func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+
+func (f QueryFn) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return f(ctx, query, args...)
+}
 
 func wrapExec(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f ExecFn) ExecFn {
-	return func(query string, args ...interface{}) (sql.Result, error) {
+	return func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 		qq, cr, err := dbType.Convert(query, convertOptions...)
 		if err != nil {
 			return nil, err
 		}
 		args = cr.PickArgs(args)
 
-		logQuery(qq, "", args)
-		result, err := f(qq, args...)
+		logQuery("", qq, args)
+		result, err := f(ctx, qq, args...)
 		logQueryError("", result, err)
 		return result, err
 	}
 }
 
-func NewSqx(db *sql.DB) *Sqx {
-	dbType := sqlparser.ToDBType(DriverName(db))
-	return &Sqx{DB: db, DBType: dbType, dbExec: wrapExec(dbType, nil, db.Exec)}
+func wrapQuery(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f QueryFn) QueryFn {
+	return func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+		qq, cr, err := dbType.Convert(query, convertOptions...)
+		if err != nil {
+			return nil, err
+		}
+		args = cr.PickArgs(args)
+
+		logQuery("", qq, args)
+		rows, err := f(ctx, qq, args...)
+		if err != nil {
+			log.Printf("query error: %v", err)
+		}
+		return rows, err
+	}
 }
 
-type QueryArgs struct {
+func NewSqx(db *sql.DB) *Sqx {
+	dbType := sqlparser.ToDBType(DriverName(db.Driver()))
+	return &Sqx{
+		DB:      db,
+		DBType:  dbType,
+		dbExec:  wrapExec(dbType, nil, db.ExecContext),
+		dbQuery: wrapQuery(dbType, nil, db.QueryContext),
+	}
+}
+
+type queryArgs struct {
 	Desc    string
 	Dest    interface{}
 	Query   string
@@ -92,7 +128,7 @@ type QueryArgs struct {
 	Options []sqlparser.ConvertOption
 }
 
-func (a *QueryArgs) GetQueryRows() int {
+func (a *queryArgs) GetQueryRows() int {
 	if a.Dest == nil {
 		return 0
 	}
@@ -110,7 +146,7 @@ func (a *QueryArgs) GetQueryRows() int {
 	}
 }
 
-func (s *Sqx) Query(arg *QueryArgs) error {
+func (s *Sqx) query(arg *queryArgs) error {
 	options := arg.Options
 	if arg.Limit > 0 {
 		options = append([]sqlparser.ConvertOption{sqlparser.WithLimit(arg.Limit)}, options...)
@@ -131,27 +167,39 @@ func (s *Sqx) Query(arg *QueryArgs) error {
 }
 
 func (s *Sqx) SelectDesc(desc string, dest interface{}, query string, args ...interface{}) error {
-	return s.Query(&QueryArgs{Desc: desc, Dest: dest, Query: query, Args: args})
+	return s.query(&queryArgs{Desc: desc, Dest: dest, Query: query, Args: args})
 }
 
 func (s *Sqx) Select(dest interface{}, query string, args ...interface{}) error {
-	return s.Query(&QueryArgs{Dest: dest, Query: query, Args: args})
+	return s.query(&queryArgs{Dest: dest, Query: query, Args: args})
 }
 
 func (s *Sqx) GetDesc(desc string, dest interface{}, query string, args ...interface{}) error {
-	return s.Query(&QueryArgs{Desc: desc, Dest: dest, Query: query, Args: args, Limit: 1})
+	return s.query(&queryArgs{Desc: desc, Dest: dest, Query: query, Args: args, Limit: 1})
 }
 
 func (s *Sqx) Get(dest interface{}, query string, args ...interface{}) error {
-	return s.Query(&QueryArgs{Dest: dest, Query: query, Args: args, Limit: 1})
+	return s.query(&queryArgs{Dest: dest, Query: query, Args: args, Limit: 1})
 }
 
 func (s *Sqx) Upsert(insertQuery, updateQuery string, args ...interface{}) (ur UpsertResult, err error) {
 	return Upsert(s, insertQuery, updateQuery, args...)
 }
 
+func (s *Sqx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return s.dbExec(ctx, query, args...)
+}
+
 func (s *Sqx) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return s.dbExec(query, args...)
+	return s.ExecContext(context.Background(), query, args...)
+}
+
+func (s *Sqx) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return s.QueryContext(context.Background(), query, args...)
+}
+
+func (s *Sqx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return s.dbQuery(ctx, query, args...)
 }
 
 func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
@@ -160,7 +208,7 @@ func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
 		return err
 	}
 
-	txExec := wrapExec(s.DBType, nil, tx.Exec)
+	txExec := wrapExec(s.DBType, nil, tx.ExecContext)
 	if err := f(txExec); err != nil {
 		err2 := tx.Rollback()
 		return multierr.Append(err, err2)
@@ -169,7 +217,7 @@ func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
 	return tx.Commit()
 }
 
-func Args(keys []string) []interface{} {
+func Args(keys ...string) []interface{} {
 	args := make([]interface{}, len(keys))
 	for i := 0; i < len(keys); i++ {
 		args[i] = keys[i]
@@ -187,12 +235,16 @@ const (
 )
 
 func Upsert(executable Executable, insertQuery, updateQuery string, args ...interface{}) (ur UpsertResult, err error) {
-	_, err1 := executable.Exec(insertQuery, args...)
+	return UpsertContext(context.Background(), executable, insertQuery, updateQuery, args...)
+}
+
+func UpsertContext(ctx context.Context, executable Executable, insertQuery, updateQuery string, args ...interface{}) (ur UpsertResult, err error) {
+	_, err1 := executable.ExecContext(ctx, insertQuery, args...)
 	if err1 == nil {
 		return UpsertInserted, nil
 	}
 
-	_, err2 := executable.Exec(updateQuery, args...)
+	_, err2 := executable.ExecContext(ctx, updateQuery, args...)
 	if err2 == nil {
 		return UpsertUpdated, nil
 	}

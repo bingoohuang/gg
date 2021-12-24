@@ -26,6 +26,12 @@ func (r Result) Return(start time.Time, err error) Result {
 	return r
 }
 
+// SQLExec wraps Exec method.
+type SQLExec interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
 type SQLExecContext interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -34,12 +40,6 @@ type SQLExecContext interface {
 type SqxDB interface {
 	SQLExec
 	SQLExecContext
-}
-
-// SQLExec wraps Exec method.
-type SQLExec interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
 type ExecOption struct {

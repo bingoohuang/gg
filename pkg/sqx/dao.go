@@ -959,7 +959,7 @@ func fillFields(mapFields []selectItem, pointers []interface{}) {
 		}
 
 		if p, ok := pointers[i].(*NullAny); ok {
-			field.Set(p.getVal())
+			field.Set(p.GetVal())
 		} else {
 			field.Set(reflect.ValueOf(pointers[i]).Elem())
 		}

@@ -76,12 +76,12 @@ func TestDriverName(t *testing.T) {
 	// 创建数据库连接池
 	db, err := sql.Open("pgx", pg)
 	assert.Nil(t, err)
-	assert.Equal(t, "pgx", sqx.DriverName(db))
+	assert.Equal(t, "pgx", sqx.DriverName(db.Driver()))
 }
 
 func TestQuery(t *testing.T) {
 	db := openDB(t)
-	assert.Equal(t, "sqlite3", sqx.DriverName(db))
+	assert.Equal(t, "sqlite3", sqx.DriverName(db.Driver()))
 
 	_, err := sqx.SQL{Q: "create table person(id varchar(100), age int)"}.Update(db)
 	assert.Nil(t, err)
@@ -116,7 +116,7 @@ func TestQuery(t *testing.T) {
 
 	var ageValue int
 
-	err = s.QueryRaw(db, sqx.WithScanRow(func(rows *sql.Rows, _ int) (bool, error) {
+	err = s.QueryRaw(db, sqx.WithScanRow(func(columns []string, rows *sql.Rows, _ int) (bool, error) {
 		return false, rows.Scan(&ageValue)
 	}))
 	assert.Nil(t, err)

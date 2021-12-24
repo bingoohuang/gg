@@ -1,11 +1,11 @@
 package hlog_test
 
 import (
-	"database/sql"
 	"github.com/bingoohuang/gg/pkg/ginx/adapt"
 	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
 	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"github.com/bingoohuang/gg/pkg/ginx/hlog"
+	"github.com/bingoohuang/gg/pkg/sqx"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -49,7 +49,7 @@ func TestLogger(t *testing.T) {
 const DSN = `root:root@tcp(127.0.0.1:3306)/httplog?charset=utf8mb4&parseTime=true&loc=Local`
 
 func TestNewSQLStore(t *testing.T) {
-	db, err := sql.Open("mysql", DSN)
+	db, err := sqx.OpenSqx("mysql", DSN)
 	assert.Nil(t, err)
 
 	af := anyfn.NewAdapter()

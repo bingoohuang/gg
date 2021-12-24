@@ -2,6 +2,7 @@ package sqx
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/bingoohuang/gg/pkg/reflector"
 	"reflect"
 )
@@ -32,8 +33,22 @@ type NullAny struct {
 // and should not be retained. Their underlying memory is owned by the driver.
 // If retention is necessary, copy their values before the next call to Scan.
 func (n *NullAny) Scan(value interface{}) error {
-	if n.Type == nil || value == nil {
+	if value == nil {
 		return nil
+	}
+
+	var err error
+	rValue := reflect.ValueOf(value)
+	if converter, ok := CustomDriverValueConverters[rValue.Type()]; ok {
+		value, err = converter.Convert(value)
+		if err != nil {
+			return err
+		}
+		rValue = reflect.ValueOf(value)
+	}
+
+	if n.Type == nil && value != nil {
+		n.Type = rValue.Type()
 	}
 
 	switch n.Type.Kind() {
@@ -72,7 +87,7 @@ func (n *NullAny) Scan(value interface{}) error {
 
 		n.Val = reflect.ValueOf(sn.Bool).Convert(n.Type)
 	case reflect.Interface:
-		n.Val = reflect.ValueOf(value).Convert(n.Type)
+		n.Val = rValue.Convert(n.Type)
 	default:
 		if n.Type == reflector.TimeType || reflector.TimeType.ConvertibleTo(n.Type) {
 			sn := &sql.NullTime{}
@@ -94,7 +109,15 @@ func (n *NullAny) Scan(value interface{}) error {
 	return nil
 }
 
-func (n *NullAny) getVal() reflect.Value {
+func (n *NullAny) Get() interface{} {
+	if n.Val.IsValid() {
+		return n.Val.Interface()
+	}
+
+	return nil
+}
+
+func (n *NullAny) GetVal() reflect.Value {
 	if n.Type == nil {
 		return reflect.Value{}
 	}
@@ -104,4 +127,20 @@ func (n *NullAny) getVal() reflect.Value {
 	}
 
 	return reflect.New(n.Type).Elem()
+}
+
+func (n *NullAny) String() string {
+	if n.Val.IsValid() {
+		i := n.Val.Interface()
+		if iv, ok := i.([]byte); ok {
+			return string(iv)
+		}
+		return fmt.Sprintf("%v", i)
+	}
+
+	return ""
+}
+
+func (n *NullAny) Valid() bool {
+	return n.Val.IsValid()
 }

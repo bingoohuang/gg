@@ -61,13 +61,13 @@ type RowScannerInit interface {
 }
 
 type RowScanner interface {
-	ScanRow(rows *sql.Rows, rowIndex int) (bool, error)
+	ScanRow(columns []string, rows *sql.Rows, rowIndex int) (bool, error)
 }
 
-type ScanRowFn func(rows *sql.Rows, rowIndex int) (bool, error)
+type ScanRowFn func(columns []string, rows *sql.Rows, rowIndex int) (bool, error)
 
-func (s ScanRowFn) ScanRow(rows *sql.Rows, rowIndex int) (bool, error) {
-	return s(rows, rowIndex)
+func (s ScanRowFn) ScanRow(columns []string, rows *sql.Rows, rowIndex int) (bool, error) {
+	return s(columns, rows, rowIndex)
 }
 
 // QueryOption defines the query options.
@@ -206,16 +206,11 @@ var ErrNotSupported = errors.New("sqx: Unsupported result type")
 
 type Col1Scanner struct {
 	Data    []string
-	Columns []string
 	MaxRows int
 }
 
-func (s *Col1Scanner) InitRowScanner(columns []string) {
-	s.Columns = append(s.Columns, columns...)
-}
-
-func (s *Col1Scanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
-	if v, err := ScanSliceRow(rows, s.Columns); err != nil {
+func (s *Col1Scanner) ScanRow(columns []string, rows *sql.Rows, _ int) (bool, error) {
+	if v, err := ScanSliceRow(rows, columns); err != nil {
 		return false, err
 	} else {
 		s.Data = append(s.Data, v[0])
@@ -225,7 +220,6 @@ func (s *Col1Scanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
 
 type MapScanner struct {
 	Data    []map[string]string
-	Columns []string
 	MaxRows int
 }
 
@@ -237,12 +231,8 @@ func (s *MapScanner) Data0() map[string]string {
 	return s.Data[0]
 }
 
-func (s *MapScanner) InitRowScanner(columns []string) {
-	s.Columns = append(s.Columns, columns...)
-}
-
-func (s *MapScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
-	if v, err := ScanMapRow(rows, s.Columns); err != nil {
+func (s *MapScanner) ScanRow(columns []string, rows *sql.Rows, _ int) (bool, error) {
+	if v, err := ScanMapRow(rows, columns); err != nil {
 		return false, err
 	} else {
 		s.Data = append(s.Data, v)
@@ -272,7 +262,7 @@ func ScanSliceRow(rows *sql.Rows, columns []string) ([]string, error) {
 
 	m := make([]string, len(columns))
 	for i, h := range holders {
-		m[i] = h.String
+		m[i] = h.String()
 	}
 
 	return m, nil
@@ -286,7 +276,7 @@ func ScanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
 
 	m := make(map[string]string)
 	for i, h := range holders {
-		m[columns[i]] = h.String
+		m[columns[i]] = h.String()
 	}
 
 	return m, nil
@@ -294,16 +284,11 @@ func ScanMapRow(rows *sql.Rows, columns []string) (map[string]string, error) {
 
 type StringRowScanner struct {
 	Data    [][]string
-	Columns []string
 	MaxRows int
 }
 
-func (r *StringRowScanner) InitRowScanner(columns []string) {
-	r.Columns = append(r.Columns, columns...)
-}
-
-func (r *StringRowScanner) ScanRow(rows *sql.Rows, _ int) (bool, error) {
-	if m, err := ScanStringRow(rows, r.Columns); err != nil {
+func (r *StringRowScanner) ScanRow(columns []string, rows *sql.Rows, _ int) (bool, error) {
+	if m, err := ScanStringRow(rows, columns); err != nil {
 		return false, err
 	} else {
 		r.Data = append(r.Data, m)
@@ -347,7 +332,7 @@ func ScanStringRow(rows *sql.Rows, columns []string) ([]string, error) {
 
 	m := make([]string, len(columns))
 	for i, h := range holders {
-		m[i] = h.String
+		m[i] = h.String()
 	}
 	return m, nil
 }
@@ -368,7 +353,7 @@ func (s SQL) QueryRaw(db SqxDB, optionFns ...QueryOptionFn) error {
 	rows := 0
 	for rn := 0; r.Next() && option.allowRowNum(rn+1); rn++ {
 		rows++
-		if continued, err := option.Scanner.ScanRow(r, rn); err != nil {
+		if continued, err := option.Scanner.ScanRow(columns, r, rn); err != nil {
 			return err
 		} else if !continued {
 			break
@@ -382,8 +367,27 @@ func (s SQL) QueryRaw(db SqxDB, optionFns ...QueryOptionFn) error {
 	return nil
 }
 
-func ScanRow(columnSize int, r *sql.Rows) ([]sql.NullString, error) {
-	holders := make([]sql.NullString, columnSize)
+func ScanRowValues(rows *sql.Rows) ([]interface{}, error) {
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := ScanRow(len(cols), rows)
+	if err != nil {
+		return nil, err
+	}
+
+	rowValues := make([]interface{}, len(cols))
+	for i := range rowValues {
+		rowValues[i] = row[i].Get()
+	}
+
+	return rowValues, nil
+}
+
+func ScanRow(columnSize int, r *sql.Rows) ([]NullAny, error) {
+	holders := make([]NullAny, columnSize)
 	pointers := make([]interface{}, columnSize)
 	for i := 0; i < columnSize; i++ {
 		pointers[i] = &holders[i]

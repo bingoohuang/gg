@@ -1,8 +1,7 @@
 package hlog
 
 import (
-	"database/sql"
-	"github.com/bingoohuang/gg/pkg/ginx/sqlrun"
+	"github.com/bingoohuang/gg/pkg/sqx"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,17 +10,15 @@ import (
 
 // SQLStore stores the log into database.
 type SQLStore struct {
-	DB         *sql.DB
-	DriverName string
-	LogTables  []string
+	DB        sqx.SqxDB
+	LogTables []string
 
 	TableCols map[string]*tableSchema
 }
 
 // NewSQLStore creates a new SQLStore.
-func NewSQLStore(db *sql.DB, defaultLogTables ...string) *SQLStore {
+func NewSQLStore(db sqx.SqxDB, defaultLogTables ...string) *SQLStore {
 	s := &SQLStore{DB: db}
-	s.DriverName = sqlrun.LookupDriverName(db.Driver())
 	s.LogTables = defaultLogTables
 	s.TableCols = make(map[string]*tableSchema)
 
@@ -33,29 +30,23 @@ func (s *SQLStore) loadTableSchema(tableName string) (*tableSchema, error) {
 		return v, nil
 	}
 
-	run := sqlrun.NewSQLRun(s.DB, sqlrun.NewStructPreparer(TableCol{}))
-
-	result := run.DoQuery(`
+	sqy := sqx.NewSQL(`
 		 select column_name, column_comment, data_type, extra, is_nullable nullable,
 			character_maximum_length max_length
 		 from information_schema.columns
 		 where table_schema = database()
 		 and table_name = ?`, tableName)
-	if result.Error != nil {
-		return nil, result.Error
+	var tableCols []TableCol
+	if err := sqy.Query(s.DB, &tableCols); err != nil {
+		return nil, err
 	}
-
-	tableCols := result.Rows.([]TableCol)
 
 	v := &tableSchema{
 		Name: tableName,
 		Cols: tableCols,
 	}
-
 	v.createInsertSQL()
-
 	s.TableCols[tableName] = v
-
 	return v, nil
 }
 
@@ -100,7 +91,7 @@ type tableSchema struct {
 	ValueGetters []col
 }
 
-func (t tableSchema) log(db sqlrun.MiniDB, l *Log) {
+func (t tableSchema) log(db sqx.SqxDB, l *Log) {
 	if len(t.ValueGetters) == 0 {
 		return
 	}
@@ -110,10 +101,8 @@ func (t tableSchema) log(db sqlrun.MiniDB, l *Log) {
 		params[i] = vg.get(l)
 	}
 
-	result := sqlrun.NewSQLExec(db).DoUpdate(t.InsertSQL, params...)
-
-	if result.Error != nil {
-		logrus.Warnf("do insert error: %v", result.Error)
+	if result, err := sqx.NewSQL(t.InsertSQL, params...).Update(db); err != nil {
+		logrus.Warnf("do insert error: %v", err)
 	} else {
 		logrus.Debugf("log result %+v", result)
 	}

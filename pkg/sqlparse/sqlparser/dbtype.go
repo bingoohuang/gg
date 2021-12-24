@@ -166,7 +166,9 @@ func (MySQLIdQuoter) Quote(s string) string {
 
 type DoubleQuoteIdQuoter struct{}
 
-func (DoubleQuoteIdQuoter) Quote(s string) string { return strconv.Quote(s) }
+func (DoubleQuoteIdQuoter) Quote(s string) string {
+	return strconv.Quote(s)
+}
 
 type PlaceholderFormatter interface {
 	FormatPlaceholder() string
@@ -376,7 +378,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	}
 
 	switch t {
-	case Mysql, Sqlite3, Dm, Gbase, Clickhouse:
+	case Mysql, Sqlite3, Gbase, Clickhouse:
 		// https://www.sqlite.org/lang_keywords.html
 		buf.IdQuoter = &MySQLIdQuoter{}
 	default:
