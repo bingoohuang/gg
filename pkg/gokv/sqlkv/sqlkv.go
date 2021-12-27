@@ -1,8 +1,6 @@
 package sqlkv
 
 import (
-	"bytes"
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,7 +8,6 @@ import (
 	"go.uber.org/multierr"
 	"log"
 	"sync"
-	"text/template"
 	"time"
 )
 
@@ -34,12 +31,6 @@ type Client struct {
 
 	cache     map[string]string
 	cacheLock sync.Mutex
-
-	allSql    *template.Template
-	delSql    *template.Template
-	getSql    *template.Template
-	updateSQL *template.Template
-	insertSQL *template.Template
 }
 
 func DefaultDuration(s, defaultValue time.Duration) time.Duration {
@@ -58,10 +49,10 @@ func Default(s, defaultValue string) string {
 
 const (
 	DefaultAllSQL    = `select k,v from kv where state = 1`
-	DefaultGetSQL    = `select v from kv where k = '{{.Key}}' and state = 1`
-	DefaultInsertSQL = `insert into kv(k, v, state, created) values('{{.Key}}', '{{.Value}}', 1, '{{.Time}}') `
-	DefaultUpdateSQL = `update kv set v = '{{.Value}}', updated = '{{.Time}}', state = 1 where k = '{{.Key}}'`
-	DefaultDelSQL    = `update kv set state = 0  where k = '{{.Key}}'`
+	DefaultGetSQL    = `select v from kv where k = :k and state = 1`
+	DefaultInsertSQL = `insert into kv(k, v, state, created) values(:k, :v, 1, :time)`
+	DefaultUpdateSQL = `update kv set v = :v, updated = :time, state = 1 where k = :k`
+	DefaultDelSQL    = `update kv set state = 0  where k = :k`
 )
 
 func NewClient(c Config) (*Client, error) {
@@ -78,32 +69,10 @@ func NewClient(c Config) (*Client, error) {
 		cache:  make(map[string]string),
 	}
 
-	var err error
-	if cli.allSql, err = template.New("").Parse(c.AllSQL); err != nil {
-		return nil, err
-	}
-	if cli.delSql, err = template.New("").Parse(c.DelSQL); err != nil {
-		return nil, err
-	}
-	if cli.getSql, err = template.New("").Parse(c.GetSQL); err != nil {
-		return nil, err
-	}
-	if cli.updateSQL, err = template.New("").Parse(c.UpdateSQL); err != nil {
-		return nil, err
-	}
-	if cli.insertSQL, err = template.New("").Parse(c.InsertSQL); err != nil {
-		return nil, err
-	}
-
 	go cli.tickerRefresh()
 
 	return cli, nil
 }
-
-var (
-	// ErrTooManyValues is the error to identify more than one values associated with a key.
-	ErrTooManyValues = errors.New("more than one values associated with the key")
-)
 
 func (c *Client) tickerRefresh() {
 	ticker := time.NewTicker(c.RefreshInterval)
@@ -116,25 +85,15 @@ func (c *Client) tickerRefresh() {
 
 // All list the keys in the store.
 func (c *Client) All() (kvs map[string]string, er error) {
-	var out bytes.Buffer
-	if err := c.allSql.Execute(&out, map[string]string{}); err != nil {
-		return nil, err
-	}
-	query := out.String()
-	log.Printf("D! query: %s", query)
-
-	dbx, err := sqx.OpenSqx(c.DriverName, c.DataSourceName)
+	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() { er = multierr.Append(er, dbx.Close()) }()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
 	kvs = make(map[string]string)
-	sqx.SQL{Q: query, Ctx: ctx}.QueryRaw(dbx, sqx.WithScanRow(func(cols []string, rows *sql.Rows, _ int) (bool, error) {
+	sqx.SQL{Q: c.AllSQL}.QueryRaw(dbx, sqx.WithScanRow(func(_ []string, rows *sql.Rows, _ int) (bool, error) {
 		rowValues, err := sqx.ScanRowValues(rows)
 		if err != nil {
 			return false, err
@@ -156,43 +115,26 @@ func (c *Client) All() (kvs map[string]string, er error) {
 // Values are automatically marshalled to JSON or gob (depending on the configuration).
 // The key must not be "" and the value must not be nil.
 func (c *Client) Set(k, v string) (er error) {
-	var out bytes.Buffer
 	m := map[string]string{
-		"Key":   k,
-		"Value": v,
-		"Time":  time.Now().Format(`2006-01-02 15:04:05.000`),
-	}
-	if err := c.updateSQL.Execute(&out, m); err != nil {
-		return err
+		"k":    k,
+		"v":    v,
+		"time": time.Now().Format(`2006-01-02 15:04:05.000`),
 	}
 
-	query := out.String()
-	log.Printf("D! query: %s", query)
-
-	dbx, err := sqx.OpenSqx(c.DriverName, c.DataSourceName)
+	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return err
 	}
 
 	defer func() { er = multierr.Append(er, dbx.Close()) }()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	effectedRows, err := sqx.SQL{Q: query, Ctx: ctx}.Update(dbx)
+	effectedRows, err := sqx.SQL{Q: c.UpdateSQL, Vars: sqx.Vars(m)}.Update(dbx)
 	if err == nil && effectedRows > 0 {
 		c.set(k, v)
 		return nil
 	}
 
-	out.Reset()
-	if err := c.insertSQL.Execute(&out, m); err != nil {
-		return err
-	}
-
-	query = out.String()
-	log.Printf("D! query: %s", query)
-	_, err = dbx.Exec(query)
+	_, err = sqx.SQL{Q: c.InsertSQL, Vars: sqx.Vars(m)}.Update(dbx)
 	return err
 }
 
@@ -215,30 +157,15 @@ func (c *Client) Get(k string) (found bool, v string, er error) {
 	}
 	c.cacheLock.Unlock()
 
-	t, err := template.New("").Parse(c.GetSQL)
-	if err != nil {
-		return false, "", err
-	}
-
-	var out bytes.Buffer
-	if err := t.Execute(&out, map[string]string{"Key": k}); err != nil {
-		return false, "", err
-	}
-
-	query := out.String()
-	log.Printf("D! query: %s", query)
-
-	dbx, err := sqx.OpenSqx(c.DriverName, c.DataSourceName)
+	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return false, "", err
 	}
 
 	defer func() { er = multierr.Append(er, dbx.Close()) }()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	v, err = sqx.SQL{Q: query, Ctx: ctx}.QueryAsString(dbx)
+	m := map[string]string{"k": k}
+	v, err = sqx.SQL{Q: c.GetSQL, Vars: sqx.Vars(m)}.QueryAsString(dbx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil
@@ -268,28 +195,18 @@ func (c *Client) Del(k string) (er error) {
 
 }
 func (c *Client) del(k string) (er error) {
-	var out bytes.Buffer
-	if err := c.delSql.Execute(&out, map[string]string{
-		"Key":  k,
-		"Time": time.Now().Format(`2006-01-02 15:04:05.000`),
-	}); err != nil {
-		return err
+	m := map[string]string{
+		"k":    k,
+		"time": time.Now().Format(`2006-01-02 15:04:05.000`),
 	}
-
-	query := out.String()
-	log.Printf("D! query: %s", query)
-
-	db, err := sql.Open(c.DriverName, c.DataSourceName)
+	db, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return err
 	}
 
 	defer func() { er = multierr.Append(er, db.Close()) }()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	if _, err := db.ExecContext(ctx, query); err != nil {
+	if _, err := (sqx.SQL{Q: c.DelSQL, Vars: sqx.Vars(m)}).Update(db); err != nil {
 		return err
 	}
 
