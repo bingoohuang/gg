@@ -1,10 +1,11 @@
 package sqx
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"reflect"
 	"strconv"
 	"strings"
@@ -38,17 +39,25 @@ func (s SQL) QueryAsString(db SqxDB) (string, error) {
 
 // Update executes an update/delete query and returns rows affected.
 func (s SQL) Update(db SqxDB) (int64, error) {
-	if s.Log {
-		log.Printf("I! execute [%s] with [%v]", s.Q, s.Vars)
+	if dbTypeAware, ok := db.(DBTypeAware); ok {
+		dbType := dbTypeAware.GetDBType()
+		qq, cr, err := dbType.Convert(s.Q, s.ConvertOptions...)
+		if err != nil {
+			return 0, err
+		}
+
+		s.Q = qq
+		s.Vars = cr.PickArgs(s.Vars)
 	}
 
-	var r sql.Result
-	var err error
-	if s.Ctx != nil {
-		r, err = db.ExecContext(s.Ctx, s.Q, s.Vars...)
-	} else {
-		r, err = db.Exec(s.Q, s.Vars...)
+	if !s.NoLog {
+		logQuery(s.Name, s.Q, s.Vars)
 	}
+
+	ctx, cancel := s.prepareContext()
+	defer cancel()
+
+	r, err := db.ExecContext(ctx, s.Q, s.Vars...)
 	if err != nil {
 		return 0, err
 	}
@@ -76,6 +85,8 @@ type QueryOption struct {
 	TagNames         []string
 	Scanner          RowScanner
 	LowerColumnNames bool
+
+	ConvertOptionOptions []sqlparser.ConvertOption
 }
 
 // QueryOptionFn define the prototype function to set QueryOption.
@@ -88,7 +99,6 @@ func (q QueryOptionFns) Options() *QueryOption {
 	o := &QueryOption{
 		TagNames: []string{"col", "db", "mapstruct", "field", "json", "yaml"},
 	}
-
 	for _, fn := range q {
 		fn(o)
 	}
@@ -400,19 +410,43 @@ func ScanRow(columnSize int, r *sql.Rows) ([]NullAny, error) {
 	return holders, nil
 }
 
-func (s SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
+func (s SQL) prepareContext() (ctx context.Context, cancel func()) {
+	ctx = s.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if s.Timeout > 0 {
+		return context.WithTimeout(ctx, s.Timeout)
+	}
+
+	return ctx, func() {}
+}
+func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
 	option := QueryOptionFns(optionFns).Options()
 
-	if s.Log {
-		log.Printf("I! execute [%s] with [%v]", s.Q, s.Vars)
+	if dbTypeAware, ok := db.(DBTypeAware); ok {
+		dbType := dbTypeAware.GetDBType()
+		options := s.ConvertOptions
+		if s.Limit > 0 {
+			options = append([]sqlparser.ConvertOption{sqlparser.WithLimit(s.Limit)}, options...)
+		}
+		qq, cr, err := dbType.Convert(s.Q, options...)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		s.Q = qq
+		s.Vars = cr.PickArgs(s.Vars)
 	}
-	var r *sql.Rows
-	var err error
-	if s.Ctx != nil {
-		r, err = db.QueryContext(s.Ctx, s.Q, s.Vars...)
-	} else {
-		r, err = db.Query(s.Q, s.Vars...)
+
+	if !s.NoLog {
+		logQuery(s.Name, s.Q, s.Vars)
 	}
+
+	ctx, cancel := s.prepareContext()
+	defer cancel()
+	r, err := db.QueryContext(ctx, s.Q, s.Vars...)
+
 	if err != nil {
 		return nil, nil, nil, err
 	}

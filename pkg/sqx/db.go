@@ -2,7 +2,8 @@ package sqx
 
 import "database/sql"
 
-func Open(driverName, dataSourceName string) (*sql.DB, error) {
+func open(driverName, dataSourceName string) (*sql.DB, error) {
+	driverName = DetectDriverName(driverName, dataSourceName)
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return db, err
@@ -12,8 +13,8 @@ func Open(driverName, dataSourceName string) (*sql.DB, error) {
 	return db, nil
 }
 
-func OpenSqx(driverName, dataSourceName string) (*Sqx, error) {
-	db, err := Open(driverName, dataSourceName)
+func Open(driverName, dataSourceName string) (*Sqx, error) {
+	db, err := open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}

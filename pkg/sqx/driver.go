@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"log"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -48,4 +49,28 @@ func DriverName(d driver.Driver) string {
 	defer sqlDriverNamesByTypeLock.Unlock()
 
 	return sqlDriverToDriverName(d)
+}
+
+// DetectDriverName detects the driver name for database source name.
+func DetectDriverName(driverName, dataSourceName string) string {
+	// DB | driverName | DSN
+	// ---|---|---
+	// MySQL |mysql |user:pass@tcp(127.0.0.1:3306)/mydb?charset=utf8
+	// 达梦 |dm| dm://user:pass@127.0.0.1:5236
+	// 人大金仓|pgx|postgres://user:pass@127.0.0.1:54321/mydb?sslmode=disable
+
+	if driverName == "" {
+		if strings.Contains(dataSourceName, "://") {
+			driverName = dataSourceName[:strings.Index(dataSourceName, "://")]
+		} else {
+			driverName = "mysql"
+		}
+	}
+
+	switch driverName { // use pgx when dsn starts with postgres
+	case "postgres":
+		driverName = "pgx"
+	}
+
+	return driverName
 }

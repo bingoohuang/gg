@@ -9,11 +9,15 @@ import (
 	"reflect"
 )
 
+type DBTypeAware interface {
+	GetDBType() sqlparser.DBType
+}
+
+func (s Sqx) GetDBType() sqlparser.DBType { return s.DBType }
+
 type Sqx struct {
 	*sql.DB
-	sqlparser.DBType
-	dbExec  ExecFn
-	dbQuery QueryFn
+	DBType sqlparser.DBType
 }
 
 func LogSqlResultDesc(desc string, lastResult sql.Result) {
@@ -63,18 +67,32 @@ type Executable interface {
 
 type ExecFn func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 
-func (f ExecFn) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (f ExecFn) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return f(context.Background(), query, args...)
+}
+func (f ExecFn) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return f(ctx, query, args...)
 }
 
 type Queryable interface {
-	Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 type QueryFn func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 
-func (f QueryFn) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (f QueryFn) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return f(context.Background(), query, args...)
+}
+func (f QueryFn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return f(ctx, query, args...)
+}
+
+func (s *Sqx) DoQuery(arg *QueryArgs) error {
+	err := NewSQL(arg.Query, arg.Args...).WithConvertOptions(arg.Options).Query(s.DB, arg.Dest)
+	logQueryError(arg.Desc, nil, err)
+	logRows(arg.Desc, arg.GetQueryRows())
+
+	return err
 }
 
 func wrapExec(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f ExecFn) ExecFn {
@@ -83,23 +101,22 @@ func wrapExec(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption,
 		if err != nil {
 			return nil, err
 		}
-		args = cr.PickArgs(args)
 
+		args = cr.PickArgs(args)
 		logQuery("", qq, args)
 		result, err := f(ctx, qq, args...)
 		logQueryError("", result, err)
 		return result, err
 	}
 }
-
 func wrapQuery(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f QueryFn) QueryFn {
 	return func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 		qq, cr, err := dbType.Convert(query, convertOptions...)
 		if err != nil {
 			return nil, err
 		}
-		args = cr.PickArgs(args)
 
+		args = cr.PickArgs(args)
 		logQuery("", qq, args)
 		rows, err := f(ctx, qq, args...)
 		if err != nil {
@@ -112,14 +129,12 @@ func wrapQuery(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption
 func NewSqx(db *sql.DB) *Sqx {
 	dbType := sqlparser.ToDBType(DriverName(db.Driver()))
 	return &Sqx{
-		DB:      db,
-		DBType:  dbType,
-		dbExec:  wrapExec(dbType, nil, db.ExecContext),
-		dbQuery: wrapQuery(dbType, nil, db.QueryContext),
+		DB:     db,
+		DBType: dbType,
 	}
 }
 
-type queryArgs struct {
+type QueryArgs struct {
 	Desc    string
 	Dest    interface{}
 	Query   string
@@ -128,7 +143,7 @@ type queryArgs struct {
 	Options []sqlparser.ConvertOption
 }
 
-func (a *queryArgs) GetQueryRows() int {
+func (a *QueryArgs) GetQueryRows() int {
 	if a.Dest == nil {
 		return 0
 	}
@@ -146,40 +161,20 @@ func (a *queryArgs) GetQueryRows() int {
 	}
 }
 
-func (s *Sqx) query(arg *queryArgs) error {
-	options := arg.Options
-	if arg.Limit > 0 {
-		options = append([]sqlparser.ConvertOption{sqlparser.WithLimit(arg.Limit)}, options...)
-	}
-	qq, cr, err := s.DBType.Convert(arg.Query, options...)
-	if err != nil {
-		return err
-	}
-
-	args := cr.PickArgs(arg.Args)
-	logQuery(arg.Desc, qq, args)
-
-	err = NewSQL(qq, args...).Query(s.DB, arg.Dest)
-	logQueryError(arg.Desc, nil, err)
-	logRows(arg.Desc, arg.GetQueryRows())
-
-	return err
-}
-
 func (s *Sqx) SelectDesc(desc string, dest interface{}, query string, args ...interface{}) error {
-	return s.query(&queryArgs{Desc: desc, Dest: dest, Query: query, Args: args})
+	return s.DoQuery(&QueryArgs{Desc: desc, Dest: dest, Query: query, Args: args})
 }
 
 func (s *Sqx) Select(dest interface{}, query string, args ...interface{}) error {
-	return s.query(&queryArgs{Dest: dest, Query: query, Args: args})
+	return s.DoQuery(&QueryArgs{Dest: dest, Query: query, Args: args})
 }
 
 func (s *Sqx) GetDesc(desc string, dest interface{}, query string, args ...interface{}) error {
-	return s.query(&queryArgs{Desc: desc, Dest: dest, Query: query, Args: args, Limit: 1})
+	return s.DoQuery(&QueryArgs{Desc: desc, Dest: dest, Query: query, Args: args, Limit: 1})
 }
 
 func (s *Sqx) Get(dest interface{}, query string, args ...interface{}) error {
-	return s.query(&queryArgs{Dest: dest, Query: query, Args: args, Limit: 1})
+	return s.DoQuery(&QueryArgs{Dest: dest, Query: query, Args: args, Limit: 1})
 }
 
 func (s *Sqx) Upsert(insertQuery, updateQuery string, args ...interface{}) (ur UpsertResult, err error) {
@@ -187,7 +182,7 @@ func (s *Sqx) Upsert(insertQuery, updateQuery string, args ...interface{}) (ur U
 }
 
 func (s *Sqx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return s.dbExec(ctx, query, args...)
+	return s.DB.ExecContext(ctx, query, args...)
 }
 
 func (s *Sqx) Exec(query string, args ...interface{}) (sql.Result, error) {
@@ -199,7 +194,7 @@ func (s *Sqx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 }
 
 func (s *Sqx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return s.dbQuery(ctx, query, args...)
+	return s.DB.QueryContext(ctx, query, args...)
 }
 
 func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
@@ -217,7 +212,16 @@ func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
 	return tx.Commit()
 }
 
-func Args(keys ...string) []interface{} {
+func VarsStr(keys ...string) []interface{} {
+	args := make([]interface{}, len(keys))
+	for i := 0; i < len(keys); i++ {
+		args[i] = keys[i]
+	}
+
+	return args
+}
+
+func Vars(keys ...interface{}) []interface{} {
 	args := make([]interface{}, len(keys))
 	for i := 0; i < len(keys); i++ {
 		args[i] = keys[i]

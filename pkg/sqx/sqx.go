@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 )
@@ -18,10 +19,15 @@ var ErrConditionKind = errors.New("condition kind should be struct or its pointe
 
 // SQL is a structure for query and vars.
 type SQL struct {
-	Q    string
-	Vars []interface{}
-	Ctx  context.Context
-	Log  bool
+	Name  string
+	Q     string
+	Vars  []interface{}
+	Ctx   context.Context
+	NoLog bool
+
+	Timeout        time.Duration
+	Limit          int
+	ConvertOptions []sqlparser.ConvertOption
 }
 
 func (s *SQL) AppendIf(ok bool, sub string, args ...interface{}) *SQL {
@@ -56,6 +62,18 @@ func NewSQL(query string, vars ...interface{}) *SQL {
 
 // WithVars replace vars.
 func WithVars(vars ...interface{}) []interface{} { return vars }
+
+// WithConvertOptions set SQL conversion options.
+func (s *SQL) WithConvertOptions(convertOptions []sqlparser.ConvertOption) *SQL {
+	s.ConvertOptions = convertOptions
+	return s
+}
+
+// WithTimeout set sql execution timeout
+func (s *SQL) WithTimeout(timeout time.Duration) *SQL {
+	s.Timeout = timeout
+	return s
+}
 
 // WithVars replace vars.
 func (s *SQL) WithVars(vars ...interface{}) *SQL {

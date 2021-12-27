@@ -38,17 +38,17 @@ func (n *NullAny) Scan(value interface{}) error {
 	}
 
 	var err error
-	rValue := reflect.ValueOf(value)
-	if converter, ok := CustomDriverValueConverters[rValue.Type()]; ok {
+	n.Val = reflect.ValueOf(value)
+	if converter, ok := CustomDriverValueConverters[n.Val.Type()]; ok {
 		value, err = converter.Convert(value)
 		if err != nil {
 			return err
 		}
-		rValue = reflect.ValueOf(value)
+		n.Val = reflect.ValueOf(value)
 	}
 
-	if n.Type == nil && value != nil {
-		n.Type = rValue.Type()
+	if n.Type == nil {
+		return nil
 	}
 
 	switch n.Type.Kind() {
@@ -87,7 +87,7 @@ func (n *NullAny) Scan(value interface{}) error {
 
 		n.Val = reflect.ValueOf(sn.Bool).Convert(n.Type)
 	case reflect.Interface:
-		n.Val = rValue.Convert(n.Type)
+		n.Val = n.Val.Convert(n.Type)
 	default:
 		if n.Type == reflector.TimeType || reflector.TimeType.ConvertibleTo(n.Type) {
 			sn := &sql.NullTime{}
@@ -111,7 +111,12 @@ func (n *NullAny) Scan(value interface{}) error {
 
 func (n *NullAny) Get() interface{} {
 	if n.Val.IsValid() {
-		return n.Val.Interface()
+		i := n.Val.Interface()
+		if s, ok := i.([]byte); ok {
+			return string(s)
+		}
+
+		return i
 	}
 
 	return nil
