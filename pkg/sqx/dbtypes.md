@@ -11,6 +11,7 @@
       1. `update t set name = :? where id = :?`，会被自动推断成 `update t set name = :name where id = :id`
       2. `insert into t_x(name, age, addr) values(:?)`，会被自动推断成 `insert into t_x(name, age, addr) values(:name, :age, :addr)`
    8. 总数 SQL 生成，在需要查询总数（分页总数）时，可以根据给定的SQL，自动生成查询总数的SQL，比如 `select a,b,c from t where a > 1 order by b`，生成的查询总数 SQL 就是 `select count(*) from t where a > 1`
+   9. 当 SQL 中存在 `in (?)`，将会根据传输变量个数，自动扩展为 `in(?,?)` 等
 2. Upsert 支持
    1. MySQL 支持 insert ... on duplicate key update ...的语法，在其他数据库中，不适用，直接需要改写成 insert 和 update 两个语句，当 sqx 执行 insert 失败时，会尝试 update 操作
 3. 查询结果 ORM 映射，支持

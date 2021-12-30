@@ -14,17 +14,25 @@ import (
 
 func TestQueryAsBeans(t *testing.T) {
 	// 创建数据库连接池
-	db, err := sql.Open("sqlite3", ":memory:")
+	_, db, err := sqx.Open("sqlite3", ":memory:")
 	assert.Nil(t, err)
 
-	sqx.NewSQL("create table person(id varchar(100), age int)").Update(db)
-	sqx.NewSQL("insert into person(id, age) values(?, ?)", "嫦娥", 1000).Update(db)
-	sqx.NewSQL("insert into person(id, age) values(?, ?)", "悟空", 500).Update(db)
+	effectedRows, err := sqx.NewSQL("create table person(id varchar(100), age int)").Update(db)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), effectedRows)
+	effectedRows, err = sqx.NewSQL("insert into person(id, age) values(?)", "嫦娥", 1000).Update(db)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), effectedRows)
+	effectedRows, err = sqx.NewSQL("insert into person(id, age) values(?, ?)", "悟空", 500).Update(db)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), effectedRows)
 
-	m, _ := sqx.NewSQL("select id, age from person where id=?", "嫦娥").QueryAsMap(db)
+	m, err := sqx.NewSQL("select id, age from person where id=?", "嫦娥").QueryAsMap(db)
+	assert.Nil(t, err)
 	assert.Equal(t, map[string]string{"age": "1000", "id": "嫦娥"}, m)
 
-	r, _ := sqx.NewSQL("select id, age from person where id=?", "嫦娥").QueryAsRow(db)
+	r, err := sqx.NewSQL("select id, age from person where id=?", "嫦娥").QueryAsRow(db)
+	assert.Nil(t, err)
 	assert.Equal(t, []string{"嫦娥", "1000"}, r)
 
 	var ids []string
@@ -48,15 +56,27 @@ func TestQueryAsBeans(t *testing.T) {
 	}
 
 	var ps []Person
-	sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &ps)
+	err = sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &ps)
+	assert.Nil(t, err)
 	assert.Equal(t, []Person{{ID: "嫦娥", Ag: 1000}}, ps)
 
+	err = sqx.NewSQL("select id, age from person where id in(?) order by age desc", "嫦娥", "悟空").Query(db, &ps)
+	assert.Nil(t, err)
+	assert.Equal(t, []Person{{ID: "嫦娥", Ag: 1000}, {ID: "悟空", Ag: 500}}, ps)
+
+	ps = nil
+	err = sqx.NewSQL("select id, age from person where id in(?) order by age desc").Query(db, &ps)
+	assert.True(t, errors.Is(err, sql.ErrNoRows))
+	assert.Equal(t, 0, len(ps))
+
 	var p Person
-	sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &p)
+	err = sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &p)
+	assert.Nil(t, err)
 	assert.Equal(t, Person{ID: "嫦娥", Ag: 1000}, p)
 
 	var p2 *Person
-	sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &p2)
+	err = sqx.NewSQL("select id, age from person where id=?", "嫦娥").Query(db, &p2)
+	assert.Nil(t, err)
 	assert.Equal(t, Person{ID: "嫦娥", Ag: 1000}, *p2)
 
 	var p3 *Person
@@ -64,28 +84,30 @@ func TestQueryAsBeans(t *testing.T) {
 	assert.Nil(t, p3)
 	assert.True(t, errors.Is(err, sql.ErrNoRows))
 
-	age, _ := sqx.NewSQL("select age from person where id=?", "嫦娥").QueryAsNumber(db)
+	age, err := sqx.NewSQL("select age from person where id=?", "嫦娥").QueryAsNumber(db)
+	assert.Nil(t, err)
 	assert.Equal(t, int64(1000), age)
 
-	id, _ := sqx.NewSQL("select id from person where id=?", "嫦娥").QueryAsString(db)
+	id, err := sqx.NewSQL("select id from person where id=?", "嫦娥").QueryAsString(db)
+	assert.Nil(t, err)
 	assert.Equal(t, "嫦娥", id)
 }
 
 func TestDriverName(t *testing.T) {
 	pg := "postgres://SYSTEM:111111@192.168.126.245:54322/METRICS_UMP?sslmode=disable"
 	// 创建数据库连接池
-	db, err := sql.Open("pgx", pg)
+	db, _, err := sqx.Open("pgx", pg)
 	assert.Nil(t, err)
 	assert.Equal(t, "pgx", sqx.DriverName(db.Driver()))
 }
 
 func TestQuery(t *testing.T) {
-	db := openDB(t)
-	assert.Equal(t, "sqlite3", sqx.DriverName(db.Driver()))
+	raw, db := openDB(t)
+	assert.Equal(t, "sqlite3", sqx.DriverName(raw.Driver()))
 
 	_, err := sqx.SQL{Q: "create table person(id varchar(100), age int)"}.Update(db)
 	assert.Nil(t, err)
-	s := sqx.SQL{Q: "insert into person(id, age) values(?, ?)"}
+	s := sqx.SQL{Q: "insert into person(id, age) values(?)"}
 	_, err = s.WithVars("嫦娥", 1000).Update(db)
 	assert.Nil(t, err)
 	_, err = s.WithVars("悟空", 500).Update(db)

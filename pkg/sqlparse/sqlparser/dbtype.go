@@ -319,7 +319,7 @@ func (r ConvertResult) ResetInVars(varsNum int) {
 	}
 
 	if varsNum == 0 {
-		exprs = append(exprs, &SQLVal{Type: ValArg, Val: []byte("null")})
+		exprs = append(exprs, &NullVal{})
 	}
 
 	r.InPlaceholder.Expr.Right = exprs

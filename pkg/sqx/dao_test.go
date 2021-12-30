@@ -39,7 +39,8 @@ func TestDao(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDao{}
-	sqx.DB = openDB(t)
+	rawDB, _ := openDB(t)
+	sqx.DB = rawDB
 	that.Nil(sqx.CreateDao(dao))
 
 	// 建表
@@ -79,12 +80,12 @@ func TestDao(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func openDB(t *testing.T) *sql.DB {
+func openDB(t *testing.T) (*sql.DB, *sqx.Sqx) {
 	// 创建数据库连接池
-	db, err := sql.Open("sqlite3", ":memory:")
+	rawDb, db, err := sqx.Open("sqlite3", ":memory:")
 	assert.Nil(t, err)
 
-	return db
+	return rawDb, db
 }
 
 // personDao2 定义对person表操作的所有方法.
@@ -108,7 +109,7 @@ func TestDaoWithError(t *testing.T) {
 
 	var err error
 
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithError(&err)))
 
 	dao.CreateTable()
@@ -137,7 +138,7 @@ func TestDaoWithContext(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithCtx(ctx), sqx.WithLimit(1)))
 
 	dao.CreateTable()
@@ -159,7 +160,7 @@ func TestDaoWithRowScanInterceptor(t *testing.T) {
 		p = v[0].(person)
 		return false, nil
 	})
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithRowScanInterceptor(f)))
 
 	dao.CreateTable()
@@ -196,7 +197,7 @@ func TestDaoWithDotSQLString(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDao3{Logger: &sqx.DaoLog{}}
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithSQLStr(dotSQL)))
 
 	dao.CreateTable()
@@ -213,7 +214,7 @@ func TestDaoWithDotSQLFile(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDao3{}
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithSQLFile(`testdata/d3.sql`)))
 
 	dao.CreateTable()
@@ -261,7 +262,7 @@ func TestNullString(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDao4{}
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao))
 
 	dao.CreateTable()
@@ -326,7 +327,7 @@ func TestMapArg(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDaoMap{Logger: &sqx.DaoLog{}}
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithSQLStr(dotSQLMap)))
 
 	dao.CreateTable()
@@ -414,7 +415,7 @@ func TestMapDynamic(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personDaoDynamic{Logger: &sqx.DaoLog{}}
-	sqx.DB = openDB(t)
+	sqx.DB, _ = openDB(t)
 	that.Nil(sqx.CreateDao(dao, sqx.WithSQLStr(dotSQLDynamic)))
 
 	dao.CreateTable()
@@ -463,7 +464,8 @@ func TestLastInsertID(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personLastInsertID{Logger: &sqx.DaoLog{}}
-	that.Nil(sqx.CreateDao(dao, sqx.WithDB(openDB(t)), sqx.WithSQLStr(dotSQLLastInsertID)))
+	db, _ := openDB(t)
+	that.Nil(sqx.CreateDao(dao, sqx.WithDB(db), sqx.WithSQLStr(dotSQLLastInsertID)))
 
 	dao.CreateTable()
 	that.True(dao.Add(M{"age": 500, "addr": "bjca"}) > 0)
@@ -537,7 +539,8 @@ func TestTime(t *testing.T) {
 
 	// 生成DAO，自动创建dao结构体中的函数字段
 	dao := &personTimeDao{Logger: &sqx.DaoLog{}}
-	that.Nil(sqx.CreateDao(dao, sqx.WithDB(openDB(t)), sqx.WithSQLStr(dotSQLTime)))
+	db, _ := openDB(t)
+	that.Nil(sqx.CreateDao(dao, sqx.WithDB(db), sqx.WithSQLStr(dotSQLTime)))
 
 	now, _ := time.Parse("2006-01-02 15:04:05", "2020-03-31 17:17:40")
 	dao.CreateTable()
