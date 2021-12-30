@@ -39,15 +39,23 @@ func (s SQL) QueryAsString(db SqxDB) (string, error) {
 
 // Update executes an update/delete query and returns rows affected.
 func (s SQL) Update(db SqxDB) (int64, error) {
+	r, err := s.UpdateRaw(db)
+	if err != nil {
+		return 0, err
+	}
+
+	return r.RowsAffected()
+}
+
+func (s SQL) UpdateRaw(db SqxDB) (sql.Result, error) {
 	if dbTypeAware, ok := db.(DBTypeAware); ok {
 		dbType := dbTypeAware.GetDBType()
-		qq, cr, err := dbType.Convert(s.Q, s.ConvertOptions...)
+		cr, err := dbType.Convert(s.Q, s.ConvertOptions...)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
-		s.Q = qq
-		s.Vars = cr.PickArgs(s.Vars)
+		s.Q, s.Vars = cr.PickArgs(s.Vars)
 	}
 
 	if !s.NoLog {
@@ -57,12 +65,9 @@ func (s SQL) Update(db SqxDB) (int64, error) {
 	ctx, cancel := s.prepareContext()
 	defer cancel()
 
-	r, err := db.ExecContext(ctx, s.Q, s.Vars...)
-	if err != nil {
-		return 0, err
-	}
-
-	return r.RowsAffected()
+	result, err := db.ExecContext(ctx, s.Q, s.Vars...)
+	logQueryError(s.Name, result, err)
+	return result, err
 }
 
 type RowScannerInit interface {
@@ -143,6 +148,31 @@ func (o QueryOption) allowRowNum(rowNum int) bool {
 
 // Query queries return with result.
 func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
+	err := s.query(db, result, optionFns...)
+	logQueryError(s.Name, nil, err)
+	logRows(s.Name, GetQueryRows(result))
+	return err
+}
+
+func GetQueryRows(dest interface{}) int {
+	if dest == nil {
+		return 0
+	}
+
+	v := reflect.ValueOf(dest)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		return v.Len()
+	default:
+		return 0
+	}
+}
+
+func (s SQL) query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
 	resultValue := reflect.ValueOf(result)
 	if resultValue.Kind() != reflect.Ptr {
 		return fmt.Errorf("result must be a pointer")
@@ -422,25 +452,8 @@ func (s SQL) prepareContext() (ctx context.Context, cancel func()) {
 	return ctx, func() {}
 }
 func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
-	option := QueryOptionFns(optionFns).Options()
-
-	if dbTypeAware, ok := db.(DBTypeAware); ok {
-		dbType := dbTypeAware.GetDBType()
-		options := s.ConvertOptions
-		if s.Limit > 0 {
-			options = append([]sqlparser.ConvertOption{sqlparser.WithLimit(s.Limit)}, options...)
-		}
-		qq, cr, err := dbType.Convert(s.Q, options...)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		s.Q = qq
-		s.Vars = cr.PickArgs(s.Vars)
-	}
-
-	if !s.NoLog {
-		logQuery(s.Name, s.Q, s.Vars)
+	if err := s.adaptQuery(db); err != nil {
+		return nil, nil, nil, err
 	}
 
 	ctx, cancel := s.prepareContext()
@@ -456,6 +469,7 @@ func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, 
 		return nil, nil, nil, err
 	}
 
+	option := QueryOptionFns(optionFns).Options()
 	if option.LowerColumnNames {
 		for i, col := range columns {
 			columns[i] = strings.ToLower(col)

@@ -6,7 +6,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"go.uber.org/multierr"
 	"log"
-	"reflect"
+	"strings"
 )
 
 type DBTypeAware interface {
@@ -16,49 +16,38 @@ type DBTypeAware interface {
 func (s Sqx) GetDBType() sqlparser.DBType { return s.DBType }
 
 type Sqx struct {
-	*sql.DB
-	DBType sqlparser.DBType
+	DB      SqxDB
+	DBType  sqlparser.DBType
+	CloseFn func() error
 }
 
 func LogSqlResultDesc(desc string, lastResult sql.Result) {
 	lastInsertId, _ := lastResult.LastInsertId()
 	rowsAffected, _ := lastResult.RowsAffected()
-	if desc == "" {
-		log.Printf("Result lastInsertId: %d, rowsAffected: %d", lastInsertId, rowsAffected)
-	} else {
-		log.Printf("%s result lastInsertId: %d, rowsAffected: %d", desc, lastInsertId, rowsAffected)
-	}
+	log.Printf("%sresult lastInsertId: %d, rowsAffected: %d", quoteDesc(desc), lastInsertId, rowsAffected)
 }
-func logQueryError(desc string, result sql.Result, err error) {
-	if desc == "" {
-		if err != nil {
-			log.Printf("query error: %v", err)
-		} else if result != nil {
-			LogSqlResultDesc(desc, result)
-		}
-		return
-	}
 
+func quoteDesc(desc string) string {
+	if desc != "" && !strings.HasPrefix(desc, "[") {
+		desc = "[" + desc + "] "
+	}
+	return desc
+}
+
+func logQueryError(desc string, result sql.Result, err error) {
 	if err != nil {
-		log.Printf("[%s] query error: %v", desc, err)
+		log.Printf("%squery error: %v", quoteDesc(desc), err)
 	} else if result != nil {
 		LogSqlResultDesc(desc, result)
 	}
 }
 
 func logRows(desc string, rows int) {
-	if desc == "" {
-		log.Printf("query %d rows", rows)
-	} else {
-		log.Printf("[%s] query %d rows", desc, rows)
-	}
+	log.Printf("%squery %d rows", quoteDesc(desc), rows)
 }
+
 func logQuery(desc, query string, args []interface{}) {
-	if desc == "" {
-		log.Printf("query [%s] with args: %v", query, args)
-	} else {
-		log.Printf("[%s] query [%s] with args: %v", desc, query, args)
-	}
+	log.Printf("%squery [%s] with args: %v", quoteDesc(desc), query, args)
 }
 
 type Executable interface {
@@ -87,51 +76,45 @@ func (f QueryFn) QueryContext(ctx context.Context, query string, args ...interfa
 	return f(ctx, query, args...)
 }
 
+func (s *Sqx) Close() error {
+	if s.CloseFn != nil {
+		return s.CloseFn()
+	}
+
+	return nil
+}
 func (s *Sqx) DoQuery(arg *QueryArgs) error {
-	err := NewSQL(arg.Query, arg.Args...).WithConvertOptions(arg.Options).Query(s.DB, arg.Dest)
-	logQueryError(arg.Desc, nil, err)
-	logRows(arg.Desc, arg.GetQueryRows())
-
-	return err
+	return arg.DoQuery(s.typedDB())
 }
 
-func wrapExec(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f ExecFn) ExecFn {
-	return func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-		qq, cr, err := dbType.Convert(query, convertOptions...)
-		if err != nil {
-			return nil, err
-		}
-
-		args = cr.PickArgs(args)
-		logQuery("", qq, args)
-		result, err := f(ctx, qq, args...)
-		logQueryError("", result, err)
-		return result, err
-	}
+func (s *Sqx) DoExec(arg *QueryArgs) (int64, error) {
+	return arg.DoExec(s.typedDB())
 }
-func wrapQuery(dbType sqlparser.DBType, convertOptions []sqlparser.ConvertOption, f QueryFn) QueryFn {
-	return func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-		qq, cr, err := dbType.Convert(query, convertOptions...)
-		if err != nil {
-			return nil, err
-		}
 
-		args = cr.PickArgs(args)
-		logQuery("", qq, args)
-		rows, err := f(ctx, qq, args...)
-		if err != nil {
-			log.Printf("query error: %v", err)
-		}
-		return rows, err
-	}
+func (s *Sqx) DoExecRaw(arg *QueryArgs) (sql.Result, error) {
+	return arg.DoExecRaw(s.typedDB())
+}
+
+func (a *QueryArgs) DoExecRaw(db SqxDB) (sql.Result, error) {
+	ns := NewSQL(a.Query, a.Args...)
+	ns.Ctx = a.Ctx
+	return ns.WithConvertOptions(a.Options).UpdateRaw(db)
+}
+
+func (a *QueryArgs) DoExec(db SqxDB) (int64, error) {
+	ns := NewSQL(a.Query, a.Args...)
+	ns.Ctx = a.Ctx
+	return ns.WithConvertOptions(a.Options).Update(db)
+}
+
+func (a *QueryArgs) DoQuery(db SqxDB) error {
+	ns := NewSQL(a.Query, a.Args...)
+	ns.Ctx = a.Ctx
+	return ns.WithConvertOptions(a.Options).Query(db, a.Dest)
 }
 
 func NewSqx(db *sql.DB) *Sqx {
-	dbType := sqlparser.ToDBType(DriverName(db.Driver()))
-	return &Sqx{
-		DB:     db,
-		DBType: dbType,
-	}
+	return &Sqx{DB: db, DBType: sqlparser.ToDBType(DriverName(db.Driver())), CloseFn: db.Close}
 }
 
 type QueryArgs struct {
@@ -141,24 +124,7 @@ type QueryArgs struct {
 	Args    []interface{}
 	Limit   int
 	Options []sqlparser.ConvertOption
-}
-
-func (a *QueryArgs) GetQueryRows() int {
-	if a.Dest == nil {
-		return 0
-	}
-
-	v := reflect.ValueOf(a.Dest)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	switch v.Kind() {
-	case reflect.Slice, reflect.Array:
-		return v.Len()
-	default:
-		return 0
-	}
+	Ctx     context.Context
 }
 
 func (s *Sqx) SelectDesc(desc string, dest interface{}, query string, args ...interface{}) error {
@@ -182,7 +148,7 @@ func (s *Sqx) Upsert(insertQuery, updateQuery string, args ...interface{}) (ur U
 }
 
 func (s *Sqx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return s.DB.ExecContext(ctx, query, args...)
+	return s.DoExecRaw(&QueryArgs{Ctx: ctx, Query: query, Args: args, Limit: 1})
 }
 
 func (s *Sqx) Exec(query string, args ...interface{}) (sql.Result, error) {
@@ -194,22 +160,53 @@ func (s *Sqx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 }
 
 func (s *Sqx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return s.DB.QueryContext(ctx, query, args...)
+	s2 := SQL{Ctx: ctx, Q: query, Vars: args}
+	s2.adaptQuery(s)
+	rows, err := s.DB.QueryContext(ctx, s2.Q, s2.Vars...)
+	if err != nil {
+		logQueryError("", nil, err)
+	}
+	return rows, err
 }
 
-func (s *Sqx) Tx(f func(txExec ExecFn) error) error {
-	tx, err := s.DB.Begin()
+type BeginTx interface {
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+}
+
+func (s *Sqx) Tx(f func(sqx *Sqx) error) error {
+	return s.TxContext(context.Background(), f)
+}
+
+func (s *Sqx) TxContext(ctx context.Context, f func(sqx *Sqx) error) error {
+	btx, ok := s.DB.(BeginTx)
+	if !ok {
+		panic("can't begin transaction")
+	}
+
+	tx, err := btx.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	txExec := wrapExec(s.DBType, nil, tx.ExecContext)
-	if err := f(txExec); err != nil {
-		err2 := tx.Rollback()
-		return multierr.Append(err, err2)
+	if err := f(&Sqx{DB: tx, DBType: s.DBType}); err != nil {
+		return multierr.Append(err, tx.Rollback())
 	}
 
 	return tx.Commit()
+}
+
+type SqxDBRaw struct {
+	SqxDB
+	DBType sqlparser.DBType
+}
+
+func (t SqxDBRaw) GetDBType() sqlparser.DBType { return t.DBType }
+
+func (s Sqx) typedDB() SqxDB {
+	return &SqxDBRaw{
+		SqxDB:  s.DB,
+		DBType: s.DBType,
+	}
 }
 
 func VarsStr(keys ...string) []interface{} {

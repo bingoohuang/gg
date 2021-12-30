@@ -162,6 +162,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/araddon/dateparse"
 	"reflect"
 	"sort"
 	"strconv"
@@ -510,7 +511,7 @@ func (d *Decoder) decodeTime(name string, data interface{}, val reflect.Value) (
 
 	switch {
 	case dataKind == reflect.String:
-		tim, err = time.Parse(time.RFC3339Nano, dataVal.String())
+		tim, err = dateparse.ParseLocal(dataVal.String())
 	default:
 		return false, nil
 	}

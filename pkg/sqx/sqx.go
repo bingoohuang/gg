@@ -130,6 +130,46 @@ func (s *SQL) And(cond string, args ...interface{}) *SQL {
 	}
 }
 
+func (s *SQL) adaptUpdate(db SqxDB) error {
+	if dbTypeAware, ok := db.(DBTypeAware); ok {
+		dbType := dbTypeAware.GetDBType()
+		options := s.ConvertOptions
+		cr, err := dbType.Convert(s.Q, options...)
+		if err != nil {
+			return err
+		}
+
+		s.Q, s.Vars = cr.PickArgs(s.Vars)
+	}
+
+	if !s.NoLog {
+		logQuery(s.Name, s.Q, s.Vars)
+	}
+
+	return nil
+}
+func (s *SQL) adaptQuery(db SqxDB) error {
+	if dbTypeAware, ok := db.(DBTypeAware); ok {
+		dbType := dbTypeAware.GetDBType()
+		options := s.ConvertOptions
+		if s.Limit > 0 {
+			options = append([]sqlparser.ConvertOption{sqlparser.WithLimit(s.Limit)}, options...)
+		}
+		cr, err := dbType.Convert(s.Q, options...)
+		if err != nil {
+			return err
+		}
+
+		s.Q, s.Vars = cr.PickArgs(s.Vars)
+	}
+
+	if !s.NoLog {
+		logQuery(s.Name, s.Q, s.Vars)
+	}
+
+	return nil
+}
+
 // CreateSQL creates a composite SQL on base and condition cond.
 func CreateSQL(base string, cond interface{}) (*SQL, error) {
 	result := &SQL{}

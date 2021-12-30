@@ -13,11 +13,11 @@ func open(driverName, dataSourceName string) (*sql.DB, error) {
 	return db, nil
 }
 
-func Open(driverName, dataSourceName string) (*Sqx, error) {
+func Open(driverName, dataSourceName string) (*sql.DB, *Sqx, error) {
 	db, err := open(driverName, dataSourceName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return NewSqx(db), nil
+	return db, NewSqx(db), nil
 }

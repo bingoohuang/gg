@@ -49,7 +49,7 @@ func TestLogger(t *testing.T) {
 const DSN = `root:root@tcp(127.0.0.1:3306)/httplog?charset=utf8mb4&parseTime=true&loc=Local`
 
 func TestNewSQLStore(t *testing.T) {
-	db, err := sqx.Open("mysql", DSN)
+	_, db, err := sqx.Open("mysql", DSN)
 	assert.Nil(t, err)
 
 	af := anyfn.NewAdapter()

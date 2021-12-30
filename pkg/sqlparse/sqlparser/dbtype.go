@@ -213,6 +213,11 @@ type ConvertResult struct {
 	VarPoses      []int // []var pos)
 	BindMode      BindMode
 	VarNames      []string
+
+	InPlaceholder *InPlaceholder
+	Placeholders  int
+
+	ConvertQuery func() string
 }
 type BindMode uint
 
@@ -222,7 +227,7 @@ const (
 	ByName
 )
 
-func (r ConvertResult) PickArgs(args []interface{}) (bindArgs []interface{}) {
+func (r ConvertResult) PickArgs(args []interface{}) (q string, bindArgs []interface{}) {
 	switch r.BindMode {
 	case ByName:
 		arg := args[0]
@@ -262,10 +267,62 @@ func (r ConvertResult) PickArgs(args []interface{}) (bindArgs []interface{}) {
 			bindArgs = append(bindArgs, args[p-1])
 		}
 	default:
-		bindArgs = append(bindArgs, args...)
+		if r.IsInPlaceholders() {
+			if len(args) == 1 && IsSlice(args[0]) {
+				r.ResetInVars(SliceLen(args[0]))
+				bindArgs = CreateSlice(args[0])
+			} else {
+				r.ResetInVars(len(args))
+				bindArgs = args
+			}
+		} else {
+			bindArgs = append(bindArgs, args...)
+		}
 	}
 
-	return append(bindArgs, r.ExtraArgs...)
+	return r.ConvertQuery(), append(bindArgs, r.ExtraArgs...)
+}
+
+func CreateSlice(i interface{}) []interface{} {
+	ti := reflect.ValueOf(i)
+	elements := make([]interface{}, ti.Len())
+
+	for i := 0; i < ti.Len(); i++ {
+		elements[i] = ti.Index(i).Interface()
+	}
+
+	return elements
+}
+
+func SliceLen(i interface{}) int {
+	ti := reflect.ValueOf(i)
+	return ti.Len()
+}
+
+func IsSlice(i interface{}) bool {
+	return reflect.TypeOf(i).Kind() == reflect.Slice
+}
+
+func (r ConvertResult) IsInPlaceholders() bool {
+	return r.InPlaceholder != nil && r.Placeholders == r.InPlaceholder.Num
+}
+
+func (r ConvertResult) ResetInVars(varsNum int) {
+	if varsNum == r.InPlaceholder.Num {
+		return
+	}
+
+	var exprs ValTuple
+
+	for i := 0; i < varsNum; i++ {
+		exprs = append(exprs, &SQLVal{Type: ValArg, Val: []byte("?")})
+	}
+
+	if varsNum == 0 {
+		exprs = append(exprs, &SQLVal{Type: ValArg, Val: []byte("null")})
+	}
+
+	r.InPlaceholder.Expr.Right = exprs
 }
 
 func findInMap(vmap reflect.Value, name string, f func(s string) string) (interface{}, bool) {
@@ -299,8 +356,6 @@ func IsStructOrPtrToStruct(arg interface{}) bool {
 	return t.Kind() == reflect.Struct
 }
 
-var errFound = errors.New("found")
-
 var ErrSyntax = errors.New("syntax not supported")
 
 const CreateCountingQuery = -1
@@ -310,25 +365,28 @@ var numReg = regexp.MustCompile(`^[1-9]\d*$`)
 // Convert converts query to target db type.
 // 1. adjust the SQL variable symbols by different type, such as ?,? $1,$2.
 // 1. quote table name, field names.
-func (t DBType) Convert(query string, options ...ConvertOption) (string, *ConvertResult, error) {
+func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult, error) {
 	stmt, err := Parse(query)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	insertStmt, _ := stmt.(*Insert)
 	if err := t.checkMySQLOnDuplicateKey(insertStmt); err != nil {
-		return "", nil, fmt.Errorf("on duplicate key is not supported directly in SQL, error %w", ErrSyntax)
+		return nil, fmt.Errorf("on duplicate key is not supported directly in SQL, error %w", ErrSyntax)
 	}
 
 	fixPlaceholders(insertStmt)
 	cr := &ConvertResult{}
-	purePlaceholders := 0
 
 	insertPos := -1
 	lastColName := ""
 
 	_ = stmt.WalkSubtree(func(node SQLNode) (kontinue bool, err error) {
+		if cr.InPlaceholder == nil {
+			cr.InPlaceholder = ParseInPlaceholder(node)
+		}
+
 		if cn, cnOk := node.(*ColName); cnOk {
 			lastColName = cn.Name.Lowered()
 			return true, nil
@@ -341,7 +399,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 			switch v.Type {
 			case ValArg, StrVal: // 转换 :a :b :c 或者 :1 :2 :3的占位符形式
 				if string(v.Val) == "?" {
-					purePlaceholders++
+					cr.Placeholders++
 				} else {
 					convertCustomBinding(insertStmt, &insertPos, &lastColName, v, cr)
 				}
@@ -357,11 +415,11 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 	if len(cr.VarNames) > 0 {
 		cr.BindMode |= ByName
 	}
-	if purePlaceholders > 0 {
+	if cr.Placeholders > 0 {
 		cr.BindMode |= ByPlaceholder
 	}
 	if bits.OnesCount(uint(cr.BindMode)) > 1 {
-		return "", nil, fmt.Errorf("mixed bind modes are not supported, error %w", ErrSyntax)
+		return nil, fmt.Errorf("mixed bind modes are not supported, error %w", ErrSyntax)
 	}
 
 	buf := &TrackedBuffer{Buffer: new(bytes.Buffer)}
@@ -403,24 +461,60 @@ func (t DBType) Convert(query string, options ...ConvertOption) (string, *Conver
 		selectStmt.SetLimitSQLNode(&CompatibleLimit{Limit: limit, DBType: t})
 	}
 
-	buf.Myprintf("%v", stmt)
-	q := buf.String()
-	buf.Reset()
+	cr.ConvertQuery = func() string {
+		buf.Myprintf("%v", stmt)
+		q := buf.String()
+		buf.Reset()
 
-	if isPaging {
-		pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
-		cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
-		if p.RowsCount == CreateCountingQuery {
-			cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
+		if isPaging {
+			pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
+			cr.ExtraArgs = append(cr.ExtraArgs, bindArgs...)
+			if p.RowsCount == CreateCountingQuery {
+				cr.CountingQuery = t.createCountingQuery(stmt, buf, q)
+			}
+			q += " " + pagingClause
 		}
-		q += " " + pagingClause
+
+		if f := config.AutoIncrementField; f != "" {
+			q += " " + t.createAutoIncrementPK(cr, f)
+		}
+		return q
 	}
 
-	if f := config.AutoIncrementField; f != "" {
-		q += " " + t.createAutoIncrementPK(cr, f)
+	return cr, nil
+}
+
+type InPlaceholder struct {
+	Expr *ComparisonExpr
+	Num  int
+}
+
+func ParseInPlaceholder(node SQLNode) *InPlaceholder {
+	v, ok := node.(*ComparisonExpr)
+	if !ok {
+		return nil
 	}
 
-	return q, cr, nil
+	if v.Operator != "in" {
+		return nil
+	}
+
+	t, tOk := v.Right.(ValTuple)
+	if !tOk {
+		return nil
+	}
+
+	for _, tv := range t {
+		if tw, twOK := tv.(*SQLVal); twOK {
+			if !(tw.Type == ValArg && bytes.Equal(tw.Val, []byte("?"))) {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	return &InPlaceholder{Expr: v, Num: len(t)}
 }
 
 func convertCustomBinding(insert *Insert, insertPos *int, lastColName *string, v *SQLVal, cr *ConvertResult) {
@@ -540,13 +634,13 @@ func (t DBType) createCountingQuery(stmt Statement, buf *TrackedBuffer, q string
 
 	if countWrapRequired() {
 		query := "select count(*) cnt from (" + q + ") t_gg_cnt"
-		countStmt, _, err := t.Convert(query)
+		cr, err := t.Convert(query)
 		if err != nil {
 			log.Printf("failed to convert query %s, err: %v", query, err)
 			return ""
 		}
 
-		buf.Myprintf("%v", countStmt)
+		buf.Myprintf("%v", cr.ConvertQuery())
 		return buf.String()
 	}
 

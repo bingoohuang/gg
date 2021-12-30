@@ -81,8 +81,8 @@ func (p SQLParsed) replaceQuery(db *sql.DB, query string) (string, error) {
 	}
 
 	dbType := sqlparser.ToDBType(DriverName(db.Driver()))
-	q, _, err := dbType.Convert(query)
-	return q, err
+	cr, err := dbType.Convert(query)
+	return cr.ConvertQuery(), err
 }
 
 func (p SQLParsed) isBindBy(by ...bindBy) bool {
