@@ -35,7 +35,7 @@ go get github.com/bingoohuang/gg/pkg/sqlparse
 package main
 
 import (
- 	"fmt"
+	"fmt"
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 )
 

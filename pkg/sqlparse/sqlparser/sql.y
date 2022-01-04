@@ -21,6 +21,10 @@ func setParseTree(yylex interface{}, stmt Statement) {
   yylex.(*Tokenizer).ParseTree = stmt
 }
 
+func setPosVarIndex(yylex interface{}, v *SQLVal) {
+  v.Seq = yylex.(*Tokenizer).posVarIndex
+}
+
 func setAllowComments(yylex interface{}, allow bool) {
   yylex.(*Tokenizer).AllowComments = allow
 }
@@ -1394,6 +1398,7 @@ value:
 | VALUE_ARG
   {
     $$ = NewValArg($1)
+    setPosVarIndex(yylex, $$.(*SQLVal))
   }
 | NULL
   {
