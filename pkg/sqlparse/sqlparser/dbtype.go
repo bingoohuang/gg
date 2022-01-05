@@ -99,7 +99,7 @@ func (n *CompatibleLimit) Format(buf *TrackedBuffer) {
 				i := offsetVar.Seq - 1
 				j := rowcount.Seq - 1
 				n.SwapArgs = func(args []interface{}) {
-					args[i] = args[j]
+					args[i], args[j] = args[j], args[i]
 				}
 			}
 		}
