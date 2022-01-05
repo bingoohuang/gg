@@ -76,6 +76,7 @@ func (p *Paging) SetRowsCount(total int) {
 // CompatibleLimit represents a LIMIT clause.
 type CompatibleLimit struct {
 	*Limit
+	SwapArgs func(args []interface{})
 	DBType
 }
 
@@ -91,6 +92,17 @@ func (n *CompatibleLimit) Format(buf *TrackedBuffer) {
 			buf.Myprintf("%v, ", n.Offset)
 		}
 		buf.Myprintf("%v", n.Rowcount)
+		if n.Offset != nil && n.Rowcount != nil {
+			offsetVar, ok1 := n.Offset.(*SQLVal)
+			rowcount, ok2 := n.Rowcount.(*SQLVal)
+			if ok1 && ok2 && offsetVar.Seq > rowcount.Seq {
+				i := offsetVar.Seq - 1
+				j := rowcount.Seq - 1
+				n.SwapArgs = func(args []interface{}) {
+					args[i] = args[j]
+				}
+			}
+		}
 	case Postgresql, Kingbase, Shentong:
 		// https://www.postgresql.org/docs/9.3/queries-limit.html
 		// SELECT select_list
@@ -218,7 +230,9 @@ type ConvertResult struct {
 	Placeholders  int
 
 	ConvertQuery func() string
+	SwapArgs     func(args []interface{})
 }
+
 type BindMode uint
 
 const (
@@ -227,7 +241,7 @@ const (
 	ByName
 )
 
-func (r ConvertResult) PickArgs(args []interface{}) (q string, bindArgs []interface{}) {
+func (r *ConvertResult) PickArgs(args []interface{}) (q string, bindArgs []interface{}) {
 	switch r.BindMode {
 	case ByName:
 		arg := args[0]
@@ -280,7 +294,12 @@ func (r ConvertResult) PickArgs(args []interface{}) (q string, bindArgs []interf
 		}
 	}
 
-	return r.ConvertQuery(), append(bindArgs, r.ExtraArgs...)
+	resultArgs := append(bindArgs, r.ExtraArgs...)
+	query := r.ConvertQuery()
+	if r.SwapArgs != nil {
+		r.SwapArgs(resultArgs)
+	}
+	return query, resultArgs
 }
 
 func CreateSlice(i interface{}) []interface{} {
@@ -376,7 +395,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 		return nil, fmt.Errorf("on duplicate key is not supported directly in SQL, error %w", ErrSyntax)
 	}
 
-	fixPlaceholders(insertStmt)
+	fixInsertPlaceholders(insertStmt)
 	cr := &ConvertResult{}
 
 	insertPos := -1
@@ -392,7 +411,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 			return true, nil
 		}
 		if _, ok := node.(*Limit); ok {
-			return false, err
+			return true, err
 		}
 
 		if v, ok := node.(*SQLVal); ok {
@@ -455,16 +474,22 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 		selectStmt.SetLimit(nil)
 	}
 
+	var compatibleLimit *CompatibleLimit
 	p := config.Paging
 	isPaging := selectStmt != nil && p != nil
 	if !isPaging && limit != nil {
-		selectStmt.SetLimitSQLNode(&CompatibleLimit{Limit: limit, DBType: t})
+		compatibleLimit = &CompatibleLimit{Limit: limit, DBType: t}
+		selectStmt.SetLimitSQLNode(compatibleLimit)
 	}
 
 	cr.ConvertQuery = func() string {
 		buf.Myprintf("%v", stmt)
 		q := buf.String()
 		buf.Reset()
+
+		if compatibleLimit != nil {
+			cr.SwapArgs = compatibleLimit.SwapArgs
+		}
 
 		if isPaging {
 			pagingClause, bindArgs := t.createPagingClause(buf.PlaceholderFormatter, p, cr.BindMode > 0)
@@ -478,6 +503,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 		if f := config.AutoIncrementField; f != "" {
 			q += " " + t.createAutoIncrementPK(cr, f)
 		}
+
 		return q
 	}
 
@@ -560,7 +586,7 @@ func (t DBType) checkMySQLOnDuplicateKey(insertStmt *Insert) error {
 	return nil
 }
 
-func fixPlaceholders(insertStmt *Insert) {
+func fixInsertPlaceholders(insertStmt *Insert) {
 	if insertStmt == nil {
 		return
 	}
