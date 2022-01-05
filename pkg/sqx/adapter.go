@@ -159,9 +159,19 @@ func (s *Sqx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return s.QueryContext(context.Background(), query, args...)
 }
 
+type ContextKey int
+
+const (
+	AdaptedKey ContextKey = iota + 1
+)
+
 func (s *Sqx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	s2 := SQL{Ctx: ctx, Q: query, Vars: args}
-	s2.adaptQuery(s)
+
+	if adapted, ok := ctx.Value(AdaptedKey).(bool); !ok || !adapted {
+		s2.adaptQuery(s)
+	}
+
 	rows, err := s.DB.QueryContext(ctx, s2.Q, s2.Vars...)
 	if err != nil {
 		logQueryError("", nil, err)

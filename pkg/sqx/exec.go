@@ -458,6 +458,7 @@ func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, 
 
 	ctx, cancel := s.prepareContext()
 	defer cancel()
+	ctx = context.WithValue(ctx, AdaptedKey, s.adapted)
 	r, err := db.QueryContext(ctx, s.Q, s.Vars...)
 
 	if err != nil {

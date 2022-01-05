@@ -28,6 +28,8 @@ type SQL struct {
 	Timeout        time.Duration
 	Limit          int
 	ConvertOptions []sqlparser.ConvertOption
+
+	adapted bool
 }
 
 func (s *SQL) AppendIf(ok bool, sub string, args ...interface{}) *SQL {
@@ -161,6 +163,7 @@ func (s *SQL) adaptQuery(db SqxDB) error {
 		}
 
 		s.Q, s.Vars = cr.PickArgs(s.Vars)
+		s.adapted = true
 	}
 
 	if !s.NoLog {
