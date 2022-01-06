@@ -85,7 +85,7 @@ func (c *Client) tickerRefresh() {
 
 // All list the keys in the store.
 func (c *Client) All() (kvs map[string]string, er error) {
-	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
+	_, dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *Client) Set(k, v string) (er error) {
 		"time": time.Now().Format(`2006-01-02 15:04:05.000`),
 	}
 
-	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
+	_, dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (c *Client) Get(k string) (found bool, v string, er error) {
 	}
 	c.cacheLock.Unlock()
 
-	dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
+	_, dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return false, "", err
 	}
@@ -199,7 +199,7 @@ func (c *Client) del(k string) (er error) {
 		"k":    k,
 		"time": time.Now().Format(`2006-01-02 15:04:05.000`),
 	}
-	db, err := sqx.Open(c.DriverName, c.DataSourceName)
+	_, db, err := sqx.Open(c.DriverName, c.DataSourceName)
 	if err != nil {
 		return err
 	}
