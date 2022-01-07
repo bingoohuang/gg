@@ -249,7 +249,7 @@ func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn)
 
 // RegisterTypeEncoderFunc register TypeEncoder for a type with encode/isEmpty function
 func (c *frozenConfig) RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
-	c.typeEncoders[typ] = &funcEncoder{fun, isEmptyFunc}
+	c.typeEncoders[typ] = &funcEncoder{fn: fun, isEmptyFn: isEmptyFunc}
 }
 
 // RegisterTypeEncoder register TypeEncoder for a type
@@ -264,7 +264,7 @@ func (c *frozenConfig) RegisterTypeEncoder(typ string, encoder ValEncoder) {
 
 // RegisterFieldEncoderFunc register TypeEncoder for a struct field with encode/isEmpty function
 func RegisterFieldEncoderFunc(typ string, field string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
-	RegisterFieldEncoder(typ, field, &funcEncoder{fun, isEmptyFunc})
+	RegisterFieldEncoder(typ, field, &funcEncoder{fn: fun, isEmptyFn: isEmptyFunc})
 }
 
 // RegisterFieldEncoder register TypeEncoder for a struct field
