@@ -49,6 +49,11 @@ type API interface {
 	RegisterExtension(extension Extension)
 	DecoderOf(typ reflect2.Type) ValDecoder
 	EncoderOf(typ reflect2.Type) ValEncoder
+
+	RegisterTypeEncoder(typ string, encoder ValEncoder)
+	RegisterTypeDecoder(typ string, decoder ValDecoder)
+	RegisterFieldEncoder(typ string, field string, encoder ValEncoder)
+	RegisterFieldDecoder(typ string, field string, decoder ValDecoder)
 }
 
 // ConfigDefault the default API
@@ -83,11 +88,16 @@ type frozenConfig struct {
 	encoderCache                  *concurrent.Map
 	encoderExtension              Extension
 	decoderExtension              Extension
-	extraExtensions               Extensions
+	extensions                    Extensions
 	streamPool                    *sync.Pool
 	iteratorPool                  *sync.Pool
 	caseSensitive                 bool
 	int64AsString                 bool
+
+	typeDecoders  map[string]ValDecoder
+	fieldDecoders map[string]ValDecoder
+	typeEncoders  map[string]ValEncoder
+	fieldEncoders map[string]ValEncoder
 }
 
 func (c *frozenConfig) initCache() {
@@ -143,6 +153,11 @@ func (c Config) Froze() API {
 		disallowUnknownFields:         c.DisallowUnknownFields,
 		caseSensitive:                 c.CaseSensitive,
 		int64AsString:                 c.Int64AsString,
+
+		typeDecoders:  map[string]ValDecoder{},
+		fieldDecoders: map[string]ValDecoder{},
+		typeEncoders:  map[string]ValEncoder{},
+		fieldEncoders: map[string]ValEncoder{},
 	}
 	api.streamPool = &sync.Pool{New: func() interface{} { return NewStream(api, nil, 512) }}
 	api.iteratorPool = &sync.Pool{New: func() interface{} { return NewIterator(api) }}
@@ -217,7 +232,7 @@ func (c *frozenConfig) useNumber(extension DecoderExtension) {
 func (c *frozenConfig) getTagKey() string { return ss.Or(c.configBeforeFrozen.TagKey, "json") }
 
 func (c *frozenConfig) RegisterExtension(extension Extension) {
-	c.extraExtensions = append(c.extraExtensions, extension)
+	c.extensions = append(c.extensions, extension)
 }
 
 type lossyFloat32Encoder struct{}
@@ -263,18 +278,6 @@ func (c *frozenConfig) escapeHTML(encoderExtension EncoderExtension) {
 	encoderExtension[PtrElem((*string)(nil))] = &htmlEscapedStringEncoder{}
 }
 
-func (c *frozenConfig) cleanDecoders() {
-	typeDecoders = map[string]ValDecoder{}
-	fieldDecoders = map[string]ValDecoder{}
-	*c = *(c.configBeforeFrozen.Froze().(*frozenConfig))
-}
-
-func (c *frozenConfig) cleanEncoders() {
-	typeEncoders = map[string]ValEncoder{}
-	fieldEncoders = map[string]ValEncoder{}
-	*c = *(c.configBeforeFrozen.Froze().(*frozenConfig))
-}
-
 func (c *frozenConfig) MarshalToString(parent context.Context, v interface{}) (string, error) {
 	stream := c.BorrowStream(nil)
 	defer c.ReturnStream(stream)
@@ -316,7 +319,7 @@ func (c *frozenConfig) MarshalIndent(parent context.Context, v interface{}, pref
 	}
 	newCfg := c.configBeforeFrozen
 	newCfg.IndentionStep = len(indent)
-	return newCfg.frozeWithCacheReuse(c.extraExtensions).Marshal(createCfgContext(parent, c), v)
+	return newCfg.frozeWithCacheReuse(c.extensions).Marshal(createCfgContext(parent, c), v)
 }
 
 func (c *frozenConfig) UnmarshalFromString(parent context.Context, str string, v interface{}) error {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
@@ -67,12 +68,14 @@ func (c *CustomEncoderAttachmentTestStructEncoder) IsEmpty(context.Context, unsa
 }
 
 func Test_custom_encoder_attachment(t *testing.T) {
-
-	jsoni.RegisterTypeEncoder("test.CustomEncoderAttachmentTestStruct", &CustomEncoderAttachmentTestStructEncoder{})
 	expectedValue := 17
 	should := require.New(t)
 	buf := &bytes.Buffer{}
-	stream := jsoni.NewStream(jsoni.Config{SortMapKeys: true}.Froze(), buf, 4096)
+	config := jsoni.Config{SortMapKeys: true}.Froze()
+	config.RegisterTypeEncoder(reflect2.TypeOf(CustomEncoderAttachmentTestStruct{}).String(),
+		&CustomEncoderAttachmentTestStructEncoder{})
+
+	stream := jsoni.NewStream(config, buf, 4096)
 	stream.Attachment = expectedValue
 	val := map[string]CustomEncoderAttachmentTestStruct{"a": {}}
 	stream.WriteVal(context.Background(), val)

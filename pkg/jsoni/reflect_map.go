@@ -48,7 +48,7 @@ func decoderOfMapKey(ctx *ctx, typ reflect2.Type) ValDecoder {
 	if decoder := ctx.decoderExtension.CreateMapKeyDecoder(typ); decoder != nil {
 		return decoder
 	}
-	if decoder := ctx.extraExtensions.CreateMapKeyDecoder(typ); decoder != nil {
+	if decoder := ctx.extensions.CreateMapKeyDecoder(typ); decoder != nil {
 		return decoder
 	}
 
@@ -90,7 +90,7 @@ func encoderOfMapKey(ctx *ctx, typ reflect2.Type) ValEncoder {
 	if encoder := ctx.encoderExtension.CreateMapKeyEncoder(typ); encoder != nil {
 		return encoder
 	}
-	if encoder := ctx.extraExtensions.CreateMapKeyEncoder(typ); encoder != nil {
+	if encoder := ctx.extensions.CreateMapKeyEncoder(typ); encoder != nil {
 		return encoder
 	}
 	if typ == textMarshalerType {

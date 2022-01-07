@@ -11,13 +11,6 @@ import (
 	"unsafe"
 )
 
-var typeDecoders = map[string]ValDecoder{}
-var fieldDecoders = map[string]ValDecoder{}
-var typeEncoders = map[string]ValEncoder{}
-var fieldEncoders = map[string]ValEncoder{}
-
-var extensions Extensions
-
 type Extensions []Extension
 
 func (es Extensions) UpdateStructDescriptor(structDescriptor *StructDescriptor) {
@@ -104,12 +97,14 @@ type Binding struct {
 
 // Extension the one for all SPI. Customize encoding/decoding by specifying alternate encoder/decoder.
 // Can also rename fields by UpdateStructDescriptor.
+
 type Extension interface {
 	UpdateStructDescriptor(structDescriptor *StructDescriptor)
 	CreateMapKeyDecoder(typ reflect2.Type) ValDecoder
 	CreateMapKeyEncoder(typ reflect2.Type) ValEncoder
 	CreateDecoder(typ reflect2.Type) ValDecoder
 	CreateEncoder(typ reflect2.Type) ValEncoder
+
 	DecorateDecoder(typ reflect2.Type, decoder ValDecoder) ValDecoder
 	DecorateEncoder(typ reflect2.Type, encoder ValEncoder) ValEncoder
 }
@@ -213,10 +208,24 @@ type DecoderFunc func(ctx context.Context, ptr unsafe.Pointer, iter *Iterator)
 type EncoderFunc func(ctx context.Context, ptr unsafe.Pointer, stream *Stream)
 
 // RegisterTypeDecoderFunc register TypeDecoder for a type with function
-func RegisterTypeDecoderFunc(typ string, fun DecoderFunc) { typeDecoders[typ] = &funcDecoder{fun} }
+func RegisterTypeDecoderFunc(typ string, fun DecoderFunc) {
+	(ConfigDefault.(*frozenConfig)).RegisterTypeDecoderFunc(typ, fun)
+}
 
-// RegisterTypeDecoder register TypeDecoder for a typ
-func RegisterTypeDecoder(typ string, decoder ValDecoder) { typeDecoders[typ] = decoder }
+// RegisterTypeDecoderFunc register TypeDecoder for a type with function
+func (c *frozenConfig) RegisterTypeDecoderFunc(typ string, fun DecoderFunc) {
+	c.typeDecoders[typ] = &funcDecoder{fun}
+}
+
+// RegisterTypeDecoder register TypeDecoder for a typ.
+func RegisterTypeDecoder(typ string, decoder ValDecoder) {
+	(ConfigDefault.(*frozenConfig)).RegisterTypeDecoder(typ, decoder)
+}
+
+// RegisterTypeDecoder register TypeDecoder for a typ.
+func (c *frozenConfig) RegisterTypeDecoder(typ string, decoder ValDecoder) {
+	c.typeDecoders[typ] = decoder
+}
 
 // RegisterFieldDecoderFunc register TypeDecoder for a struct field with function
 func RegisterFieldDecoderFunc(typ string, field string, fun DecoderFunc) {
@@ -225,16 +234,33 @@ func RegisterFieldDecoderFunc(typ string, field string, fun DecoderFunc) {
 
 // RegisterFieldDecoder register TypeDecoder for a struct field
 func RegisterFieldDecoder(typ string, field string, decoder ValDecoder) {
-	fieldDecoders[fmt.Sprintf("%s/%s", typ, field)] = decoder
+	(ConfigDefault.(*frozenConfig)).RegisterFieldDecoder(typ, field, decoder)
+}
+
+// RegisterFieldDecoder register TypeDecoder for a struct field
+func (c *frozenConfig) RegisterFieldDecoder(typ string, field string, decoder ValDecoder) {
+	c.fieldDecoders[fmt.Sprintf("%s/%s", typ, field)] = decoder
 }
 
 // RegisterTypeEncoderFunc register TypeEncoder for a type with encode/isEmpty function
 func RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
-	typeEncoders[typ] = &funcEncoder{fun, isEmptyFunc}
+	(ConfigDefault.(*frozenConfig)).RegisterTypeEncoderFunc(typ, fun, isEmptyFunc)
+}
+
+// RegisterTypeEncoderFunc register TypeEncoder for a type with encode/isEmpty function
+func (c *frozenConfig) RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
+	c.typeEncoders[typ] = &funcEncoder{fun, isEmptyFunc}
 }
 
 // RegisterTypeEncoder register TypeEncoder for a type
-func RegisterTypeEncoder(typ string, encoder ValEncoder) { typeEncoders[typ] = encoder }
+func RegisterTypeEncoder(typ string, encoder ValEncoder) {
+	(ConfigDefault.(*frozenConfig)).RegisterTypeEncoder(typ, encoder)
+}
+
+// RegisterTypeEncoder register TypeEncoder for a type
+func (c *frozenConfig) RegisterTypeEncoder(typ string, encoder ValEncoder) {
+	c.typeEncoders[typ] = encoder
+}
 
 // RegisterFieldEncoderFunc register TypeEncoder for a struct field with encode/isEmpty function
 func RegisterFieldEncoderFunc(typ string, field string, fun EncoderFunc, isEmptyFunc IsEmptyFn) {
@@ -243,12 +269,17 @@ func RegisterFieldEncoderFunc(typ string, field string, fun EncoderFunc, isEmpty
 
 // RegisterFieldEncoder register TypeEncoder for a struct field
 func RegisterFieldEncoder(typ string, field string, encoder ValEncoder) {
-	fieldEncoders[fmt.Sprintf("%s/%s", typ, field)] = encoder
+	(ConfigDefault.(*frozenConfig)).RegisterFieldEncoder(typ, field, encoder)
+}
+
+// RegisterFieldEncoder register TypeEncoder for a struct field
+func (c *frozenConfig) RegisterFieldEncoder(typ string, field string, encoder ValEncoder) {
+	c.fieldEncoders[fmt.Sprintf("%s/%s", typ, field)] = encoder
 }
 
 // RegisterExtension register extension
 func RegisterExtension(extension Extension) {
-	extensions = append(extensions, extension)
+	(ConfigDefault.(*frozenConfig)).RegisterExtension(extension)
 }
 
 func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
@@ -257,28 +288,28 @@ func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 		return nil
 	}
 
-	d = extensions.decorateDecoder(typ, d)
+	d = ctx.frozenConfig.extensions.decorateDecoder(typ, d)
 	d = ctx.decoderExtension.DecorateDecoder(typ, d)
-	d = ctx.extraExtensions.decorateDecoder(typ, d)
+	d = ctx.extensions.decorateDecoder(typ, d)
 
 	return d
 }
 func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
-	if d := extensions.createDecoder(typ); d != nil {
+	if d := ctx.frozenConfig.extensions.createDecoder(typ); d != nil {
 		return d
 	}
 	if d := ctx.decoderExtension.CreateDecoder(typ); d != nil {
 		return d
 	}
-	if d := ctx.extraExtensions.createDecoder(typ); d != nil {
+	if d := ctx.extensions.createDecoder(typ); d != nil {
 		return d
 	}
-	if d := typeDecoders[typ.String()]; d != nil {
+	if d := ctx.frozenConfig.typeDecoders[typ.String()]; d != nil {
 		return d
 	}
 	if typ.Kind() == reflect.Ptr {
 		ptrType := typ.(*reflect2.UnsafePtrType)
-		if d := typeDecoders[ptrType.Elem().String()]; d != nil {
+		if d := ctx.frozenConfig.typeDecoders[ptrType.Elem().String()]; d != nil {
 			return &OptionalDecoder{ptrType.Elem(), d}
 		}
 	}
@@ -291,28 +322,28 @@ func getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
 		return nil
 	}
 
-	e = extensions.decorateEncoder(typ, e)
+	e = ctx.frozenConfig.extensions.decorateEncoder(typ, e)
 	e = ctx.encoderExtension.DecorateEncoder(typ, e)
-	e = ctx.extraExtensions.decorateEncoder(typ, e)
+	e = ctx.extensions.decorateEncoder(typ, e)
 
 	return e
 }
 
 func _getTypeEncoderFromExtension(ctx *ctx, typ reflect2.Type) ValEncoder {
-	if e := extensions.createEncoder(typ); e != nil {
+	if e := ctx.frozenConfig.extensions.createEncoder(typ); e != nil {
 		return e
 	}
 	if e := ctx.encoderExtension.CreateEncoder(typ); e != nil {
 		return e
 	}
-	if e := ctx.extraExtensions.createEncoder(typ); e != nil {
+	if e := ctx.extensions.createEncoder(typ); e != nil {
 		return e
 	}
-	if e := typeEncoders[typ.String()]; e != nil {
+	if e := ctx.frozenConfig.typeEncoders[typ.String()]; e != nil {
 		return e
 	}
 	if typ.Kind() == reflect.Ptr {
-		if e := typeEncoders[typ.(*reflect2.UnsafePtrType).Elem().String()]; e != nil {
+		if e := ctx.frozenConfig.typeEncoders[typ.(*reflect2.UnsafePtrType).Elem().String()]; e != nil {
 			return &OptionalEncoder{e}
 		}
 	}
@@ -364,11 +395,11 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 		}
 		fieldNames := calcFieldNames(field.Name(), tagParts[0], tag)
 		fieldCacheKey := fmt.Sprintf("%s/%s", typ.String(), field.Name())
-		decoder := fieldDecoders[fieldCacheKey]
+		decoder := ctx.frozenConfig.fieldDecoders[fieldCacheKey]
 		if decoder == nil {
 			decoder = decoderOfType(ctx.append(field.Name()), field.Type())
 		}
-		encoder := fieldEncoders[fieldCacheKey]
+		encoder := ctx.frozenConfig.fieldEncoders[fieldCacheKey]
 		if encoder == nil {
 			encoder = encoderOfType(ctx.append(field.Name()), field.Type())
 		}
@@ -380,10 +411,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 }
 func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
 	structDescriptor := &StructDescriptor{Type: typ, Fields: bindings}
-	extensions.UpdateStructDescriptor(structDescriptor)
+	ctx.frozenConfig.extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
 	ctx.decoderExtension.UpdateStructDescriptor(structDescriptor)
-	ctx.extraExtensions.UpdateStructDescriptor(structDescriptor)
+	ctx.extensions.UpdateStructDescriptor(structDescriptor)
 	processTags(structDescriptor, ctx.frozenConfig)
 	// merge normal & embedded bindings & sort with original order
 	allBindings := sortableBindings(append(embeddedBindings, structDescriptor.Fields...))

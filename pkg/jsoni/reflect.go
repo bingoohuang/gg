@@ -120,9 +120,9 @@ func decoderOfType(ctx *ctx, typ reflect2.Type) ValDecoder {
 		return d
 	}
 	decoder := createDecoderOfType(ctx, typ)
-	decoder = extensions.decorateDecoder(typ, decoder)
+	decoder = ctx.frozenConfig.extensions.decorateDecoder(typ, decoder)
 	decoder = ctx.decoderExtension.DecorateDecoder(typ, decoder)
-	decoder = ctx.extraExtensions.decorateDecoder(typ, decoder)
+	decoder = ctx.extensions.decorateDecoder(typ, decoder)
 	return decoder
 }
 
@@ -207,9 +207,9 @@ func encoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 		return encoder
 	}
 	encoder := createEncoderOfType(ctx, typ)
-	encoder = extensions.decorateEncoder(typ, encoder)
+	encoder = ctx.frozenConfig.extensions.decorateEncoder(typ, encoder)
 	encoder = ctx.encoderExtension.DecorateEncoder(typ, encoder)
-	encoder = ctx.extraExtensions.decorateEncoder(typ, encoder)
+	encoder = ctx.extensions.decorateEncoder(typ, encoder)
 	return encoder
 }
 
