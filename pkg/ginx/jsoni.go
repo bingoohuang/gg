@@ -77,16 +77,52 @@ func validate(obj interface{}) error {
 
 // JSONRender contains the given interface object.
 type JSONRender struct {
-	Data interface{}
+	Data     interface{}
+	JsoniAPI jsoni.API
 }
 
 var jsonContentType = []string{"application/json; charset=utf-8"}
 
 // Render (JSON) writes data with custom ContentType.
-func (r JSONRender) Render(w http.ResponseWriter) (err error) { return WriteJSON(w, r.Data) }
+func (r JSONRender) Render(w http.ResponseWriter) (err error) {
+	return WriteJSONOptions(w, r.Data, WithJsoniAPI(r.JsoniAPI))
+}
 
 // WriteContentType (JSON) writes JSON ContentType.
 func (r JSONRender) WriteContentType(w http.ResponseWriter) { writeContentType(w, jsonContentType) }
+
+type WriteJSONConfig struct {
+	JsoniAPI jsoni.API
+}
+
+type WriteJSONConfigFn func(*WriteJSONConfig)
+
+func WithJsoniAPI(api jsoni.API) WriteJSONConfigFn {
+	return func(o *WriteJSONConfig) {
+		o.JsoniAPI = api
+	}
+}
+
+// WriteJSONOptions marshals the given interface object and writes it with custom ContentType.
+func WriteJSONOptions(w http.ResponseWriter, obj interface{}, fns ...WriteJSONConfigFn) error {
+	options := &WriteJSONConfig{}
+	for _, fn := range fns {
+		fn(options)
+	}
+
+	if options.JsoniAPI == nil {
+		options.JsoniAPI = JsoniConfig
+	}
+
+	writeContentType(w, jsonContentType)
+
+	data, err := options.JsoniAPI.Marshal(nil, obj)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	return err
+}
 
 // WriteJSON marshals the given interface object and writes it with custom ContentType.
 func WriteJSON(w http.ResponseWriter, obj interface{}) error {
