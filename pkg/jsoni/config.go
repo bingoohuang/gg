@@ -52,6 +52,8 @@ type API interface {
 
 	RegisterTypeEncoder(typ string, encoder ValEncoder)
 	RegisterTypeDecoder(typ string, decoder ValDecoder)
+	RegisterTypeEncoderFunc(typ string, fun EncoderFunc, isEmptyFunc IsEmptyFn)
+	RegisterTypeDecoderFunc(typ string, fun DecoderFunc)
 	RegisterFieldEncoder(typ string, field string, encoder ValEncoder)
 	RegisterFieldDecoder(typ string, field string, decoder ValDecoder)
 }
