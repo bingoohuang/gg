@@ -2,6 +2,8 @@ package jsoni
 
 import (
 	"context"
+	"time"
+	"unsafe"
 )
 
 // MarshalerContext is the interface implemented by types that
@@ -21,3 +23,10 @@ type contextKey int
 const (
 	ContextCfg contextKey = iota
 )
+
+// CreateTimeEncodeFn creates a time.Time encoding function on the specified layout.
+func CreateTimeEncodeFn(layout string) EncoderFunc {
+	return func(_ context.Context, p unsafe.Pointer, stream *Stream) {
+		stream.WriteString((*((*time.Time)(p))).Format(layout))
+	}
+}
