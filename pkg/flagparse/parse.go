@@ -172,7 +172,7 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 		checkVersionShow()
 	}
 
-	if options.initFiles != nil && initing {
+	if initing {
 		ctl.Config{Initing: true, InitFiles: options.initFiles}.ProcessInit()
 	}
 
