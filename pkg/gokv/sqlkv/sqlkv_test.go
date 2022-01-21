@@ -42,7 +42,7 @@ func TestSQL(t *testing.T) {
 
 	client, err := sqlkv.NewClient(sqlkv.Config{
 		DataSourceName: fmt.Sprintf("user:pass@tcp(localhost:%d)/testdb", port),
-		UpdateSQL:      "update kv set v = '{{.Value}}', updated = '{{.Time}}' where k = '{{.Key}}' and state = 1",
+		UpdateSQL:      "update kv set v = :v, updated = :time where k = :k and state = 1",
 	})
 
 	k := "Key1"
