@@ -4,6 +4,15 @@ import (
 	"strings"
 )
 
+// Left returns the left n runes of s at most.
+func Left(s string, n int) string {
+	if n <= len(s) {
+		return s[:n]
+	}
+
+	return s
+}
+
 func IsDigits(s string) bool {
 	for _, c := range s {
 		if c < '0' || c > '9' {
