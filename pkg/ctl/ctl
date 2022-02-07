@@ -64,8 +64,8 @@ function start() {
   fi
 
   local redirectLog="/dev/null"
-  if [[ -n "$NOHUP_LOG" ]]; then
-    redirectLog=${app}.nohup.log
+  if [[ -n "$NOHUP_LOG" ] || [ -n "$NHL" ]]; then
+    redirectLog=nohup.${app}.log
   fi
 
   nohup ${app} {{.BinArgs}} ${moreArgs} >>$redirectLog 2>&1 &
