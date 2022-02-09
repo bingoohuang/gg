@@ -105,7 +105,7 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			switch ft.Elem().Kind() {
 			case reflect.String:
 				pp := p.(*[]string)
-				f.Var(&arrayFlags{pp: pp, Value: val}, name, usage)
+				f.Var(&ArrayFlags{pp: pp, Value: val}, name, usage)
 				if required == "true" {
 					requiredVars = append(requiredVars, requiredVar{name: name, pp: pp})
 				}
@@ -232,14 +232,14 @@ func checkVersion(checker func(), arg interface{}, fiName string, bp *bool) func
 	return checker
 }
 
-type arrayFlags struct {
+type ArrayFlags struct {
 	Value string
 	pp    *[]string
 }
 
-func (i *arrayFlags) String() string { return i.Value }
+func (i *ArrayFlags) String() string { return i.Value }
 
-func (i *arrayFlags) Set(value string) error {
+func (i *ArrayFlags) Set(value string) error {
 	*i.pp = append(*i.pp, value)
 	return nil
 }
