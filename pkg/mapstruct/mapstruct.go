@@ -366,8 +366,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	}
 
 	if input == nil {
-		// If the data is nil, then we don't set anything, unless ZeroFields is set
-		// to true.
+		// If the data is nil, then we don't set anything, unless ZeroFields is set to true.
 		if d.ZeroFields {
 			outVal.Set(reflect.Zero(outVal.Type()))
 
@@ -445,7 +444,6 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	return err
 }
 
-// nolint:gochecknoglobals
 var (
 	TimeType = reflect.TypeOf((*time.Time)(nil)).Elem()
 )
@@ -507,20 +505,20 @@ func (d *Decoder) decodeTime(name string, data interface{}, val reflect.Value) (
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 
-	var tim time.Time
-
 	switch {
 	case dataKind == reflect.String:
-		tim, err = dateparse.ParseLocal(dataVal.String())
+		if s := dataVal.String(); s != "" {
+			tim, err := dateparse.ParseLocal(s)
+			if err != nil {
+				return true, err
+			}
+
+			val.Set(reflect.ValueOf(tim).Convert(val.Type()))
+		}
 	default:
 		return false, nil
 	}
 
-	if err != nil {
-		return true, err
-	}
-
-	val.Set(reflect.ValueOf(tim).Convert(val.Type()))
 	return true, nil
 }
 
@@ -977,20 +975,21 @@ func getTag(tag reflect.StructTag, names []string) string {
 	return ""
 }
 
-func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) (bool, error) {
-	// If the input data is nil, then we want to just set the output
-	// pointer to be nil as well.
+func (d *Decoder) decodePtr(name string, data interface{}, outVal reflect.Value) (bool, error) {
+	// If the input data is nil, then we want to just set the output pointer to be nil as well.
 	isNil := data == nil
 	if !isNil {
 		switch v := reflect.Indirect(reflect.ValueOf(data)); v.Kind() {
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 			isNil = v.IsNil()
+		case reflect.String:
+			isNil = data == ""
 		}
 	}
 	if isNil {
-		if !val.IsNil() && val.CanSet() {
-			nilValue := reflect.New(val.Type()).Elem()
-			val.Set(nilValue)
+		if !outVal.IsNil() && outVal.CanSet() {
+			nilValue := reflect.New(outVal.Type()).Elem()
+			outVal.Set(nilValue)
 		}
 
 		return true, nil
@@ -998,10 +997,10 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) (b
 
 	// Create an element of the concrete (non pointer) type and decode
 	// into that. Then set the value of the pointer to this type.
-	valType := val.Type()
+	valType := outVal.Type()
 	valElemType := valType.Elem()
-	if val.CanSet() {
-		realVal := val
+	if outVal.CanSet() {
+		realVal := outVal
 		if realVal.IsNil() || d.ZeroFields {
 			realVal = reflect.New(valElemType)
 		}
@@ -1010,9 +1009,9 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) (b
 			return false, err
 		}
 
-		val.Set(realVal)
+		outVal.Set(realVal)
 	} else {
-		if err := d.decode(name, data, reflect.Indirect(val)); err != nil {
+		if err := d.decode(name, data, reflect.Indirect(outVal)); err != nil {
 			return false, err
 		}
 	}
