@@ -2,12 +2,37 @@ package mapstruct
 
 import (
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
+
+type NullTime struct {
+	DeletedTime *time.Time
+}
+
+func TestNullTime(t *testing.T) {
+	var nullTimes []NullTime
+
+	decoder, err := NewDecoder(&Config{
+		Result:   &nullTimes,
+		Squash:   true,
+		WeakType: true,
+	})
+	assert.Nil(t, err)
+
+	values := []map[string]string{
+		{"DeletedTime": ""},
+	}
+
+	err = decoder.Decode(values)
+	assert.Nil(t, err)
+	assert.Nil(t, nullTimes[0].DeletedTime)
+}
 
 type Basic struct {
 	Vstring     string
