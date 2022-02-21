@@ -202,6 +202,23 @@ func (s *stringValue) Set(val string) error {
 func (s *stringValue) Get() interface{} { return string(*s) }
 func (s *stringValue) String() string   { return fmt.Sprintf("%s", *s) }
 
+type StringBool struct {
+	val    string
+	exists bool
+}
+
+func (i *StringBool) Val() string      { return i.val }
+func (i *StringBool) String() string   { return i.val }
+func (i *StringBool) Get() interface{} { return i.val }
+func (i *StringBool) Set(value string) error {
+	i.val = value
+	i.exists = true
+	return nil
+}
+
+func (i *StringBool) AsBool() bool     { return i.exists && i.val == "" }
+func (i *StringBool) SetExists(b bool) { i.exists = b }
+
 type stringsValue struct {
 	arr []string
 	p   *[]string
@@ -1028,12 +1045,19 @@ func (f *FlagSet) parseOne() (bool, error) {
 			hasValue = true
 			value, f.args = f.args[0], f.args[1:]
 		}
+
 		if !hasValue {
-			return false, f.failf("flag needs an argument: -%s", name)
+			if sb, ok := flag.Value.(*StringBool); ok {
+				sb.SetExists(true)
+			} else {
+				return false, f.failf("flag needs an argument: -%s", name)
+			}
+		} else {
+			if err := flag.Value.Set(value); err != nil {
+				return false, f.failf("invalid value %q for flag -%s: %v", value, name, err)
+			}
 		}
-		if err := flag.Value.Set(value); err != nil {
-			return false, f.failf("invalid value %q for flag -%s: %v", value, name, err)
-		}
+
 	}
 	if f.actual == nil {
 		f.actual = make(map[string]*Flag)
