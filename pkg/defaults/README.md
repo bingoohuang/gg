@@ -1,5 +1,6 @@
-defaults
-========
+# defaults
+
+fork from https://github.com/creasty/defaults
 
 Initialize structs with default values
 
