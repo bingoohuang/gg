@@ -144,7 +144,7 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			f.Float32Var(p.(*float32), name, cast.ToFloat32(val), usage)
 		case reflect.Uint64:
 			if size == "true" {
-				f.Var(newSizeFlag(p.(*uint64), val), name, usage)
+				f.Var(flag.NewSizeFlag(p.(*uint64), val), name, usage)
 			}
 		case reflect.Int64:
 			f.Int64Var(p.(*int64), name, cast.ToInt64(val), usage)

@@ -202,23 +202,6 @@ func (s *stringValue) Set(val string) error {
 func (s *stringValue) Get() interface{} { return string(*s) }
 func (s *stringValue) String() string   { return fmt.Sprintf("%s", *s) }
 
-type StringBool struct {
-	val    string
-	exists bool
-}
-
-func (i *StringBool) Val() string      { return i.val }
-func (i *StringBool) String() string   { return i.val }
-func (i *StringBool) Get() interface{} { return i.val }
-func (i *StringBool) Set(value string) error {
-	i.val = value
-	i.exists = true
-	return nil
-}
-
-func (i *StringBool) AsBool() bool     { return i.exists && i.val == "" }
-func (i *StringBool) SetExists(b bool) { i.exists = b }
-
 type stringsValue struct {
 	arr []string
 	p   *[]string
@@ -859,15 +842,22 @@ func Float64(name string, value float64, usage string) *float64 {
 // DurationVar defines a time.Duration flag with specified name, default value, and usage string.
 // The argument p points to a time.Duration variable in which to store the value of the flag.
 // The flag accepts a value acceptable to time.ParseDuration.
-func (f *FlagSet) DurationVar(p *time.Duration, name string, value time.Duration, usage string) {
-	f.Var(newDurationValue(value, p), name, usage)
+func DurationVar(p *time.Duration, name string, value time.Duration, usage string) {
+	CommandLine.Var(newDurationValue(value, p), name, usage)
+}
+
+// Duration defines a time.Duration flag with specified name, default value, and usage string.
+// The return value is the address of a time.Duration variable that stores the value of the flag.
+// The flag accepts a value acceptable to time.ParseDuration.
+func Duration(name string, value time.Duration, usage string) *time.Duration {
+	return CommandLine.Duration(name, value, usage)
 }
 
 // DurationVar defines a time.Duration flag with specified name, default value, and usage string.
 // The argument p points to a time.Duration variable in which to store the value of the flag.
 // The flag accepts a value acceptable to time.ParseDuration.
-func DurationVar(p *time.Duration, name string, value time.Duration, usage string) {
-	CommandLine.Var(newDurationValue(value, p), name, usage)
+func (f *FlagSet) DurationVar(p *time.Duration, name string, value time.Duration, usage string) {
+	f.Var(newDurationValue(value, p), name, usage)
 }
 
 // Duration defines a time.Duration flag with specified name, default value, and usage string.
@@ -877,13 +867,6 @@ func (f *FlagSet) Duration(name string, value time.Duration, usage string) *time
 	p := new(time.Duration)
 	f.DurationVar(p, name, value, usage)
 	return p
-}
-
-// Duration defines a time.Duration flag with specified name, default value, and usage string.
-// The return value is the address of a time.Duration variable that stores the value of the flag.
-// The flag accepts a value acceptable to time.ParseDuration.
-func Duration(name string, value time.Duration, usage string) *time.Duration {
-	return CommandLine.Duration(name, value, usage)
 }
 
 // Var defines a flag with the specified name and usage string. The type and
