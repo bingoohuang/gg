@@ -14,9 +14,13 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/gofuzz v1.0.0
+	github.com/gookit/color v1.5.0
+	github.com/gookit/goutil v0.4.4
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f
 	github.com/juju/testing v0.0.0-20201216035041-2be42bba85f3 // indirect
+	github.com/kortschak/utter v1.5.0
+	github.com/kr/pretty v0.1.0
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.15-0.20210929170527-d423e9c6c3bf // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
