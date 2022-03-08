@@ -6,7 +6,32 @@ import (
 	"github.com/gookit/color"
 	"github.com/kortschak/utter"
 	"github.com/kr/pretty"
+	"sync"
 )
+
+func ExampleGotcha1() {
+	type MyStruct struct {
+		A int
+	}
+
+	var wg sync.WaitGroup
+
+	values := []MyStruct{{1}, {2}, {3}}
+	var output []*MyStruct
+	for i, v := range values {
+		output = append(output, &values[i])
+		wg.Add(1)
+		go func(m MyStruct) {
+			defer wg.Done()
+			dump.V(m)
+		}(v)
+	}
+
+	dump.V(output)
+	wg.Wait()
+
+	// Output:
+}
 
 func ExampleBasic() {
 	dump.P(
