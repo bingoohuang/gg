@@ -30,6 +30,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/timex"
 
 	"golang.org/x/net/idna"
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 var (
