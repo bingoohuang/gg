@@ -2,12 +2,24 @@ package dump_test
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/bingoohuang/gg/pkg/dump"
 	"github.com/gookit/color"
 	"github.com/kortschak/utter"
 	"github.com/kr/pretty"
-	"sync"
 )
+
+func ExampleGotcha2() {
+	type cc struct {
+		a int
+		b [3]byte
+	}
+
+	c1 := cc{a: 1, b: [3]byte{1, 2, 3}}
+	dump.P(c1)
+	// Output:
+}
 
 func ExampleGotcha1() {
 	type MyStruct struct {
@@ -109,7 +121,6 @@ func ExampleSlice() {
 	)
 
 	// Output:
-
 }
 
 func ExampleStruct() {
