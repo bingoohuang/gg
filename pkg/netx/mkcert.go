@@ -30,7 +30,6 @@ import (
 	"github.com/bingoohuang/gg/pkg/timex"
 
 	"golang.org/x/net/idna"
-	"software.sslmate.com/src/go-pkcs12"
 )
 
 var (
@@ -155,11 +154,14 @@ func (m *MkCert) makeCert(hosts []string) error {
 	if m.CertDuration == 0 {
 		m.CertDuration, _ = timex.ParseDuration("2y3M")
 	}
-	expiration := time.Now().Add(m.CertDuration)
+
 	serialNumber, err := randomSerialNumber()
 	if err != nil {
 		return err
 	}
+
+	start := time.Now().UTC()
+	expiration := start.Add(m.CertDuration)
 
 	c := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -168,7 +170,7 @@ func (m *MkCert) makeCert(hosts []string) error {
 			OrganizationalUnit: []string{userAndHostname},
 		},
 
-		NotBefore: time.Now(), NotAfter: expiration,
+		NotBefore: start, NotAfter: expiration,
 		KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 	}
 
@@ -357,18 +359,20 @@ func (m *MkCert) makeCertFromCSR() error {
 	if m.CertDuration == 0 {
 		m.CertDuration, _ = timex.ParseDuration("2y3M")
 	}
-	expiration := time.Now().Add(m.CertDuration)
 	serialNumber, err := randomSerialNumber()
 	if err != nil {
 		return err
 	}
+
+	start := time.Now().UTC()
+	expiration := start.Add(m.CertDuration)
 
 	tpl := &x509.Certificate{
 		SerialNumber:    serialNumber,
 		Subject:         csr.Subject,
 		ExtraExtensions: csr.Extensions, // includes requested SANs, KUs and EKUs
 
-		NotBefore: time.Now(), NotAfter: expiration,
+		NotBefore: start, NotAfter: expiration,
 
 		// If the CSR does not request a SAN extension, fix it up for them as
 		// the Common Name field does not work in modern browsers. Otherwise,
@@ -497,6 +501,9 @@ func (m *MkCert) newCA() error {
 		m.RootDuration, _ = timex.ParseDuration("10y")
 	}
 
+	start := time.Now().UTC()
+	expiration := start.Add(m.RootDuration)
+
 	tpl := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
@@ -510,8 +517,7 @@ func (m *MkCert) newCA() error {
 		},
 		SubjectKeyId: skid[:],
 
-		NotAfter:  time.Now().Add(m.RootDuration),
-		NotBefore: time.Now(),
+		NotBefore: start, NotAfter: expiration,
 
 		KeyUsage: x509.KeyUsageCertSign,
 
