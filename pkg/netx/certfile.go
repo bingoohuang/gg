@@ -12,13 +12,13 @@ import (
 	"github.com/bingoohuang/gg/pkg/ss"
 )
 
-type File struct {
+type CertFiles struct {
 	Cert string
 	Key  string
 }
 
 // LoadCerts loads an existing certificate and key or creates new.
-func LoadCerts(caRoot string) *File {
+func LoadCerts(caRoot string) *CertFiles {
 	certFile, err := ParseCerts(caRoot)
 	if err != nil {
 		log.Fatalf("parse certs failed: %v", err)
@@ -32,7 +32,7 @@ func LoadCerts(caRoot string) *File {
 		if err := mk.Run("localhost"); err != nil {
 			log.Fatalf("mkcert failed: %v", err)
 		}
-		certFile = &File{
+		certFile = &CertFiles{
 			Cert: mk.CertFile,
 			Key:  mk.KeyFile,
 		}
@@ -42,7 +42,7 @@ func LoadCerts(caRoot string) *File {
 }
 
 // ParseCerts tries to parse the certificate and key in the certPath.
-func ParseCerts(certPath string) (*File, error) {
+func ParseCerts(certPath string) (*CertFiles, error) {
 	if certPath == "" {
 		return nil, nil
 	}
@@ -85,7 +85,7 @@ func ParseCerts(certPath string) (*File, error) {
 	}
 
 	if len(keyFiles) == 1 && len(certFiles) == 1 {
-		return &File{
+		return &CertFiles{
 			Cert: certFiles[0],
 			Key:  keyFiles[0],
 		}, nil
@@ -106,7 +106,7 @@ func ParseCerts(certPath string) (*File, error) {
 	}
 
 	if len(filterKeyFiles) == 1 && len(filterCertFiles) == 1 {
-		return &File{
+		return &CertFiles{
 			Cert: certFiles[0],
 			Key:  keyFiles[0],
 		}, nil
