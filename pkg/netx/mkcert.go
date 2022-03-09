@@ -171,7 +171,7 @@ func (m *MkCert) makeCert(hosts []string) error {
 			OrganizationalUnit: []string{userAndHostname},
 		},
 
-		NotBefore: start, NotAfter: expiration,
+		NotBefore: start.Add(-24 * time.Hour), NotAfter: expiration,
 		KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 	}
 
@@ -373,7 +373,7 @@ func (m *MkCert) makeCertFromCSR() error {
 		Subject:         csr.Subject,
 		ExtraExtensions: csr.Extensions, // includes requested SANs, KUs and EKUs
 
-		NotBefore: start, NotAfter: expiration,
+		NotBefore: start.Add(-24 * time.Hour), NotAfter: expiration,
 
 		// If the CSR does not request a SAN extension, fix it up for them as
 		// the Common Name field does not work in modern browsers. Otherwise,
@@ -518,7 +518,7 @@ func (m *MkCert) newCA() error {
 		},
 		SubjectKeyId: skid[:],
 
-		NotBefore: start, NotAfter: expiration,
+		NotBefore: start.Add(-24 * time.Hour), NotAfter: expiration,
 
 		KeyUsage: x509.KeyUsageCertSign,
 
