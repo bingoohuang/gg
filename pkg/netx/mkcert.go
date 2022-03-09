@@ -27,8 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bingoohuang/gg/pkg/timex"
-
 	"golang.org/x/net/idna"
 	"software.sslmate.com/src/go-pkcs12"
 )
@@ -44,7 +42,7 @@ type MkCert struct {
 	Pkcs12, Ecdsa, Client, Silent bool
 	KeyFile, CertFile, P12File    string
 	CaRoot, CsrPath               string
-	RootDuration, CertDuration    time.Duration
+	RootYears, CertYears          int
 
 	caCert *x509.Certificate
 	caKey  crypto.PrivateKey
@@ -152,8 +150,8 @@ func (m *MkCert) makeCert(hosts []string) error {
 	// Certificates last for 2 years and 3 months, which is always less than
 	// 825 days, the limit that macOS/iOS apply to all certificates,
 	// including custom roots. See https://support.apple.com/en-us/HT210176.
-	if m.CertDuration == 0 {
-		m.CertDuration, _ = timex.ParseDuration("2y3M")
+	if m.CertYears == 0 {
+		m.CertYears = 2
 	}
 
 	serialNumber, err := randomSerialNumber()
@@ -162,7 +160,7 @@ func (m *MkCert) makeCert(hosts []string) error {
 	}
 
 	start := time.Now().UTC()
-	expiration := start.Add(m.CertDuration)
+	expiration := start.AddDate(m.CertYears, 0, 0)
 
 	c := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -357,8 +355,8 @@ func (m *MkCert) makeCertFromCSR() error {
 		return fmt.Errorf("check CSR %s signature failed: %w", m.CsrPath, err)
 	}
 
-	if m.CertDuration == 0 {
-		m.CertDuration, _ = timex.ParseDuration("2y3M")
+	if m.CertYears == 0 {
+		m.CertYears = 2
 	}
 	serialNumber, err := randomSerialNumber()
 	if err != nil {
@@ -366,7 +364,7 @@ func (m *MkCert) makeCertFromCSR() error {
 	}
 
 	start := time.Now().UTC()
-	expiration := start.Add(m.CertDuration)
+	expiration := start.AddDate(m.CertYears, 0, 0)
 
 	tpl := &x509.Certificate{
 		SerialNumber:    serialNumber,
@@ -498,12 +496,12 @@ func (m *MkCert) newCA() error {
 		return err
 	}
 
-	if m.RootDuration == 0 {
-		m.RootDuration, _ = timex.ParseDuration("10y")
+	if m.RootYears == 0 {
+		m.RootYears = 10
 	}
 
 	start := time.Now().UTC()
-	expiration := start.Add(m.RootDuration)
+	expiration := start.AddDate(10, 0, 0)
 
 	tpl := &x509.Certificate{
 		SerialNumber: serialNumber,
