@@ -2,6 +2,7 @@ package iox
 
 import (
 	"io"
+	"log"
 	"sync"
 	"time"
 )
@@ -27,7 +28,9 @@ func (m *MaxLatencyWriter) Write(p []byte) (n int, err error) {
 	defer m.mu.Unlock()
 	n, err = m.Dst.Write(p)
 	if m.Latency < 0 {
-		m.Dst.Flush()
+		if err := m.Dst.Flush(); err != nil {
+			return 0, err
+		}
 		return
 	}
 	if m.flushPending {
@@ -48,7 +51,9 @@ func (m *MaxLatencyWriter) delayedFlush() {
 	if !m.flushPending { // if stop was called but AfterFunc already started this goroutine
 		return
 	}
-	m.Dst.Flush()
+	if err := m.Dst.Flush(); err != nil {
+		log.Printf("flush failed: %v", err)
+	}
 	m.flushPending = false
 }
 
