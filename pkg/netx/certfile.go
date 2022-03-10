@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/bingoohuang/gg/pkg/ss"
 )
@@ -18,16 +19,18 @@ type CertFiles struct {
 }
 
 // LoadCerts loads an existing certificate and key or creates new.
+// CaRoot can be {dir}:{name}, like
+// "" will default to .cert directory
+// ":server" will find server.key and server.pem in .cert directory
+// "." will default to xxx.key and xxx.pem in current directory
+// ".:server" will find server.key and server.pem in . directory
 func LoadCerts(caRoot string) *CertFiles {
-	certFile, err := ParseCerts(caRoot)
+	caRoot, certFile, err := ParseCerts(caRoot)
 	if err != nil {
 		log.Fatalf("parse certs failed: %v", err)
 	} else if certFile != nil {
 		log.Printf("cert found %+v", *certFile)
 	} else {
-		if caRoot == "" {
-			caRoot = ".cert"
-		}
 		mk := MkCert{CaRoot: caRoot}
 		if err := mk.Run("localhost"); err != nil {
 			log.Fatalf("mkcert failed: %v", err)
@@ -42,20 +45,27 @@ func LoadCerts(caRoot string) *CertFiles {
 }
 
 // ParseCerts tries to parse the certificate and key in the certPath.
-func ParseCerts(certPath string) (*CertFiles, error) {
+func ParseCerts(certPath string) (string, *CertFiles, error) {
+	specifiedName := ""
+	lastCommaPos := strings.LastIndex(certPath, ":")
+	if lastCommaPos >= 0 {
+		specifiedName = certPath[lastCommaPos+1:]
+		certPath = certPath[:lastCommaPos]
+	}
+
 	if certPath == "" {
-		return nil, nil
+		certPath = ".cert"
 	}
 
 	stat, err := os.Stat(certPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil
+			return certPath, nil, nil
 		}
-		return nil, fmt.Errorf("stat %s failed: %v", certPath, err)
+		return "", nil, fmt.Errorf("stat %s failed: %v", certPath, err)
 	}
 	if !stat.IsDir() {
-		return nil, fmt.Errorf("%s is not a dir", certPath)
+		return "", nil, fmt.Errorf("%s is not a dir", certPath)
 	}
 
 	var keyFiles, certFiles []string
@@ -80,37 +90,37 @@ func ParseCerts(certPath string) (*CertFiles, error) {
 		return nil
 	})
 
-	if len(keyFiles) == 0 && len(certFiles) == 0 {
-		return nil, nil
+	if len(certFiles) == 0 && len(keyFiles) == 0 {
+		return certPath, nil, nil
 	}
 
-	if len(keyFiles) == 1 && len(certFiles) == 1 {
-		return &CertFiles{
-			Cert: certFiles[0],
-			Key:  keyFiles[0],
-		}, nil
+	if len(certFiles) == 1 && len(keyFiles) == 1 {
+		return certPath, &CertFiles{Cert: certFiles[0], Key: keyFiles[0]}, nil
 	}
 
-	// filter root
-	var filterKeyFiles, filterCertFiles []string
-	for _, k := range keyFiles {
-		if !ss.ContainsFold(k, "root") {
-			filterKeyFiles = append(filterKeyFiles, k)
+	filter := func(input []string, sub string, included bool) (ret []string) {
+		for _, k := range input {
+			contains := ss.ContainsFold(k, sub)
+			if included && contains || !included && !contains {
+				ret = append(ret, k)
+			}
 		}
+		return
 	}
 
-	for _, k := range certFiles {
-		if !ss.ContainsFold(k, "root") {
-			filterCertFiles = append(filterCertFiles, k)
+	if specifiedName != "" {
+		specifiedCertFiles := filter(certFiles, specifiedName, true)
+		specifiedKeyFiles := filter(keyFiles, specifiedName, true)
+		if len(specifiedCertFiles) == 1 && len(specifiedKeyFiles) == 1 {
+			return certPath, &CertFiles{Cert: specifiedCertFiles[0], Key: specifiedKeyFiles[0]}, nil
 		}
+
+	}
+	filterCertFiles := filter(certFiles, "root", false)
+	filterKeyFiles := filter(keyFiles, "root", false)
+	if len(filterCertFiles) == 1 && len(filterKeyFiles) == 1 {
+		return certPath, &CertFiles{Cert: filterCertFiles[0], Key: filterKeyFiles[0]}, nil
 	}
 
-	if len(filterKeyFiles) == 1 && len(filterCertFiles) == 1 {
-		return &CertFiles{
-			Cert: certFiles[0],
-			Key:  keyFiles[0],
-		}, nil
-	}
-
-	return nil, fmt.Errorf("multiple keyFiles %v and certFiles %v found", keyFiles, certFiles)
+	return "", nil, fmt.Errorf("multiple keyFiles %v and certFiles %v found", keyFiles, certFiles)
 }
