@@ -6,7 +6,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/netx/freeport"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/golog/pkg/randx"
-	"gopkg.in/resty.v1"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"time"
 )
@@ -40,7 +40,8 @@ func IsLocalAddr(addr string) (bool, error) {
 
 	time.Sleep(100 * time.Millisecond) // nolint gomnd
 
-	resp, err := resty.R().Get(`http://` + JoinHostPort(addr, port))
+	addr = `http://` + JoinHostPort(addr, port)
+	resp, err := resty.New().SetTimeout(3 * time.Second).R().Get(addr)
 	_ = server.Close()
 
 	if err != nil {
