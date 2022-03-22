@@ -66,7 +66,7 @@ func (s SQL) UpdateRaw(db SqxDB) (sql.Result, error) {
 	defer cancel()
 
 	result, err := db.ExecContext(ctx, s.Q, s.Vars...)
-	logQueryError(s.Name, result, err)
+	logQueryError(s.NoLog, s.Name, result, err)
 	return result, err
 }
 
@@ -149,7 +149,7 @@ func (o QueryOption) allowRowNum(rowNum int) bool {
 // Query queries return with result.
 func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
 	err := s.query(db, result, optionFns...)
-	logQueryError(s.Name, nil, err)
+	logQueryError(s.NoLog, s.Name, nil, err)
 	logRows(s.Name, GetQueryRows(result))
 	return err
 }

@@ -34,7 +34,11 @@ func quoteDesc(desc string) string {
 	return desc
 }
 
-func logQueryError(desc string, result sql.Result, err error) {
+func logQueryError(nolog bool, desc string, result sql.Result, err error) {
+	if nolog {
+		return
+	}
+
 	if err != nil {
 		log.Printf("%squery error: %v", quoteDesc(desc), err)
 	} else if result != nil {
@@ -169,12 +173,14 @@ func (s *Sqx) QueryContext(ctx context.Context, query string, args ...interface{
 	s2 := SQL{Ctx: ctx, Q: query, Vars: args}
 
 	if adapted, ok := ctx.Value(AdaptedKey).(bool); !ok || !adapted {
-		s2.adaptQuery(s)
+		if err := s2.adaptQuery(s); err != nil {
+			return nil, err
+		}
 	}
 
 	rows, err := s.DB.QueryContext(ctx, s2.Q, s2.Vars...)
 	if err != nil {
-		logQueryError("", nil, err)
+		logQueryError(false, "", nil, err)
 	}
 	return rows, err
 }
@@ -205,15 +211,15 @@ func (s *Sqx) TxContext(ctx context.Context, f func(sqx *Sqx) error) error {
 	return tx.Commit()
 }
 
-type SqxDBRaw struct {
+type DBRaw struct {
 	SqxDB
 	DBType sqlparser.DBType
 }
 
-func (t SqxDBRaw) GetDBType() sqlparser.DBType { return t.DBType }
+func (t DBRaw) GetDBType() sqlparser.DBType { return t.DBType }
 
 func (s Sqx) typedDB() SqxDB {
-	return &SqxDBRaw{
+	return &DBRaw{
 		SqxDB:  s.DB,
 		DBType: s.DBType,
 	}
