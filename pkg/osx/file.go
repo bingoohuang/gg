@@ -3,6 +3,8 @@ package osx
 import (
 	"github.com/bingoohuang/gg/pkg/gz"
 	"io/ioutil"
+	"log"
+	"os"
 	"strings"
 )
 
@@ -20,4 +22,10 @@ func ReadFile(filename string) ([]byte, error) {
 		}
 	}
 	return data, nil
+}
+
+func Remove(f string) {
+	if err := os.Remove(f); err != nil {
+		log.Printf("E! remove %s failed: %v", f, err)
+	}
 }

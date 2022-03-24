@@ -2,6 +2,8 @@ package sigx
 
 import (
 	"context"
+	"github.com/bingoohuang/gg/pkg/iox"
+	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/profile"
 	"io/ioutil"
 	"log"
@@ -47,12 +49,14 @@ func RegisterSignalProfile(signals ...os.Signal) {
 	}
 
 	RegisterSignalCallback(func() {
-		if HasCmd("jj.cpu") {
-			if err := CollectCpuProfile("cpu.profile"); err != nil {
+		if HasCmd("jj.cpu", false) {
+			if completed, err := CollectCpuProfile("cpu.profile"); err != nil {
 				log.Printf("failed to collect profile: %v", err)
+			} else if completed {
+				osx.Remove("jj.cpu")
 			}
 		}
-		if HasCmd("jj.mem") {
+		if HasCmd("jj.mem", true) {
 			if err := CollectMemProfile("mem.profile"); err != nil {
 				log.Printf("failed to collect profile: %v", err)
 			}
@@ -65,10 +69,12 @@ func RegisterSignalProfile(signals ...os.Signal) {
 
 var cpuProfileFile *os.File
 
-func HasCmd(f string) bool {
+func HasCmd(f string, remove bool) bool {
 	s, err := os.Stat(f)
 	if err == nil && !s.IsDir() {
-		os.Remove(f)
+		if remove {
+			osx.Remove(f)
+		}
 		return true
 	}
 
@@ -79,39 +85,39 @@ func ReadCmd(f string) []byte {
 	s, err := os.Stat(f)
 	if err == nil && !s.IsDir() {
 		data, _ := ioutil.ReadFile(f)
-		os.Remove(f)
+		osx.Remove(f)
 		return data
 	}
 
 	return nil
 }
 
-func CollectCpuProfile(cpuProfile string) error {
+func CollectCpuProfile(cpuProfile string) (bool, error) {
 	if cpuProfile == "" {
-		return nil
+		return false, nil
 	}
 
 	if cpuProfileFile != nil {
 		pprof.StopCPUProfile()
-		cpuProfileFile.Close()
+		iox.Close(cpuProfileFile)
 
 		log.Printf("%s collected", cpuProfileFile.Name())
 		cpuProfileFile = nil
-		return nil
+		return true, nil
 	}
 
 	f, err := os.Create(cpuProfile)
 	if err != nil {
-		return err
+		return false, err
 	}
 	cpuProfileFile = f
 
 	if err := pprof.StartCPUProfile(f); err != nil {
-		return err
+		return false, err
 	}
 
 	log.Printf("%s started", cpuProfile)
-	return nil
+	return false, nil
 }
 
 func CollectMemProfile(memProfile string) error {
