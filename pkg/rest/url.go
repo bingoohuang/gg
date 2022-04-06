@@ -1,33 +1,52 @@
 package rest
 
 import (
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/rotate"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/timex"
-	"net/url"
-	"regexp"
-	"strings"
-	"time"
 )
 
 var reScheme = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+-.]*://`)
 
-const defaultScheme, defaultHost = "http", "127.0.0.1"
+type FixURIConfig struct {
+	DefaultScheme string
+	DefaultHost   string
+	DefaultPort   int
+}
 
-func FixURI(uri string) (string, error) {
+func WithDefaultScheme(v string) FixURIConfigFn {
+	return func(c *FixURIConfig) { c.DefaultScheme = v }
+}
+
+func WithDefaultHost(v string) FixURIConfigFn {
+	return func(c *FixURIConfig) { c.DefaultHost = v }
+}
+
+func WithDefaultPort(v int) FixURIConfigFn {
+	return func(c *FixURIConfig) { c.DefaultPort = v }
+}
+
+func FixURI(uri string, fns ...FixURIConfigFn) (string, error) {
+	config := (FixURIConfigFns(fns)).Create()
 	if uri == ":" {
-		uri = ":80"
+		uri = ":" + strconv.Itoa(config.DefaultPort)
 	}
 
 	// ex) :8080/hello or /hello or :
 	if strings.HasPrefix(uri, ":") || strings.HasPrefix(uri, "/") {
-		uri = defaultHost + uri
+		uri = config.DefaultHost + uri
 	}
 
 	// ex) example.com/hello
 	if !reScheme.MatchString(uri) {
-		uri = defaultScheme + "://" + uri
+		uri = config.DefaultScheme + "://" + uri
 	}
 
 	u, err := url.Parse(uri)
@@ -82,4 +101,21 @@ func MaybeURL(out string) (string, bool) {
 
 	uri, err := FixURI(out)
 	return uri, err == nil
+}
+
+type FixURIConfigFn func(*FixURIConfig)
+
+type FixURIConfigFns []FixURIConfigFn
+
+func (fns FixURIConfigFns) Create() *FixURIConfig {
+	c := &FixURIConfig{
+		DefaultScheme: "http",
+		DefaultHost:   "127.0.0.1",
+	}
+
+	for _, f := range fns {
+		f(c)
+	}
+
+	return c
 }
