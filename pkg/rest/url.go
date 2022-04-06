@@ -22,15 +22,17 @@ type FixURIConfig struct {
 	DefaultHost   string
 	DefaultPort   int
 	FatalErr      bool
+	Auth          string
 }
 
 func WithDefaultScheme(v string) FixURIConfigFn { return func(c *FixURIConfig) { c.DefaultScheme = v } }
 func WithDefaultHost(v string) FixURIConfigFn   { return func(c *FixURIConfig) { c.DefaultHost = v } }
 func WithDefaultPort(v int) FixURIConfigFn      { return func(c *FixURIConfig) { c.DefaultPort = v } }
 func WithFatalErr(v bool) FixURIConfigFn        { return func(c *FixURIConfig) { c.FatalErr = v } }
+func WithAuth(v string) FixURIConfigFn          { return func(c *FixURIConfig) { c.Auth = v } }
 
 type FixURIResult struct {
-	Data string
+	Data *url.URL
 	Err  error
 }
 
@@ -69,7 +71,15 @@ func FixURI(uri string, fns ...FixURIConfigFn) (rr FixURIResult) {
 		u.Path = "/"
 	}
 
-	return FixURIResult{Data: u.String()}
+	if config.Auth != "" {
+		if userpass := strings.Split(config.Auth, ":"); len(userpass) == 2 {
+			u.User = url.UserPassword(userpass[0], userpass[1])
+		} else {
+			u.User = url.User(config.Auth)
+		}
+	}
+
+	return FixURIResult{Data: u}
 }
 
 func MaybeURL(out string) (string, bool) {
@@ -83,7 +93,7 @@ func MaybeURL(out string) (string, bool) {
 
 	if ss.HasPrefix(out, ":", "/", ".") {
 		uri := FixURI(out)
-		return uri.Data, uri.OK()
+		return uri.Data.String(), uri.OK()
 	}
 
 	if osx.CanExpandHome(out) {
@@ -101,7 +111,7 @@ func MaybeURL(out string) (string, bool) {
 	// like ip:port
 	if regexp.MustCompile(`^\d{1,3}((.\d){1,3}){3}(:\d+)?`).MatchString(out) {
 		uri := FixURI(out)
-		return uri.Data, uri.OK()
+		return uri.Data.String(), uri.OK()
 	}
 
 	c := &rotate.Config{}
@@ -110,7 +120,7 @@ func MaybeURL(out string) (string, bool) {
 	}
 
 	uri := FixURI(out)
-	return uri.Data, uri.OK()
+	return uri.Data.String(), uri.OK()
 }
 
 type FixURIConfigFn func(*FixURIConfig)
