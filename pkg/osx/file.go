@@ -53,6 +53,12 @@ func ReadFile(filename string, fns ...ReadFileConfigFn) (rr ReadFileResult) {
 
 type ReadFileConfigFn func(*ReadFileConfig)
 
+func WithFatalOnError(v bool) ReadFileConfigFn {
+	return func(config *ReadFileConfig) {
+		config.FatalOnError = v
+	}
+}
+
 func WithAutoUncompress(v bool) ReadFileConfigFn {
 	return func(config *ReadFileConfig) {
 		config.AutoUncompress = v
