@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/url"
 	"path"
 )
@@ -40,15 +39,12 @@ func (u URL) Paths(paths ...string) URL {
 }
 
 func (u URL) Build() (string, error) {
-	base, err := FixURI(u.Base)
-	if err != nil {
-		return "", err
+	base := FixURI(u.Base)
+	if !base.OK() {
+		return "", base.Err
 	}
 
-	b, err := url.Parse(base)
-	if err != nil {
-		return "", fmt.Errorf("invalid url")
-	}
+	b := base.Data
 
 	p2 := append([]string{b.Path}, u.SubPaths...)
 	b.Path = path.Join(p2...)
