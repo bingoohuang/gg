@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -19,22 +21,29 @@ type FixURIConfig struct {
 	DefaultScheme string
 	DefaultHost   string
 	DefaultPort   int
+	FatalErr      bool
 }
 
-func WithDefaultScheme(v string) FixURIConfigFn {
-	return func(c *FixURIConfig) { c.DefaultScheme = v }
+func WithDefaultScheme(v string) FixURIConfigFn { return func(c *FixURIConfig) { c.DefaultScheme = v } }
+func WithDefaultHost(v string) FixURIConfigFn   { return func(c *FixURIConfig) { c.DefaultHost = v } }
+func WithDefaultPort(v int) FixURIConfigFn      { return func(c *FixURIConfig) { c.DefaultPort = v } }
+func WithFatalErr(v bool) FixURIConfigFn        { return func(c *FixURIConfig) { c.FatalErr = v } }
+
+type FixURIResult struct {
+	Data string
+	Err  error
 }
 
-func WithDefaultHost(v string) FixURIConfigFn {
-	return func(c *FixURIConfig) { c.DefaultHost = v }
-}
+func (r FixURIResult) OK() bool { return r.Err == nil }
 
-func WithDefaultPort(v int) FixURIConfigFn {
-	return func(c *FixURIConfig) { c.DefaultPort = v }
-}
-
-func FixURI(uri string, fns ...FixURIConfigFn) (string, error) {
+func FixURI(uri string, fns ...FixURIConfigFn) (rr FixURIResult) {
 	config := (FixURIConfigFns(fns)).Create()
+	defer func() {
+		if rr.Err != nil && config.FatalErr {
+			log.Fatal(rr.Err)
+		}
+	}()
+
 	if uri == ":" {
 		uri = ":" + strconv.Itoa(config.DefaultPort)
 	}
@@ -51,7 +60,8 @@ func FixURI(uri string, fns ...FixURIConfigFn) (string, error) {
 
 	u, err := url.Parse(uri)
 	if err != nil {
-		return "", err
+		rr.Err = fmt.Errorf("parse %s failed: %s", uri, err)
+		return rr
 	}
 
 	u.Host = strings.TrimSuffix(u.Host, ":")
@@ -59,7 +69,7 @@ func FixURI(uri string, fns ...FixURIConfigFn) (string, error) {
 		u.Path = "/"
 	}
 
-	return u.String(), nil
+	return FixURIResult{Data: u.String()}
 }
 
 func MaybeURL(out string) (string, bool) {
@@ -72,8 +82,8 @@ func MaybeURL(out string) (string, bool) {
 	}
 
 	if ss.HasPrefix(out, ":", "/", ".") {
-		uri, err := FixURI(out)
-		return uri, err == nil
+		uri := FixURI(out)
+		return uri.Data, uri.OK()
 	}
 
 	if osx.CanExpandHome(out) {
@@ -90,8 +100,8 @@ func MaybeURL(out string) (string, bool) {
 
 	// like ip:port
 	if regexp.MustCompile(`^\d{1,3}((.\d){1,3}){3}(:\d+)?`).MatchString(out) {
-		uri, err := FixURI(out)
-		return uri, err == nil
+		uri := FixURI(out)
+		return uri.Data, uri.OK()
 	}
 
 	c := &rotate.Config{}
@@ -99,8 +109,8 @@ func MaybeURL(out string) (string, bool) {
 		return "", false
 	}
 
-	uri, err := FixURI(out)
-	return uri, err == nil
+	uri := FixURI(out)
+	return uri.Data, uri.OK()
 }
 
 type FixURIConfigFn func(*FixURIConfig)

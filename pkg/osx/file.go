@@ -25,6 +25,8 @@ type ReadFileResult struct {
 	Err  error
 }
 
+func (r ReadFileResult) OK() bool { return r.Err == nil }
+
 // ReadFile reads a file content, if it's a .gz, decompress it.
 func ReadFile(filename string, fns ...ReadFileConfigFn) (rr ReadFileResult) {
 	config := (ReadFileConfigFns(fns)).Create()
