@@ -7,7 +7,8 @@ goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
 # e.g. 2021-10-28T11:49:52+0800
 buildTime := $(shell date +%FT%T%z)
 # https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emaIem
-gitCommit := $(shell [ -f git.commit ] && cat git.commit || git rev-list --oneline --format=format:'%h@%aI' --max-count=1 `git rev-parse HEAD` | tail -1)
+# e.g. ffd23d3@2022-04-06T18:07:14+08:00
+gitCommit := $(shell [ -f git.commit ] && cat git.commit || git log --format=format:'%h@%aI' -1)
 gitBranch := $(shell [ -f git.branch ] && cat git.branch || git rev-parse --abbrev-ref HEAD)
 gitInfo = $(gitBranch)-$(gitCommit)
 #gitCommit := $(shell git rev-list -1 HEAD)
