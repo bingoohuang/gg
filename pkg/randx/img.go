@@ -112,10 +112,6 @@ func (c *ImgConfig) GenFile(filename string, fileSize int) int {
 	f, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
 
-	if c.PixelSize == 0 {
-		c.PixelSize = 40
-	}
-
 	data, imgSize := c.Gen(filepath.Ext(filename))
 	f.Write(data)
 	if fileSize <= imgSize {
@@ -148,6 +144,10 @@ func (c *ImgConfig) Gen(imageFormat string) ([]byte, int) {
 		img = image.NewNRGBA(image.Rect(0, 0, c.Width, c.Height))
 	default: // png
 		img = image.NewRGBA(image.Rect(0, 0, c.Width, c.Height))
+	}
+
+	if c.PixelSize == 0 {
+		c.PixelSize = 40
 	}
 
 	yp := c.Height / c.PixelSize
