@@ -2,6 +2,9 @@ package randx
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/bingoohuang/gg/pkg/man"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/pbnjay/pixfont"
 	"image"
 	"image/color"
@@ -12,6 +15,77 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type RandomImageResult struct {
+	Size     int
+	Filename string
+}
+
+// RandomImage creates a random image.
+// Environment variables supported:
+// GG_IMG_FAST=Y/N to enable fast mode or not
+// GG_IMG_FORMAT=jpg/png to choose the format
+// GG_IMG_FILE_SIZE=10M to set image file size
+// GG_IMG_SIZE=640x320 to set the {width}x{height} of image
+func RandomImage(prefix string) (*RandomImageResult, error) {
+	imgFormat := parseImageFormat("GG_IMG_FORMAT")
+	width, height := parseImageSize("GG_IMG_SIZE")
+	fn := fmt.Sprintf("%s_%dx%d%s", prefix, width, height, imgFormat)
+	c := ImgConfig{
+		Width:      width,
+		Height:     height,
+		RandomText: fmt.Sprintf("%s", prefix),
+		FastMode:   parseImageFastMode("GG_IMG_FAST"),
+	}
+	size := c.GenFile(fn, int(parseImageFileSize("GG_IMG_FILE_SIZE")))
+	return &RandomImageResult{Size: size, Filename: fn}, nil
+}
+
+func parseImageFastMode(envName string) bool {
+	if val := os.Getenv(envName); val != "" {
+		if v, err := ss.ParseBoolE(val); err == nil {
+			return v
+		}
+	}
+
+	return true
+}
+
+func parseImageFileSize(envName string) (v uint64) {
+	if val := os.Getenv(envName); val != "" {
+		v, _ = man.ParseBytes(val)
+	}
+	return v
+}
+
+func parseImageFormat(envName string) string {
+	if v := os.Getenv(envName); v != "" {
+		switch strings.ToLower(v) {
+		case ".jpg", "jpg", ".jpeg", "jpeg":
+			return ".jpg"
+		case ".png", "png":
+			return ".png"
+		}
+	}
+	return ss.If(Bool(), ".jpg", ".png")
+}
+
+func parseImageSize(envName string) (width, height int) {
+	width, height = 640, 320
+	if val := os.Getenv(envName); val != "" {
+		val = strings.ToLower(val)
+		parts := strings.SplitN(val, "x", 2)
+		if len(parts) == 2 {
+			if v := ss.ParseInt(parts[0]); v > 0 {
+				width = v
+			}
+			if v := ss.ParseInt(parts[1]); v > 0 {
+				height = v
+			}
+		}
+	}
+	return width, height
+}
 
 // GenerateRandomImageFile generate image file.
 // If fastMode is true, a sparse file is filled with zero (ascii NUL) and doesn't actually take up the disk space
