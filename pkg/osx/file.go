@@ -37,7 +37,7 @@ func ReadFile(filename string, fns ...ReadFileConfigFn) (rr ReadFileResult) {
 		}
 	}()
 
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(ExpandHome(filename))
 	if err != nil {
 		rr.Err = fmt.Errorf("read file %s failed: %w", filename, err)
 		return rr
