@@ -97,5 +97,7 @@ func Encode(dst io.Writer, src io.Reader, flags ...EncodeFlags) (int64, error) {
 		enc = base64.StdEncoding
 	}
 
-	return io.Copy(base64.NewEncoder(enc, dst), src)
+	closer := base64.NewEncoder(enc, dst)
+	defer closer.Close()
+	return io.Copy(closer, src)
 }
