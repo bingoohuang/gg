@@ -89,7 +89,7 @@ func Encode(dst io.Writer, src io.Reader, flags ...EncodeFlags) (int64, error) {
 
 	if (flag&URL) == URL && (flag&Raw) == Raw {
 		enc = base64.RawURLEncoding
-	} else if (flag&URL) == Std && (flag&Raw) == Raw {
+	} else if (flag&Std) == Std && (flag&Raw) == Raw {
 		enc = base64.RawStdEncoding
 	} else if (flag & URL) == URL {
 		enc = base64.URLEncoding
