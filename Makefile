@@ -37,7 +37,7 @@ sec:
 	@echo "[OK] Go security check was completed!"
 
 init:
-	export GOPROXY=https://goproxy.cn
+	export GOPROXY=https://goproxy.cn,https://goproxy.io,direct
 
 lint-all:
 	golangci-lint run --enable-all
