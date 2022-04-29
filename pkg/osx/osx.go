@@ -22,7 +22,7 @@ func EnvSize(envName string, defaultValue int) int {
 	if s := os.Getenv(envName); s != "" {
 		if size, err := man.ParseBytes(s); err != nil {
 			log.Printf("parse env %s=%s failed: %+v", envName, s, err)
-		} else if size > 0 {
+		} else if size >= 0 {
 			return int(size)
 		}
 	}
