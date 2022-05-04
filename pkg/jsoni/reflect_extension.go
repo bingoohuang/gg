@@ -370,8 +370,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 				structDescriptor := describeStruct(ctx, field.Type())
 				for _, b := range structDescriptor.Fields {
 					b.levels = append([]int{i}, b.levels...)
-					omitempty := b.Encoder.(*structFieldEncoder).omitempty
-					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty}
+					fieldEncoder := b.Encoder.(*structFieldEncoder)
+					omitempty := fieldEncoder.omitempty
+					nilAsEmpty := fieldEncoder.nilAsEmpty
+					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty, nilAsEmpty: nilAsEmpty}
 					b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 					embeddedBindings = append(embeddedBindings, b)
 				}
@@ -382,9 +384,11 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 					structDescriptor := describeStruct(ctx, ptrType.Elem())
 					for _, b := range structDescriptor.Fields {
 						b.levels = append([]int{i}, b.levels...)
-						omitempty := b.Encoder.(*structFieldEncoder).omitempty
+						fieldEncoder := b.Encoder.(*structFieldEncoder)
+						omitempty := fieldEncoder.omitempty
+						nilAsEmpty := fieldEncoder.nilAsEmpty
 						b.Encoder = &dereferenceEncoder{ValueEncoder: b.Encoder}
-						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty}
+						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty, nilAsEmpty: nilAsEmpty}
 						b.Decoder = &dereferenceDecoder{valueType: ptrType.Elem(), valueDecoder: b.Decoder}
 						b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 						embeddedBindings = append(embeddedBindings, b)
@@ -445,9 +449,12 @@ func (b sortableBindings) Less(i, j int) bool {
 func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 	for _, b := range structDescriptor.Fields {
 		shouldOmitEmpty := cfg.omitEmptyStructField
+		nilAsEmpty := cfg.nilAsEmpty
 		tagParts := strings.Split(b.Field.Tag().Get(cfg.getTagKey()), ",")
 		for _, tagPart := range tagParts[1:] {
 			switch tagPart {
+			case "nilasempty":
+				nilAsEmpty = true
 			case "omitempty":
 				shouldOmitEmpty = true
 			case "string":
@@ -466,7 +473,7 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 			}
 		}
 		b.Decoder = &structFieldDecoder{field: b.Field, fieldDecoder: b.Decoder}
-		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder, omitempty: shouldOmitEmpty}
+		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder, omitempty: shouldOmitEmpty, nilAsEmpty: nilAsEmpty}
 	}
 }
 

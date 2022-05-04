@@ -51,13 +51,13 @@ func createCheckIsEmpty(ctx *ctx, typ reflect2.Type) checkIsEmpty {
 
 	switch kind := typ.Kind(); kind {
 	case reflect.Interface:
-		return &dynamicEncoder{typ}
+		return &dynamicEncoder{valType: typ}
 	case reflect.Struct:
 		return &structEncoder{typ: typ}
 	case reflect.Array:
 		return &arrayEncoder{}
 	case reflect.Slice:
-		return &sliceEncoder{}
+		return &sliceEncoder{ctx: ctx}
 	case reflect.Map:
 		return encoderOfMap(ctx, typ)
 	case reflect.Ptr:
@@ -100,6 +100,7 @@ type structFieldEncoder struct {
 	field        reflect2.StructField
 	fieldEncoder ValEncoder
 	omitempty    bool
+	nilAsEmpty   bool
 }
 
 func (e *structFieldEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
@@ -142,17 +143,23 @@ func (e *structEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range e.fields {
-		if field.encoder.omitempty && field.encoder.IsEmpty(ctx, ptr, true) {
+		fieldEncoder := field.encoder
+		if fieldEncoder.omitempty && fieldEncoder.IsEmpty(ctx, ptr, true) {
 			continue
 		}
-		if field.encoder.IsEmbeddedPtrNil(ptr) {
+		if fieldEncoder.IsEmbeddedPtrNil(ptr) {
 			continue
 		}
 		if isNotFirst {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField(field.toName)
-		field.encoder.Encode(ctx, ptr, stream)
+		if fieldEncoder.nilAsEmpty && fieldEncoder.IsEmpty(ctx, ptr, true) && fieldEncoder.field.Type().Kind() == reflect.Slice {
+			stream.WriteEmptyArray()
+		} else {
+			fieldEncoder.Encode(ctx, ptr, stream)
+		}
+
 		isNotFirst = true
 	}
 	stream.WriteObjectEnd()

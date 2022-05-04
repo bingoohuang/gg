@@ -30,6 +30,7 @@ type Config struct {
 	ObjectFieldMustBeSimpleString bool
 	CaseSensitive                 bool
 	Int64AsString                 bool
+	NilAsEmpty                    bool
 }
 
 // API the public interface of this package.
@@ -95,6 +96,7 @@ type frozenConfig struct {
 	iteratorPool                  *sync.Pool
 	caseSensitive                 bool
 	int64AsString                 bool
+	nilAsEmpty                    bool
 
 	typeDecoders  map[string]ValDecoder
 	fieldDecoders map[string]ValDecoder
@@ -155,6 +157,7 @@ func (c Config) Froze() API {
 		disallowUnknownFields:         c.DisallowUnknownFields,
 		caseSensitive:                 c.CaseSensitive,
 		int64AsString:                 c.Int64AsString,
+		nilAsEmpty:                    c.NilAsEmpty,
 
 		typeDecoders:  map[string]ValDecoder{},
 		fieldDecoders: map[string]ValDecoder{},

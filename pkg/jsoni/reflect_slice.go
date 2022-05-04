@@ -11,23 +11,28 @@ import (
 func decoderOfSlice(ctx *ctx, typ reflect2.Type) ValDecoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	decoder := decoderOfType(ctx.append("[sliceElem]"), sliceType.Elem())
-	return &sliceDecoder{sliceType, decoder}
+	return &sliceDecoder{sliceType: sliceType, elemDecoder: decoder}
 }
 
 func encoderOfSlice(ctx *ctx, typ reflect2.Type) ValEncoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	encoder := encoderOfType(ctx.append("[sliceElem]"), sliceType.Elem())
-	return &sliceEncoder{sliceType, encoder}
+	return &sliceEncoder{ctx: ctx, sliceType: sliceType, elemEncoder: encoder}
 }
 
 type sliceEncoder struct {
+	ctx         *ctx
 	sliceType   *reflect2.UnsafeSliceType
 	elemEncoder ValEncoder
 }
 
 func (e *sliceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	if e.sliceType.UnsafeIsNil(ptr) {
-		stream.WriteNil()
+		if e.ctx.nilAsEmpty {
+			stream.WriteEmptyArray()
+		} else {
+			stream.WriteNil()
+		}
 		return
 	}
 	length := e.sliceType.UnsafeLengthOf(ptr)

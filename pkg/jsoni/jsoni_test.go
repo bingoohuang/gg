@@ -106,6 +106,15 @@ func TestContext(t *testing.T) {
 	assert.Equal(t, expect, m)
 }
 
+func TestMarshalJSONArray(t *testing.T) {
+	f := struct {
+		Foo []json.Number `json:",nilasempty"`
+	}{}
+
+	s, _ := jsoni.MarshalToString(f)
+	assert.Equal(t, `{"Foo":[]}`, s)
+}
+
 func TestMarshalJSON(t *testing.T) {
 	f := struct {
 		Foo json.Number
