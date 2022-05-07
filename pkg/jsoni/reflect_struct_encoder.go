@@ -1,7 +1,9 @@
 package jsoni
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/modern-go/reflect2"
 	"io"
@@ -116,6 +118,19 @@ func getContextStructFieldEncoder(ctx context.Context) *structFieldEncoder {
 		return v.(*structFieldEncoder)
 	}
 	return &structFieldEncoder{}
+}
+
+func writeRawBytesIfClearQuotes(ctx context.Context, s string, stream *Stream) bool {
+	if sfe := getContextStructFieldEncoder(ctx); sfe.clearQuotes && s != "" {
+		if b := []byte(s); ValidJSONContext(ctx, b) {
+			buf := &bytes.Buffer{}
+			_ = json.Compact(buf, b)
+			stream.WriteRawBytes(buf.Bytes())
+			return true
+		}
+	}
+
+	return false
 }
 
 func (e *structFieldEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {

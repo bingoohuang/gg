@@ -90,6 +90,9 @@ func (s *Stream) Flush() error {
 	return nil
 }
 
+// WriteRawBytes write string out without quotes, just like []byte
+func (s *Stream) WriteRawBytes(a []byte) { s.buf = append(s.buf, a...) }
+
 // WriteRaw write string out without quotes, just like []byte
 func (s *Stream) WriteRaw(a string) { s.buf = append(s.buf, a...) }
 

@@ -278,16 +278,12 @@ type htmlEscapedStringEncoder struct{}
 
 func (e *htmlEscapedStringEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
 	s := *((*string)(ptr))
-	sfe := &structFieldEncoder{}
-	if v := ctx.Value(keyStructField); v != nil {
-		sfe = v.(*structFieldEncoder)
+
+	if writeRawBytesIfClearQuotes(ctx, s, stream) {
+		return
 	}
 
-	if sfe.clearQuotes && s != "" && ValidJSONContext(ctx, []byte(s)) {
-		stream.WriteRaw(s)
-	} else {
-		stream.WriteStringWithHTMLEscaped(s)
-	}
+	stream.WriteStringWithHTMLEscaped(s)
 }
 
 func (e *htmlEscapedStringEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
