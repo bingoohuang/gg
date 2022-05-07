@@ -169,6 +169,14 @@ func Valid(data []byte) bool {
 	return ValidContext(context.Background(), data)
 }
 
+func ValidJSON(data []byte) bool {
+	return ValidJSONContext(context.Background(), data)
+}
+
+func ValidJSONContext(ctx context.Context, s []byte) bool {
+	return ValidContext(ctx, s) && (s[0] == '{' || s[0] == '[')
+}
+
 func ValidContext(ctx context.Context, data []byte) bool {
 	return ConfigDefault.Valid(ctx, data)
 }

@@ -106,6 +106,32 @@ func TestContext(t *testing.T) {
 	assert.Equal(t, expect, m)
 }
 
+func TestMarshalClear(t *testing.T) {
+	f := struct {
+		Foo string `json:",clearQuotes"`
+	}{
+		Foo: `{"age":10}`,
+	}
+	s, _ := jsoni.MarshalToString(f)
+	assert.Equal(t, `{"Foo":{"age":10}}`, s)
+
+	a := struct {
+		Foo string `json:",clearQuotes"`
+	}{
+		Foo: `["age",10]`,
+	}
+	s, _ = jsoni.MarshalToString(a)
+	assert.Equal(t, `{"Foo":["age",10]}`, s)
+
+	b := struct {
+		Foo string `json:",clearQuotes"`
+	}{
+		Foo: `"age"`,
+	}
+	s, _ = jsoni.MarshalToString(b)
+	assert.Equal(t, `{"Foo":"\"age\""}`, s)
+}
+
 func TestMarshalJSONArray(t *testing.T) {
 	f := struct {
 		Foo []json.Number `json:",nilasempty"`

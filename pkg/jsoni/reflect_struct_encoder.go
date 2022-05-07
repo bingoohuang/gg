@@ -101,11 +101,29 @@ type structFieldEncoder struct {
 	fieldEncoder ValEncoder
 	omitempty    bool
 	nilAsEmpty   bool
+	clearQuotes  bool
+}
+
+type key int
+
+const (
+	_ key = iota
+	keyStructField
+)
+
+func getContextStructFieldEncoder(ctx context.Context) *structFieldEncoder {
+	if v := ctx.Value(keyStructField); v != nil {
+		return v.(*structFieldEncoder)
+	}
+	return &structFieldEncoder{}
 }
 
 func (e *structFieldEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
+	ctx = context.WithValue(ctx, keyStructField, e)
+
 	fieldPtr := e.field.UnsafeGet(ptr)
 	e.fieldEncoder.Encode(ctx, fieldPtr, stream)
+
 	if stream.Error != nil && stream.Error != io.EOF {
 		stream.Error = fmt.Errorf("%s: %s", e.field.Name(), stream.Error.Error())
 	}
@@ -143,23 +161,19 @@ func (e *structEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range e.fields {
-		fieldEncoder := field.encoder
-		if fieldEncoder.omitempty && fieldEncoder.IsEmpty(ctx, ptr, true) {
+		fe := field.encoder
+		if fe.omitempty && fe.IsEmpty(ctx, ptr, true) {
 			continue
 		}
-		if fieldEncoder.IsEmbeddedPtrNil(ptr) {
+		if fe.IsEmbeddedPtrNil(ptr) {
 			continue
 		}
 		if isNotFirst {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField(field.toName)
-		if fieldEncoder.nilAsEmpty && fieldEncoder.IsEmpty(ctx, ptr, true) && fieldEncoder.field.Type().Kind() == reflect.Slice {
-			stream.WriteEmptyArray()
-		} else {
-			fieldEncoder.Encode(ctx, ptr, stream)
-		}
 
+		fe.Encode(ctx, ptr, stream)
 		isNotFirst = true
 	}
 	stream.WriteObjectEnd()

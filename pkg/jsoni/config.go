@@ -79,24 +79,30 @@ var ConfigFastest = Config{
 }.Froze()
 
 type frozenConfig struct {
-	configBeforeFrozen            Config
-	sortMapKeys                   bool
-	omitEmptyStructField          bool // omit empty struct field
-	omitEmptyMapKeys              bool // omit empty keys whose value is empty
-	indentionStep                 int
+	configBeforeFrozen Config
+
+	indentionStep        int
+	sortMapKeys          bool
+	omitEmptyStructField bool // omit empty struct field
+	omitEmptyMapKeys     bool // omit empty keys whose value is empty
+
 	objectFieldMustBeSimpleString bool
-	onlyTaggedField               bool
-	disallowUnknownFields         bool
-	decoderCache                  *concurrent.Map
-	encoderCache                  *concurrent.Map
-	encoderExtension              Extension
-	decoderExtension              Extension
-	extensions                    Extensions
-	streamPool                    *sync.Pool
-	iteratorPool                  *sync.Pool
-	caseSensitive                 bool
-	int64AsString                 bool
-	nilAsEmpty                    bool
+
+	onlyTaggedField       bool
+	disallowUnknownFields bool
+
+	caseSensitive bool
+	int64AsString bool
+	nilAsEmpty    bool
+	clearQuotes   bool // clear Valid JSONObject/JSONArray string without quotes
+
+	decoderCache     *concurrent.Map
+	encoderCache     *concurrent.Map
+	encoderExtension Extension
+	decoderExtension Extension
+	extensions       Extensions
+	streamPool       *sync.Pool
+	iteratorPool     *sync.Pool
 
 	typeDecoders  map[string]ValDecoder
 	fieldDecoders map[string]ValDecoder
@@ -270,9 +276,18 @@ func (c *frozenConfig) marshalFloatWith6Digits(extension EncoderExtension) {
 
 type htmlEscapedStringEncoder struct{}
 
-func (e *htmlEscapedStringEncoder) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
-	str := *((*string)(ptr))
-	stream.WriteStringWithHTMLEscaped(str)
+func (e *htmlEscapedStringEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
+	s := *((*string)(ptr))
+	sfe := &structFieldEncoder{}
+	if v := ctx.Value(keyStructField); v != nil {
+		sfe = v.(*structFieldEncoder)
+	}
+
+	if sfe.clearQuotes && s != "" && ValidJSONContext(ctx, []byte(s)) {
+		stream.WriteRaw(s)
+	} else {
+		stream.WriteStringWithHTMLEscaped(s)
+	}
 }
 
 func (e *htmlEscapedStringEncoder) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {

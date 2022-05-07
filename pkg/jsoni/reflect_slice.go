@@ -27,27 +27,30 @@ type sliceEncoder struct {
 }
 
 func (e *sliceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
-	if e.sliceType.UnsafeIsNil(ptr) {
-		if e.ctx.nilAsEmpty {
-			stream.WriteEmptyArray()
-		} else {
-			stream.WriteNil()
-		}
-		return
-	}
-	length := e.sliceType.UnsafeLengthOf(ptr)
-	if length == 0 {
+	sfe := getContextStructFieldEncoder(ctx)
+
+	if sfe.nilAsEmpty && e.IsEmpty(ctx, ptr, true) {
 		stream.WriteEmptyArray()
-		return
+	} else {
+		if e.sliceType.UnsafeIsNil(ptr) {
+			stream.WriteNil()
+			return
+		}
+		length := e.sliceType.UnsafeLengthOf(ptr)
+		if length == 0 {
+			stream.WriteEmptyArray()
+			return
+		}
+		stream.WriteArrayStart()
+		e.elemEncoder.Encode(ctx, e.sliceType.UnsafeGetIndex(ptr, 0), stream)
+		for i := 1; i < length; i++ {
+			stream.WriteMore()
+			elemPtr := e.sliceType.UnsafeGetIndex(ptr, i)
+			e.elemEncoder.Encode(ctx, elemPtr, stream)
+		}
+		stream.WriteArrayEnd()
 	}
-	stream.WriteArrayStart()
-	e.elemEncoder.Encode(ctx, e.sliceType.UnsafeGetIndex(ptr, 0), stream)
-	for i := 1; i < length; i++ {
-		stream.WriteMore()
-		elemPtr := e.sliceType.UnsafeGetIndex(ptr, i)
-		e.elemEncoder.Encode(ctx, elemPtr, stream)
-	}
-	stream.WriteArrayEnd()
+
 	if stream.Error != nil && stream.Error != io.EOF {
 		stream.Error = fmt.Errorf("%v: %s", e.sliceType, stream.Error.Error())
 	}

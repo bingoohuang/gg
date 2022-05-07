@@ -219,9 +219,15 @@ func (c *stringCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *Iterat
 	*((*string)(ptr)) = iter.ReadString()
 }
 
-func (c *stringCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *Stream) {
-	str := *((*string)(ptr))
-	stream.WriteString(str)
+func (c *stringCodec) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
+	s := *((*string)(ptr))
+
+	sfe := getContextStructFieldEncoder(ctx)
+	if sfe.clearQuotes && s != "" && ValidJSONContext(ctx, []byte(s)) {
+		stream.WriteRaw(s)
+	} else {
+		stream.WriteString(s)
+	}
 }
 
 func (c *stringCodec) IsEmpty(_ context.Context, p unsafe.Pointer, _ bool) bool {

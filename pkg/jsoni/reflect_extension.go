@@ -373,7 +373,8 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 					fieldEncoder := b.Encoder.(*structFieldEncoder)
 					omitempty := fieldEncoder.omitempty
 					nilAsEmpty := fieldEncoder.nilAsEmpty
-					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty, nilAsEmpty: nilAsEmpty}
+					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder,
+						omitempty: omitempty, nilAsEmpty: nilAsEmpty}
 					b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 					embeddedBindings = append(embeddedBindings, b)
 				}
@@ -388,7 +389,8 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 						omitempty := fieldEncoder.omitempty
 						nilAsEmpty := fieldEncoder.nilAsEmpty
 						b.Encoder = &dereferenceEncoder{ValueEncoder: b.Encoder}
-						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder, omitempty: omitempty, nilAsEmpty: nilAsEmpty}
+						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder,
+							omitempty: omitempty, nilAsEmpty: nilAsEmpty}
 						b.Decoder = &dereferenceDecoder{valueType: ptrType.Elem(), valueDecoder: b.Decoder}
 						b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 						embeddedBindings = append(embeddedBindings, b)
@@ -407,13 +409,16 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 		if encoder == nil {
 			encoder = encoderOfType(ctx.append(field.Name()), field.Type())
 		}
-		binding := &Binding{Field: field, FromNames: fieldNames, ToNames: fieldNames, Decoder: decoder, Encoder: encoder}
+		binding := &Binding{Field: field, FromNames: fieldNames, ToNames: fieldNames,
+			Decoder: decoder, Encoder: encoder}
 		binding.levels = []int{i}
 		bindings = append(bindings, binding)
 	}
 	return createStructDescriptor(ctx, typ, bindings, embeddedBindings)
 }
-func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
+
+func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding,
+	embeddedBindings []*Binding) *StructDescriptor {
 	structDescriptor := &StructDescriptor{Type: typ, Fields: bindings}
 	ctx.frozenConfig.extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
@@ -450,6 +455,7 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 	for _, b := range structDescriptor.Fields {
 		shouldOmitEmpty := cfg.omitEmptyStructField
 		nilAsEmpty := cfg.nilAsEmpty
+		clearQuotes := cfg.clearQuotes
 		tagParts := strings.Split(b.Field.Tag().Get(cfg.getTagKey()), ",")
 		for _, tagPart := range tagParts[1:] {
 			switch tagPart {
@@ -457,6 +463,8 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 				nilAsEmpty = true
 			case "omitempty":
 				shouldOmitEmpty = true
+			case "clearQuotes":
+				clearQuotes = true
 			case "string":
 				switch k := b.Field.Type().Kind(); k {
 				case reflect.String:
@@ -473,7 +481,8 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 			}
 		}
 		b.Decoder = &structFieldDecoder{field: b.Field, fieldDecoder: b.Decoder}
-		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder, omitempty: shouldOmitEmpty, nilAsEmpty: nilAsEmpty}
+		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder,
+			omitempty: shouldOmitEmpty, nilAsEmpty: nilAsEmpty, clearQuotes: clearQuotes}
 	}
 }
 

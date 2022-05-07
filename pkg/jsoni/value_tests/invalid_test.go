@@ -164,6 +164,7 @@ func Test_invalid_number(t *testing.T) {
 func Test_valid(t *testing.T) {
 	should := require.New(t)
 	should.True(jsoni.Valid([]byte(`{}`)))
+	should.True(jsoni.Valid([]byte(`[]`)))
 	should.False(jsoni.Valid([]byte(`{`)))
 }
 
