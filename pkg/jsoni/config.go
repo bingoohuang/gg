@@ -31,6 +31,7 @@ type Config struct {
 	CaseSensitive                 bool
 	Int64AsString                 bool
 	NilAsEmpty                    bool
+	ClearQuotes                   bool
 }
 
 // API the public interface of this package.
@@ -164,6 +165,7 @@ func (c Config) Froze() API {
 		caseSensitive:                 c.CaseSensitive,
 		int64AsString:                 c.Int64AsString,
 		nilAsEmpty:                    c.NilAsEmpty,
+		clearQuotes:                   c.ClearQuotes,
 
 		typeDecoders:  map[string]ValDecoder{},
 		fieldDecoders: map[string]ValDecoder{},
