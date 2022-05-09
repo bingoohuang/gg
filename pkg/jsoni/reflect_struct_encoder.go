@@ -113,6 +113,15 @@ const (
 	keyStructField
 )
 
+func getContextFrozenConfig(ctx context.Context) *frozenConfig {
+	cv := ctx.Value(ContextCfg)
+	if cv != nil {
+		return cv.(*frozenConfig)
+	}
+
+	return &frozenConfig{}
+}
+
 func getContextStructFieldEncoder(ctx context.Context) *structFieldEncoder {
 	if v := ctx.Value(keyStructField); v != nil {
 		return v.(*structFieldEncoder)
@@ -120,8 +129,16 @@ func getContextStructFieldEncoder(ctx context.Context) *structFieldEncoder {
 	return &structFieldEncoder{}
 }
 
+func getContextClearQuotes(ctx context.Context) bool {
+	return getContextStructFieldEncoder(ctx).clearQuotes || getContextFrozenConfig(ctx).clearQuotes
+}
+
+func getContextNilEmpty(ctx context.Context) bool {
+	return getContextStructFieldEncoder(ctx).nilAsEmpty || getContextFrozenConfig(ctx).nilAsEmpty
+}
+
 func writeRawBytesIfClearQuotes(ctx context.Context, s string, stream *Stream) bool {
-	if sfe := getContextStructFieldEncoder(ctx); sfe.clearQuotes && s != "" {
+	if s != "" && getContextClearQuotes(ctx) {
 		if b := []byte(s); ValidJSONContext(ctx, b) {
 			buf := &bytes.Buffer{}
 			_ = json.Compact(buf, b)

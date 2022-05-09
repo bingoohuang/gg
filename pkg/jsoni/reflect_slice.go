@@ -27,9 +27,7 @@ type sliceEncoder struct {
 }
 
 func (e *sliceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, stream *Stream) {
-	sfe := getContextStructFieldEncoder(ctx)
-
-	if sfe.nilAsEmpty && e.IsEmpty(ctx, ptr, true) {
+	if getContextNilEmpty(ctx) && e.IsEmpty(ctx, ptr, true) {
 		stream.WriteEmptyArray()
 	} else {
 		if e.sliceType.UnsafeIsNil(ptr) {
