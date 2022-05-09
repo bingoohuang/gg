@@ -1,6 +1,7 @@
 package sigx
 
 import (
+	"bytes"
 	"context"
 	"github.com/bingoohuang/gg/pkg/iox"
 	"github.com/bingoohuang/gg/pkg/osx"
@@ -11,6 +12,7 @@ import (
 	"os/signal"
 	"runtime/pprof"
 	"syscall"
+	"time"
 )
 
 // RegisterSignals registers signal handlers.
@@ -49,13 +51,22 @@ func RegisterSignalProfile(signals ...os.Signal) {
 	}
 
 	RegisterSignalCallback(func() {
-		if HasCmd("jj.cpu", false) {
-			if completed, err := CollectCpuProfile("cpu.profile"); err != nil {
-				log.Printf("failed to collect profile: %v", err)
-			} else if completed {
-				osx.Remove("jj.cpu")
+		val, ok := ReadCmdOK("jj.cpu", false)
+		if ok {
+			collectCpuProfile()
+			if val = bytes.TrimSpace(val); len(val) > 0 {
+				if duration, err := time.ParseDuration(string(val)); err != nil {
+					log.Printf("ignore duration %s in jj.cpu, parse failed: %v", val, err)
+				} else if duration > 0 {
+					log.Printf("after %s, cpu.profile will be generated ", val)
+					go func() {
+						time.Sleep(duration)
+						collectCpuProfile()
+					}()
+				}
 			}
 		}
+
 		if HasCmd("jj.mem", true) {
 			if err := CollectMemProfile("mem.profile"); err != nil {
 				log.Printf("failed to collect profile: %v", err)
@@ -65,6 +76,14 @@ func RegisterSignalProfile(signals ...os.Signal) {
 			go profile.Start(profile.Specs(string(v)))
 		}
 	}, signals...)
+}
+
+func collectCpuProfile() {
+	if completed, err := CollectCpuProfile("cpu.profile"); err != nil {
+		log.Printf("failed to collect profile: %v", err)
+	} else if completed {
+		osx.Remove("jj.cpu")
+	}
 }
 
 var cpuProfileFile *os.File
@@ -79,6 +98,19 @@ func HasCmd(f string, remove bool) bool {
 	}
 
 	return false
+}
+
+func ReadCmdOK(f string, remove bool) ([]byte, bool) {
+	s, err := os.Stat(f)
+	if err == nil && !s.IsDir() {
+		data, _ := ioutil.ReadFile(f)
+		if remove {
+			osx.Remove(f)
+		}
+		return data, true
+	}
+
+	return nil, false
 }
 
 func ReadCmd(f string) []byte {

@@ -17,8 +17,13 @@ func init() {
 ## cpu.profile
 
 1. start to collect cpu.profile `touch jj.cpu; kill -USR1 69110`
-1. after some time, like 10 minutes, repeat above cmd to stop.
-1. `go tool pprof -http :9402 cpu.profile` to view
+2. after some time, like 10 minutes, repeat above cmd to stop.
+3. `go tool pprof -http :9402 cpu.profile` to view
+
+or
+
+1. start to collect cpu.profile in 5m `echo 5m > jj.cpu; kill -USR1 69110`
+1. after 5 minutes, `go tool pprof -http :9402 cpu.profile` to view
 
 ## mem.profile
 
