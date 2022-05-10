@@ -208,6 +208,10 @@ func (a *Adaptee) Use(f func(c *gin.Context)) {
 	a.Router.Use(f)
 }
 
+func (a *Adaptee) Handle(httpMethod, relativePath string, args ...interface{}) {
+	a.Router.Handle(httpMethod, relativePath, a.createHandlerFuncs(relativePath, args))
+}
+
 func (a *Adaptee) Any(relativePath string, args ...interface{}) {
 	a.Router.Any(relativePath, a.createHandlerFuncs(relativePath, args))
 }
