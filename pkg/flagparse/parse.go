@@ -7,6 +7,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/ctl"
 	flag "github.com/bingoohuang/gg/pkg/fla9"
 	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/gg/pkg/v"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // Comment this line to disable pprof endpoint.
@@ -100,6 +101,8 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			continue
 		}
 
+		fullName, shortName := ss.Split2(name, ss.WithSeps(","))
+
 		switch ft.Kind() {
 		case reflect.Slice:
 			switch ft.Elem().Kind() {
@@ -117,10 +120,10 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 				requiredVars = append(requiredVars, requiredVar{name: name, p: pp})
 			}
 
-			switch name {
-			case "pprof":
+			switch {
+			case ss.AnyOf("pprof", fullName, shortName):
 				pprof = pp
-			case options.flagName:
+			case ss.AnyOf(options.flagName, fullName, shortName):
 				options.cnf = pp
 			}
 
@@ -153,39 +156,94 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 		}
 	}
 
-	if v, ok := a.(UsageShower); ok {
+	if u, ok := a.(UsageShower); ok {
 		f.Usage = func() {
-			fmt.Println(strings.TrimSpace(v.Usage()))
+			fmt.Println(strings.TrimSpace(u.Usage()))
 		}
 	}
-
-	_ = f.Parse(args[1:])
 
 	if options.cnf != nil {
-		if err := LoadConfFile(*options.cnf, options.defaultCnf, a); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(0)
+		fn, sn := ss.Split2(options.flagName, ss.WithSeps(","))
+		if value, _ := FindFlag(args, fn, sn); value != "" || options.defaultCnf != "" {
+			if err := LoadConfFile(value, options.defaultCnf, a); err != nil {
+				fmt.Fprintln(os.Stderr, err.Error())
+				os.Exit(-1)
+			}
 		}
 	}
+
+	// 提前到这里，实际上是为了先解析出 --conf 参数，便于下面从配置文件载入数据
+	// 但是，命令行应该优先级，应该比配置文件优先级高，为了解决这个矛盾
+	// 需要把 --conf 参数置为第一个参数，并且使用自定义参数的形式，在解析到改参数时，
+	// 立即从对应的配置文件加载所有配置，然后再依次处理其它命令行参数
+	_ = f.Parse(args[1:])
 
 	if checkVersionShow != nil {
 		checkVersionShow()
 	}
-
 	if initing {
 		ctl.Config{Initing: true, InitFiles: options.initFiles}.ProcessInit()
 	}
 
 	checkRequired(requiredVars, f)
 
-	if v, ok := a.(PostProcessor); ok {
-		v.PostProcess()
+	if pp, ok := a.(PostProcessor); ok {
+		pp.PostProcess()
 	}
 
 	if pprof != nil && *pprof != "" {
 		go startPprof(*pprof)
 	}
+}
 
+func FindFlag(args []string, targetNames ...string) (value string, found bool) {
+	for i := 1; i < len(args); i++ {
+		s := args[i]
+		if len(s) < 2 || s[0] != '-' {
+			continue
+		}
+		numMinuses := 1
+		if s[1] == '-' {
+			numMinuses++
+			if len(s) == 2 { // "--" terminates the flags
+				break
+			}
+		}
+
+		name := s[numMinuses:]
+		if len(name) == 0 || name[0] == '-' || name[0] == '=' { // bad flag syntax: %s"
+			continue
+		}
+		if strings.HasPrefix(name, "test.") { // ignore go test flags
+			continue
+		}
+
+		// it's a flag. does it have an argument?
+		hasValue := false
+		for j := 1; j < len(name); j++ { // equals cannot be first
+			if name[j] == '=' {
+				value = name[j+1:]
+				hasValue = true
+				name = name[0:j]
+				break
+			}
+		}
+
+		if !ss.AnyOf(name, targetNames...) {
+			continue
+		}
+
+		// It must have a value, which might be the next argument.
+		if !hasValue && i+1 < len(args) {
+			// value is the next arg
+			hasValue = true
+			value = args[i+1]
+		}
+
+		return value, true
+	}
+
+	return "", false
 }
 
 func createOptions(fns []OptionsFn) *Options {
@@ -204,10 +262,10 @@ var (
 
 func checkRequired(requiredVars []requiredVar, f *flag.FlagSet) {
 	requiredMissed := 0
-	for _, v := range requiredVars {
-		if v.p != nil && *v.p == "" || v.pp != nil && len(*v.pp) == 0 {
+	for _, rv := range requiredVars {
+		if rv.p != nil && *rv.p == "" || rv.pp != nil && len(*rv.pp) == 0 {
 			requiredMissed++
-			fmt.Printf("-%s is required\n", v.name)
+			fmt.Printf("-%s is required\n", rv.name)
 		}
 	}
 
@@ -223,6 +281,13 @@ func checkVersion(checker func(), arg interface{}, fiName string, bp *bool) func
 			return func() {
 				if *bp {
 					fmt.Println(vs.VersionInfo())
+					os.Exit(0)
+				}
+			}
+		} else {
+			return func() {
+				if *bp {
+					fmt.Println(v.Version())
 					os.Exit(0)
 				}
 			}

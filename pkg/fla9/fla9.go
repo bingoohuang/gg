@@ -111,7 +111,7 @@ func newCountValue(val int, p *int) *countValue {
 }
 
 func (i *countValue) Set(s string) error {
-	*i += countValue(len(s) + 1)
+	*i = countValue(len(s) + 1)
 	return nil
 }
 
@@ -1214,6 +1214,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	f := &FlagSet{
 		name:          name,
 		errorHandling: errorHandling,
+		envPrefix:     EnvPrefix,
 	}
 	f.Usage = f.defaultUsage
 	return f
@@ -1230,7 +1231,7 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 
 // EnvPrefix defines a string that will be implicitly prefixed to a
 // flag name before looking it up in the environment variables.
-var EnvPrefix = ""
+var EnvPrefix = "GG"
 
 // ParseEnv parses flags from environment variables.
 // Flags already set will be ignored.
