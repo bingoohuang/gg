@@ -17,3 +17,4 @@
 .DS_Store
 /pkg/fla9/testdata/missing.sample
 *.output
+/.vscode

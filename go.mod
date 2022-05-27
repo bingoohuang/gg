@@ -40,7 +40,7 @@ require (
 	golang.org/x/text v0.3.6
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	gopkg.in/yaml.v3 v3.0.0
 	gorm.io/driver/mysql v1.1.0
 	gorm.io/gorm v1.21.11
 	software.sslmate.com/src/go-pkcs12 v0.0.0-20210415151418-c5206de65a78
