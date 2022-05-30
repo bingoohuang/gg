@@ -15,6 +15,42 @@ const (
 	Raw
 )
 
+// EncodeBytes2Bytes encodes src into base64 []byte.
+func EncodeBytes2Bytes(src []byte, flags ...EncodeFlags) []byte {
+	var b bytes.Buffer
+	if _, err := Encode(&b, bytes.NewReader(src), flags...); err != nil {
+		panic(err)
+	}
+	return b.Bytes()
+}
+
+// EncodeString2String encodes src into base64 string.
+func EncodeString2String(src string, flags ...EncodeFlags) string {
+	var b bytes.Buffer
+	if _, err := Encode(&b, strings.NewReader(src), flags...); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+// EncodeBytes2String encodes src into base64 []byte.
+func EncodeBytes2String(src []byte, flags ...EncodeFlags) string {
+	var b bytes.Buffer
+	if _, err := Encode(&b, bytes.NewReader(src), flags...); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+// EncodeString2Bytes encodes src into base64 string.
+func EncodeString2Bytes(src string, flags ...EncodeFlags) []byte {
+	var b bytes.Buffer
+	if _, err := Encode(&b, strings.NewReader(src), flags...); err != nil {
+		panic(err)
+	}
+	return b.Bytes()
+}
+
 // EncodeBytes encodes src into base64 []byte.
 func EncodeBytes(src []byte, flags ...EncodeFlags) ([]byte, error) {
 	var b bytes.Buffer
@@ -54,6 +90,42 @@ func (f *rawStdEncodingReader) Read(p []byte) (int, error) {
 	}
 
 	return n, err
+}
+
+// DecodeBytes2String decode bytes which is in base64 format ( any one of StdEncoding/URLEncoding/RawStdEncoding/RawURLEncoding).
+func DecodeBytes2String(src []byte) string {
+	var b bytes.Buffer
+	if _, err := Decode(&b, bytes.NewReader(src)); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+// DecodeBytes2Bytes decode bytes which is in base64 format ( any one of StdEncoding/URLEncoding/RawStdEncoding/RawURLEncoding).
+func DecodeBytes2Bytes(src []byte) []byte {
+	var b bytes.Buffer
+	if _, err := Decode(&b, bytes.NewReader(src)); err != nil {
+		panic(err)
+	}
+	return b.Bytes()
+}
+
+// DecodeString2String decode string which is in base64 format ( any one of StdEncoding/URLEncoding/RawStdEncoding/RawURLEncoding).
+func DecodeString2String(src string) string {
+	var b bytes.Buffer
+	if _, err := Decode(&b, strings.NewReader(src)); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+// DecodeString2Bytes decode string which is in base64 format ( any one of StdEncoding/URLEncoding/RawStdEncoding/RawURLEncoding).
+func DecodeString2Bytes(src string) []byte {
+	var b bytes.Buffer
+	if _, err := Decode(&b, strings.NewReader(src)); err != nil {
+		panic(err)
+	}
+	return b.Bytes()
 }
 
 // DecodeBytes decode bytes which is in base64 format ( any one of StdEncoding/URLEncoding/RawStdEncoding/RawURLEncoding).
