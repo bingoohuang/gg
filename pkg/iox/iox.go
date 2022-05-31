@@ -32,3 +32,11 @@ func ReadBytes(r io.Reader) []byte {
 
 	return data
 }
+
+// DiscardClose discards the reader and then close it.
+func DiscardClose(c io.ReadCloser) {
+	if c != nil {
+		_, _ = io.Copy(io.Discard, c)
+		Close(c)
+	}
+}
