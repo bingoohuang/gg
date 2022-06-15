@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"net/url"
 	"path"
 )
@@ -36,6 +37,15 @@ func (u URL) Query(k, v string, kvs ...string) URL {
 func (u URL) Paths(paths ...string) URL {
 	u.SubPaths = append(u.SubPaths, paths...)
 	return u
+}
+
+func (u URL) String() string {
+	s, err := u.Build()
+	if err != nil {
+		log.Fatalf("build URL from base %s failed: %v", u.Base, err)
+	}
+
+	return s
 }
 
 func (u URL) Build() (string, error) {
