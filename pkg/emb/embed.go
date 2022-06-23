@@ -61,7 +61,11 @@ func FileHandler(f fs.FS, name string) http.HandlerFunc {
 }
 
 func ServeFile(f fs.FS, name string, w http.ResponseWriter, r *http.Request) {
-	data, hash, contentType, err := Asset(f, name, true)
+	ServeFileGzip(f, name, w, r, true)
+}
+
+func ServeFileGzip(f fs.FS, name string, w http.ResponseWriter, r *http.Request, useGzip bool) {
+	data, hash, contentType, err := Asset(f, name, useGzip)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -72,7 +76,9 @@ func ServeFile(f fs.FS, name string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Encoding", "gzip")
+	if useGzip {
+		w.Header().Set("Content-Encoding", "gzip")
+	}
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Add("Cache-Control", "public, max-age=31536000")
 	w.Header().Add("ETag", hash)
