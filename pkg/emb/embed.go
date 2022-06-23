@@ -65,6 +65,10 @@ func ServeFile(f fs.FS, name string, w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeFileGzip(f fs.FS, name string, w http.ResponseWriter, r *http.Request, useGzip bool) {
+	if useGzip && w.Header().Get("Content-Encoding") == "gzip" {
+		useGzip = false // if already gzip outside
+	}
+
 	data, hash, contentType, err := Asset(f, name, useGzip)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
