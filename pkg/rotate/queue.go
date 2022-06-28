@@ -99,6 +99,10 @@ func createConfig(options []Option) *Config {
 var digits = regexp.MustCompile(`^\d+$`)
 
 func ParseOutputPath(c *Config, outputPath string) string {
+	if outputPath == "stdout" || outputPath == "stderr" || strings.HasPrefix(outputPath, "stdout:") || strings.HasPrefix(outputPath, "stderr:") {
+		return outputPath
+	}
+
 	s := ss.RemoveAll(outputPath, ":append")
 	if s != outputPath {
 		c.Append = true
