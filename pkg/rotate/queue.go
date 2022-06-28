@@ -125,7 +125,7 @@ type LfLog struct{}
 func (l LfLog) Flush() error { return nil }
 
 func (l LfLog) Write(p []byte) (n int, err error) {
-	log.Printf("{PRE} %s", bytes.TrimSpace(p))
+	log.Printf("[PRE]%s", bytes.TrimSpace(p))
 	return len(p), nil
 }
 
