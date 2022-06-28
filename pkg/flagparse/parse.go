@@ -133,6 +133,20 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 			} else {
 				f.IntVar(p.(*int), name, cast.ToInt(val), usage)
 			}
+		case reflect.Int32:
+			f.Int32Var(p.(*int32), name, cast.ToInt32(val), usage)
+		case reflect.Int64:
+			f.Int64Var(p.(*int64), name, cast.ToInt64(val), usage)
+		case reflect.Uint:
+			f.UintVar(p.(*uint), name, cast.ToUint(val), usage)
+		case reflect.Uint32:
+			f.Uint32Var(p.(*uint32), name, cast.ToUint32(val), usage)
+		case reflect.Uint64:
+			if size == "true" {
+				f.Var(flag.NewSizeFlag(p.(*uint64), val), name, usage)
+			} else {
+				f.Uint64Var(p.(*uint64), name, cast.ToUint64(val), usage)
+			}
 		case reflect.Bool:
 			if fi.Name == "Init" {
 				f.BoolVar(&initing, name, false, usage)
@@ -141,18 +155,10 @@ func ParseArgs(a interface{}, args []string, optionFns ...OptionsFn) {
 				checkVersionShow = checkVersion(checkVersionShow, a, fi.Name, pp)
 				f.BoolVar(pp, name, cast.ToBool(val), usage)
 			}
-		case reflect.Float64:
-			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
 		case reflect.Float32:
 			f.Float32Var(p.(*float32), name, cast.ToFloat32(val), usage)
-		case reflect.Uint64:
-			if size == "true" {
-				f.Var(flag.NewSizeFlag(p.(*uint64), val), name, usage)
-			}
-		case reflect.Int64:
-			f.Int64Var(p.(*int64), name, cast.ToInt64(val), usage)
-		case reflect.Uint:
-			f.UintVar(p.(*uint), name, cast.ToUint(val), usage)
+		case reflect.Float64:
+			f.Float64Var(p.(*float64), name, cast.ToFloat64(val), usage)
 		}
 	}
 
