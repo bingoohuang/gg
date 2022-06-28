@@ -83,7 +83,7 @@ func FixURI(uri string, fns ...FixURIConfigFn) (rr FixURIResult) {
 }
 
 func MaybeURL(out string) (string, bool) {
-	if out == "stdout" {
+	if out == "stdout" || out == "sterr" || strings.HasPrefix(out, "stdout:") || strings.HasPrefix(out, "stderr:") {
 		return "", false
 	}
 
