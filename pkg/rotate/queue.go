@@ -116,20 +116,46 @@ func ParseOutputPath(c *Config, outputPath string) string {
 	return s
 }
 
-type LfStdout struct{}
+type LfLog struct{}
+
+func (l LfLog) Flush() error { return nil }
+
+func (l LfLog) Write(p []byte) (n int, err error) {
+	log.Printf("{PRE} %s", bytes.TrimSpace(p))
+	return len(p), nil
+}
+
+type LfStdout struct {
+	io.Writer
+}
 
 func (l LfStdout) Flush() error { return nil }
 
 func (l LfStdout) Write(p []byte) (n int, err error) {
-	return fmt.Fprintf(os.Stdout, "%s\n", bytes.TrimSpace(p))
+	return fmt.Fprintf(l.Writer, "%s\n", bytes.TrimSpace(p))
 }
 
 func createWriter(outputPath string, c *Config) iox.WriteFlusher {
-	if outputPath == "stdout" {
-		return &LfStdout{}
+	switch {
+	case outputPath == "stdout":
+		return &LfStdout{Writer: os.Stdout}
+	case outputPath == "stderr":
+		return &LfStdout{Writer: os.Stderr}
+	case strings.HasPrefix(outputPath, "stdout:"):
+		if option := strings.TrimPrefix(outputPath, "stdout:"); option == "log" {
+			return &LfLog{}
+		} else {
+			return &LfStdout{Writer: os.Stdout}
+		}
+	case strings.HasPrefix(outputPath, "stderr:"):
+		if option := strings.TrimPrefix(outputPath, "stdout:"); option == "log" {
+			return &LfLog{}
+		} else {
+			return &LfStdout{Writer: os.Stderr}
+		}
+	default:
+		return NewFileWriter(outputPath, c.MaxSize, c.Append, c.KeepDays)
 	}
-
-	return NewFileWriter(outputPath, c.MaxSize, c.Append, c.KeepDays)
 }
 
 func (p *QueueWriter) Send(msg string, countDiscards bool) {
