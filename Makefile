@@ -64,7 +64,7 @@ install: init
 linux: init
 	GOOS=linux GOARCH=amd64 ${goinstall}
 	upx --best --lzma ${gobin}/linux_amd64/${app}
-	ls -lh  ${gobin}/linux_amd64/${app
+	ls -lh  ${gobin}/linux_amd64/${app}
 windows: init
 	GOOS=windows GOARCH=amd64 ${goinstall}
 	upx --best --lzma ${gobin}/windows_amd64/${app}.exe
