@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	gitee.com/chunanyong/dm v1.8.4
+	github.com/Shopify/sarama v1.19.0
 	github.com/antonmedv/expr v1.8.9
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/bingoohuang/golog v0.0.0-20211112131923-101b7e1b3d4c
@@ -49,6 +50,9 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/dgraph-io/ristretto v0.0.4-0.20210309073149-3836124cdc5a // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/eapache/go-resiliency v1.1.0 // indirect
+	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
+	github.com/eapache/queue v1.1.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
@@ -79,7 +83,9 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/src-d/go-oniguruma v1.0.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
