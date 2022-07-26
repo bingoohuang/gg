@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"log"
 
@@ -84,6 +85,7 @@ type producer interface {
 type Producer struct {
 	producer
 	io.Closer
+	Config *ProducerConfig
 }
 
 func (p Producer) Publish(topic string, vv []byte, optionsFns ...OptionFn) (*PublishResponse, error) {
@@ -94,7 +96,7 @@ func (p Producer) Publish(topic string, vv []byte, optionsFns ...OptionFn) (*Pub
 
 	// We are not setting a message key, which means that all messages will
 	// be distributed randomly over the different partitions.
-	msg := &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(vv)}
+	msg := &sarama.ProducerMessage{Topic: ss.Or(topic, p.Config.Topic), Value: sarama.ByteEncoder(vv)}
 	options.Fulfil(msg)
 
 	result, err := p.producer.SendMessage(msg)
@@ -105,7 +107,7 @@ func (p Producer) Publish(topic string, vv []byte, optionsFns ...OptionFn) (*Pub
 	return &PublishResponse{Result: result, Topic: msg.Topic}, nil
 }
 
-func (c ProducerConfig) NewProducer() (*Producer, error) {
+func (c *ProducerConfig) NewProducer() (*Producer, error) {
 	// For the data collector, we are looking for strong consistency semantics.
 	// Because we don't change the flush settings, sarama will try to produce messages
 	// as fast as possible to keep latency low.
@@ -133,7 +135,7 @@ func (c ProducerConfig) NewProducer() (*Producer, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to start Sarama SyncProducer, %w", err)
 		}
-		return &Producer{producer: &syncProducer{SyncProducer: p}}, nil
+		return &Producer{producer: &syncProducer{SyncProducer: p}, Config: c}, nil
 	}
 
 	sc.Producer.Return.Errors = true
@@ -155,5 +157,5 @@ func (c ProducerConfig) NewProducer() (*Producer, error) {
 		}
 	}()
 
-	return &Producer{producer: &asyncProducer{AsyncProducer: p}}, nil
+	return &Producer{producer: &asyncProducer{AsyncProducer: p}, Config: c}, nil
 }
