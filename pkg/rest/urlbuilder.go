@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"path"
@@ -66,5 +67,18 @@ func (u URL) Build() (string, error) {
 		}
 	}
 	b.RawQuery = q.Encode()
+	return b.String(), nil
+}
+
+func JoinURL(base *url.URL, target string) (string, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return "", fmt.Errorf("parse url %s: %w", target, err)
+	}
+
+	b := *base
+	b.Path = path.Join(b.Path, u.Path)
+	b.RawQuery = u.RawQuery
+
 	return b.String(), nil
 }
