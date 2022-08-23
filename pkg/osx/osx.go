@@ -2,8 +2,7 @@ package osx
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/man"
-	"log"
+	"github.com/bingoohuang/gg/pkg/osx/env"
 	"os"
 )
 
@@ -19,12 +18,5 @@ func Exit(msg string, code int) {
 }
 
 func EnvSize(envName string, defaultValue int) int {
-	if s := os.Getenv(envName); s != "" {
-		if size, err := man.ParseBytes(s); err != nil {
-			log.Printf("parse env %s=%s failed: %+v", envName, s, err)
-		} else if size >= 0 {
-			return int(size)
-		}
-	}
-	return defaultValue
+	return env.Size(envName, defaultValue)
 }
