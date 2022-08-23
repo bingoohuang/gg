@@ -9,13 +9,13 @@ import (
 type GenFn func() interface{}
 
 type MapGenValue struct {
-	GenMap     map[string]func() GenFn
+	GenMap     map[string]func(params string) GenFn
 	Map        map[string]GenFn
 	MissedVars map[string]bool
 	Vars       map[string]interface{}
 }
 
-func NewMapGenValue(m map[string]func() GenFn) *MapGenValue {
+func NewMapGenValue(m map[string]func(params string) GenFn) *MapGenValue {
 	return &MapGenValue{
 		GenMap:     m,
 		Map:        make(map[string]GenFn),
@@ -25,10 +25,10 @@ func NewMapGenValue(m map[string]func() GenFn) *MapGenValue {
 }
 
 func (m *MapGenValue) Value(name, params string) interface{} {
-	return m.GetValue(name)
+	return m.GetValue(name, params)
 }
 
-func (m *MapGenValue) GetValue(name string) interface{} {
+func (m *MapGenValue) GetValue(name, params string) interface{} {
 	if fn, ok := m.Map[name]; ok {
 		return fn()
 	}
@@ -36,7 +36,7 @@ func (m *MapGenValue) GetValue(name string) interface{} {
 	var f GenFn
 
 	if fn, ok := m.GenMap[name]; ok {
-		ff := fn()
+		ff := fn(params)
 		f = func() interface{} {
 			v := ff()
 			m.Vars[name] = v
@@ -52,7 +52,7 @@ func (m *MapGenValue) GetValue(name string) interface{} {
 }
 
 type VarValue interface {
-	GetValue(name string) interface{}
+	GetValue(name, params string) interface{}
 }
 
 type VarValueHandler func(name string) interface{}
@@ -74,7 +74,7 @@ type Var struct {
 type Literal struct{ V string }
 
 func (l Literal) Eval(VarValue) string      { return l.V }
-func (l Var) Eval(varValue VarValue) string { return fmt.Sprintf("%s", varValue.GetValue(l.Name)) }
+func (l Var) Eval(varValue VarValue) string { return fmt.Sprintf("%s", varValue.GetValue(l.Name, "")) }
 
 func (l Parts) Eval(varValue VarValue) string {
 	sb := strings.Builder{}

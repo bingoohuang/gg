@@ -6,8 +6,8 @@ import (
 )
 
 func TestVars(t *testing.T) {
-	m := map[string]func() GenFn{
-		"name": func() GenFn { return func() interface{} { return "bingoo" } },
+	m := map[string]func(params string) GenFn{
+		"name": func(params string) GenFn { return func() interface{} { return "bingoo" } },
 	}
 	mv := NewMapGenValue(m)
 	s := EvalSubstitute("hello {name}", mv)
@@ -22,7 +22,7 @@ func TestVars(t *testing.T) {
 	assert.Equal(t, "hello bingoo", s)
 	assert.Equal(t, map[string]interface{}{"name": "bingoo"}, mv.Vars)
 
-	mv = NewMapGenValue(map[string]func() GenFn{})
+	mv = NewMapGenValue(map[string]func(params string) GenFn{})
 	s = EvalSubstitute("hello ${name}", mv)
 	assert.Equal(t, "hello name", s)
 	assert.Equal(t, map[string]bool{"name": true}, mv.MissedVars)
