@@ -44,6 +44,7 @@ func (s SubTxt) IsVar() bool { return false }
 type SubVar struct {
 	Name   string
 	Params string
+	Expr   string
 }
 
 func (s SubVar) IsVar() bool { return true }
@@ -87,7 +88,7 @@ func ParseExpr(src string) Subs {
 				fn := s[1:rb]
 				s = s[rb+1:]
 
-				subLiteral, subVar := parseName(&fn, &left)
+				subLiteral, subVar := parseName(&fn, &left, true)
 				if subLiteral != nil {
 					subs = append(subs, subLiteral)
 				}
@@ -96,7 +97,7 @@ func ParseExpr(src string) Subs {
 				}
 			}
 		} else {
-			subLiteral, subVar := parseName(&s, &left)
+			subLiteral, subVar := parseName(&s, &left, false)
 			if subLiteral != nil {
 				subs = append(subs, subLiteral)
 			}
@@ -117,7 +118,8 @@ func ParseExpr(src string) Subs {
 	return subs
 }
 
-func parseName(s, left *string) (subLiteral, subVar Sub) {
+func parseName(s, left *string, withBrackets bool) (subLiteral, subVar Sub) {
+	original := *s
 	name := ""
 	offset := 0
 	for i, r := range *s {
@@ -148,14 +150,24 @@ func parseName(s, left *string) (subLiteral, subVar Sub) {
 			if rb := strings.IndexByte(*s, ')'); rb > 0 {
 				sv.Params = (*s)[offset+1 : rb]
 				*s = (*s)[rb+1:]
+				sv.Expr = wrap(original[:rb+1], withBrackets)
 				return
 			}
 		}
 	}
 
 	*s = (*s)[offset:]
+	sv.Expr = wrap(original[:offset], withBrackets)
 
 	return
+}
+
+func wrap(s string, brackets bool) string {
+	if brackets {
+		return "@{" + s + "}"
+	}
+
+	return "@" + s
 }
 
 func validNameRune(r int32) bool {

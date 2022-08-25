@@ -16,7 +16,7 @@ func ExampleCreateCount() {
 	fmt.Println(fmt.Sprintf("%+v", ret), err)
 
 	// Output:
-	// &{Name: Q:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲] Ctx:<nil> NoLog:false Timeout:0s Limit:0 ConvertOptions:[]} <nil>
+	// &{Name: Q:select count(*) from t where a = ? and b = ? Vars:[地球 亚洲] Ctx:<nil> NoLog:false Timeout:0s Limit:0 ConvertOptions:[] adapted:false} <nil>
 }
 
 func TestCreateCount(t *testing.T) {

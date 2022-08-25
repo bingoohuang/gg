@@ -50,7 +50,7 @@ func ExampleBasic() {
 		nil, true,
 		12, int8(12), int16(12), int32(12), int64(12),
 		uint(22), uint8(22), uint16(22), uint32(22), uint64(22),
-		float32(23.78), float64(56.45),
+		float32(23.78), 56.45,
 		'c', byte('d'),
 		"string",
 	)
@@ -187,8 +187,9 @@ func ExampleDemo2() {
 }
 
 // rum demo:
-// 	go run ./refer_kr_pretty.go
-// 	go run ./dump/_examples/refer_kr_pretty.go
+//
+//	go run ./refer_kr_pretty.go
+//	go run ./dump/_examples/refer_kr_pretty.go
 func ExamleKr() {
 	vs := []interface{}{
 		23,
