@@ -8,7 +8,7 @@ import (
 )
 
 type Valuer interface {
-	Value(name, params string) interface{}
+	Value(name, params, expr string) interface{}
 }
 
 type ValuerHandler func(name, params string) interface{}
@@ -18,7 +18,7 @@ func (f ValuerHandler) Value(name, params string) interface{} { return f(name, p
 func (s Subs) Eval(valuer Valuer) interface{} {
 	if len(s) == 1 && s.CountVars() == len(s) {
 		v := s[0].(*SubVar)
-		return valuer.Value(v.Name, v.Params)
+		return valuer.Value(v.Name, v.Params, v.Expr)
 	}
 
 	value := ""
@@ -27,7 +27,7 @@ func (s Subs) Eval(valuer Valuer) interface{} {
 		case *SubTxt:
 			value += v.Val
 		case *SubVar:
-			vv := valuer.Value(v.Name, v.Params)
+			vv := valuer.Value(v.Name, v.Params, v.Expr)
 			value += ToString(vv)
 		}
 	}
