@@ -24,11 +24,11 @@ func NewMapGenValue(m map[string]func(params string) GenFn) *MapGenValue {
 	}
 }
 
-func (m *MapGenValue) Value(name, params string) interface{} {
-	return m.GetValue(name, params)
+func (m *MapGenValue) Value(name, params, expr string) interface{} {
+	return m.GetValue(name, params, expr)
 }
 
-func (m *MapGenValue) GetValue(name, params string) interface{} {
+func (m *MapGenValue) GetValue(name, params, expr string) interface{} {
 	if fn, ok := m.Map[name]; ok {
 		return fn()
 	}
@@ -43,7 +43,7 @@ func (m *MapGenValue) GetValue(name, params string) interface{} {
 			return v
 		}
 	} else {
-		f = func() interface{} { return name }
+		f = func() interface{} { return expr }
 		m.MissedVars[name] = true
 	}
 
@@ -52,12 +52,14 @@ func (m *MapGenValue) GetValue(name, params string) interface{} {
 }
 
 type VarValue interface {
-	GetValue(name, params string) interface{}
+	GetValue(name, params, expr string) interface{}
 }
 
-type VarValueHandler func(name string) interface{}
+type VarValueHandler func(name, params, expr string) interface{}
 
-func (v VarValueHandler) GetValue(name string) interface{} { return v(name) }
+func (v VarValueHandler) GetValue(name, params, expr string) interface{} {
+	return v(name, params, expr)
+}
 
 func EvalSubstitute(s string, varValue VarValue) string {
 	return ParseSubstitute(s).Eval(varValue)
@@ -69,12 +71,15 @@ type Part interface {
 
 type Var struct {
 	Name string
+	Expr string
 }
 
 type Literal struct{ V string }
 
-func (l Literal) Eval(VarValue) string      { return l.V }
-func (l Var) Eval(varValue VarValue) string { return fmt.Sprintf("%s", varValue.GetValue(l.Name, "")) }
+func (l Literal) Eval(VarValue) string { return l.V }
+func (l Var) Eval(varValue VarValue) string {
+	return fmt.Sprintf("%s", varValue.GetValue(l.Name, "", l.Expr))
+}
 
 func (l Parts) Eval(varValue VarValue) string {
 	sb := strings.Builder{}
@@ -101,7 +106,7 @@ func ParseSubstitute(s string) (parts Parts) {
 
 		vn := strings.TrimSpace(sub)
 
-		parts = append(parts, &Var{Name: vn})
+		parts = append(parts, &Var{Name: vn, Expr: sub})
 	}
 
 	if start < len(s) {
