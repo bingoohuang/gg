@@ -20,6 +20,7 @@ extldflags := -extldflags -static
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
 flags1 = -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitInfo) -X $(pkg).GoVersion=$(goVersion)
 flags2 = ${extldflags} ${flags1}
+buildFlags = -trimpath -ldflags="'${flags1}'"
 goinstall = go install -trimpath -ldflags='${flags1}' ./...
 gobin := $(shell go env GOBIN)
 # try $GOPATN/bin if $gobin is empty
@@ -28,6 +29,10 @@ gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
 export GOPROXY=https://mirrors.aliyun.com/goproxy/,https://goproxy.cn,https://goproxy.io,direct
 # Active module mode, as we use go modules to manage dependencies
 export GO111MODULE=on
+
+# usage: t=$(mktemp); echo $t; echo "set -x; go build -o build/rig_linux_arm64 $(make -f ~/github/gg/Makefile build.flags) ./cmd/rig" > $t && sh $t
+build.flags:
+	@echo ${buildFlags}
 
 git.commit:
 	echo ${gitCommit} > git.commit
