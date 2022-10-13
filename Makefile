@@ -66,7 +66,7 @@ fmt:
 	go fmt ./...
 	revive .
 	goimports -w .
-	gci -w -local github.com/daixiang0/gci
+	gci write .
 
 install: init
 	${goinstall}
