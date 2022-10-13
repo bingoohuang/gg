@@ -53,6 +53,12 @@ lint-all:
 lint:
 	golangci-lint run ./...
 
+fmt-update:
+	go install mvdan.cc/gofumpt@latest
+	go install golang.org/x/tools/cmd/...@latest 	# for goimports
+	go install github.com/mgechev/revive@master
+	go install github.com/daixiang0/gci@latest
+
 fmt:
 	gofumpt -l -w .
 	gofmt -s -w .
