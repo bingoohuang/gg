@@ -34,8 +34,10 @@ require (
 	github.com/src-d/go-mysql-server v0.6.1-0.20191029145134-62780e17d9e5
 	github.com/stretchr/testify v1.8.0
 	github.com/thoas/go-funk v0.9.0
+	go.uber.org/goleak v1.2.0
 	go.uber.org/multierr v1.6.0
 	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.4.0
@@ -102,6 +104,7 @@ require (
 	go.opencensus.io v0.22.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	google.golang.org/grpc v1.31.0 // indirect
