@@ -68,11 +68,19 @@ fmt:
 	goimports -w .
 	gci write .
 
-install: init
+install-upx: init
 	${goinstall}
 	upx --best --lzma ${gobin}/${app}
 	ls -lh ${gobin}/${app}
+
+install: init
+	${goinstall}
+	ls -lh ${gobin}/${app}
+
 linux: init
+	GOOS=linux GOARCH=amd64 ${goinstall}
+	ls -lh  ${gobin}/linux_amd64/${app}
+linux-upx: init
 	GOOS=linux GOARCH=amd64 ${goinstall}
 	upx --best --lzma ${gobin}/linux_amd64/${app}
 	ls -lh  ${gobin}/linux_amd64/${app}
