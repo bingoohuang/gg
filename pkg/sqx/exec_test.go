@@ -3,6 +3,8 @@ package sqx_test
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"testing"
 
 	"github.com/bingoohuang/gg/pkg/sqx"
@@ -96,9 +98,21 @@ func TestQueryAsBeans(t *testing.T) {
 func TestDriverName(t *testing.T) {
 	pg := "postgres://SYSTEM:111111@192.168.126.245:54322/METRICS_UMP?sslmode=disable"
 	// 创建数据库连接池
-	db, _, err := sqx.Open("pgx", pg)
+	db, d, err := sqx.Open("pgx", pg)
 	assert.Nil(t, err)
 	assert.Equal(t, "pgx", sqx.DriverName(db.Driver()))
+	assert.Equal(t, sqlparser.Postgresql, d.GetDBType())
+
+	sq := sqx.SQL{
+		Q:    `INSERT INTO COMPANY (NAME,AGE,ADDRESS,SALARY) VALUES(:?)`,
+		Vars: []interface{}{"Paul", 32, "California", 20000.00},
+	}
+	if d.GetDBType() == sqlparser.Postgresql || d.GetDBType() == sqlparser.Kingbase {
+		sq.AppendQ = `RETURNING ID`
+	}
+
+	id, err := sq.QueryAsNumber(d)
+	fmt.Println(id, err)
 }
 
 func TestQuery(t *testing.T) {

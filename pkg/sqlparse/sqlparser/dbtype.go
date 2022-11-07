@@ -274,6 +274,8 @@ func (r *ConvertResult) PickArgs(args []interface{}) (q string, bindArgs []inter
 					bindArgs = append(bindArgs, bindArg)
 				}
 			}
+		} else {
+			bindArgs = args
 		}
 
 	case BySeq:

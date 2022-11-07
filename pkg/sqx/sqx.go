@@ -19,11 +19,12 @@ var ErrConditionKind = errors.New("condition kind should be struct or its pointe
 
 // SQL is a structure for query and vars.
 type SQL struct {
-	Name  string
-	Q     string
-	Vars  []interface{}
-	Ctx   context.Context
-	NoLog bool
+	Name    string
+	Q       string
+	AppendQ string
+	Vars    []interface{}
+	Ctx     context.Context
+	NoLog   bool
 
 	Timeout        time.Duration
 	Limit          int
@@ -163,6 +164,10 @@ func (s *SQL) adaptQuery(db SqxDB) error {
 		}
 
 		s.Q, s.Vars = cr.PickArgs(s.Vars)
+		if s.AppendQ != "" {
+			s.Q += " " + s.AppendQ
+		}
+
 		s.adapted = true
 	}
 
