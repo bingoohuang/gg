@@ -168,7 +168,7 @@ func GetQueryRows(dest interface{}) int {
 	case reflect.Slice, reflect.Array:
 		return v.Len()
 	default:
-		return 0
+		return 1
 	}
 }
 
