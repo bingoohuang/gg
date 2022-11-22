@@ -11,6 +11,9 @@ func subVar(n, p, exp string) *SubVar { return &SubVar{Name: n, Params: p, Expr:
 func TestParseExpr(t *testing.T) {
 	assert.Equal(t, Subs{subVar("中文", "", "@中文")}, ParseExpr("@中文"))
 	assert.Equal(t, Subs{subVar("fn", "", "@fn")}, ParseExpr("@fn"))
+	assert.Equal(t, Subs{subVar("fn.1", "", "@fn.1")}, ParseExpr("@fn.1"))
+	assert.Equal(t, Subs{subVar("fn-1", "", "@fn-1")}, ParseExpr("@fn-1"))
+	assert.Equal(t, Subs{subVar("fn_1", "", "@fn_1")}, ParseExpr("@fn_1"))
 	assert.Equal(t, Subs{subVar("fn", "", "@fn"), subTxt("@")}, ParseExpr("@fn@"))
 	assert.Equal(t, Subs{subTxt("abc"), subVar("fn", "", "@{fn}")}, ParseExpr("abc@{fn}"))
 	assert.Equal(t, Subs{subVar("fn", "", "@fn"), subVar("fn", "", "@fn")}, ParseExpr("@fn@fn"))
