@@ -58,6 +58,7 @@ fmt-update:
 	go install golang.org/x/tools/cmd/...@latest 	# for goimports
 	go install github.com/mgechev/revive@master
 	go install github.com/daixiang0/gci@latest
+	go install github.com/google/osv-scanner/cmd/osv-scanner@v1
 
 fmt:
 	gofumpt -l -w .
@@ -67,6 +68,7 @@ fmt:
 	revive .
 	goimports -w .
 	gci write .
+	osv-scanner -r .
 
 install-upx: init
 	${goinstall}
