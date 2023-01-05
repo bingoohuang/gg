@@ -33,10 +33,10 @@ func (c Config) ProcessInit() {
 	}
 
 	if c.PrintVersion {
-		if v := v.Version(); strings.HasSuffix(v, "\n") {
-			fmt.Print(v)
+		if vv := v.Version(); strings.HasSuffix(vv, "\n") {
+			fmt.Print(vv)
 		} else {
-			fmt.Println(v)
+			fmt.Println(vv)
 		}
 	}
 
