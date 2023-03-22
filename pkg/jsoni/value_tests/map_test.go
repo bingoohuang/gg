@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	var pRawMessage = func(val json.RawMessage) *json.RawMessage {
+	pRawMessage := func(val json.RawMessage) *json.RawMessage {
 		return &val
 	}
 	nilMap := map[string]string(nil)

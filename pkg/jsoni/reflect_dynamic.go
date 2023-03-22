@@ -2,9 +2,10 @@ package jsoni
 
 import (
 	"context"
-	"github.com/modern-go/reflect2"
 	"reflect"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
 type dynamicEncoder struct {

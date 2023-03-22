@@ -1,8 +1,9 @@
 package bytex
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestToInt64(t *testing.T) {

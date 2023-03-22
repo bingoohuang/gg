@@ -25,6 +25,7 @@ func Test_any_to_string(t *testing.T) {
 	should.NotNil(jsoni.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoni.UnmarshalFromString("[]", &val))
 }
+
 func Test_any_to_int64(t *testing.T) {
 	should := require.New(t)
 	var val int64
@@ -201,6 +202,7 @@ func Test_any_to_uint64(t *testing.T) {
 	// large float to int
 	should.NotNil(jsoni.UnmarshalFromString(`1234512345123451234512345.0`, &val))
 }
+
 func Test_any_to_uint32(t *testing.T) {
 	should := require.New(t)
 	var val uint32
@@ -228,6 +230,7 @@ func Test_any_to_uint32(t *testing.T) {
 	// large float to int
 	should.NotNil(jsoni.UnmarshalFromString(`1234512345123451234512345.0`, &val))
 }
+
 func Test_any_to_uint16(t *testing.T) {
 	should := require.New(t)
 	var val uint16
@@ -255,6 +258,7 @@ func Test_any_to_uint16(t *testing.T) {
 	// large float to int
 	should.NotNil(jsoni.UnmarshalFromString(`1234512345123451234512345.0`, &val))
 }
+
 func Test_any_to_uint(t *testing.T) {
 	should := require.New(t)
 	var val uint
@@ -340,7 +344,7 @@ func Test_empty_array_as_object(t *testing.T) {
 }
 
 func Test_bad_case(t *testing.T) {
-	var jsonstr = `
+	jsonstr := `
 {
     "extra_type": 181760,
     "combo_type": 0,

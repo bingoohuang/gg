@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/man"
-	"github.com/bingoohuang/gg/pkg/yaml/internal/errors"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"math"
@@ -17,9 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/man"
 	"github.com/bingoohuang/gg/pkg/yaml"
 	"github.com/bingoohuang/gg/pkg/yaml/ast"
+	"github.com/bingoohuang/gg/pkg/yaml/internal/errors"
 	"github.com/bingoohuang/gg/pkg/yaml/parser"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/xerrors"
 )
 
@@ -280,7 +280,8 @@ func TestDecoder(t *testing.T) {
 		{
 			"v: 42",
 			map[string]uint{"v": 42},
-		}, {
+		},
+		{
 			"v: 4294967296",
 			map[string]uint64{"v": 4294967296},
 		},
@@ -638,11 +639,11 @@ func TestDecoder(t *testing.T) {
 		},
 		{
 			"v: [A,B,C,]",
-			map[string][]string{"v": []string{"A", "B", "C"}},
+			map[string][]string{"v": {"A", "B", "C"}},
 		},
 		{
 			"v: [A,1,C]",
-			map[string][]string{"v": []string{"A", "1", "C"}},
+			map[string][]string{"v": {"A", "1", "C"}},
 		},
 		{
 			"v: [A,1,C]",
@@ -656,11 +657,11 @@ func TestDecoder(t *testing.T) {
 		},
 		{
 			"v:\n - A\n - B\n - C",
-			map[string][]string{"v": []string{"A", "B", "C"}},
+			map[string][]string{"v": {"A", "B", "C"}},
 		},
 		{
 			"v:\n - A\n - 1\n - C",
-			map[string][]string{"v": []string{"A", "1", "C"}},
+			map[string][]string{"v": {"A", "1", "C"}},
 		},
 		{
 			"v:\n - A\n - 1\n - C",
@@ -1592,7 +1593,7 @@ c: true
 		t.Fatalf("expected error")
 	}
 
-	//TODO: properly check if errors are colored/have source
+	// TODO: properly check if errors are colored/have source
 	t.Logf("%s", err)
 	t.Logf("%s", yaml.FormatError(err, true, false))
 	t.Logf("%s", yaml.FormatError(err, false, true))
@@ -1619,7 +1620,7 @@ a:
 		t.Fatal(`err.Error() should match yaml.FormatError(err, false, true)`)
 	}
 
-	//TODO: properly check if errors are colored/have source
+	// TODO: properly check if errors are colored/have source
 	t.Logf("%s", err)
 	t.Logf("%s", yaml.FormatError(err, true, false))
 	t.Logf("%s", yaml.FormatError(err, false, true))
@@ -2444,22 +2445,22 @@ func TestDecoder_LiteralWithNewLine(t *testing.T) {
 		LastNode string `yaml:"last"`
 	}
 	tests := []A{
-		A{
+		{
 			Node: "hello\nworld",
 		},
-		A{
+		{
 			Node: "hello\nworld\n",
 		},
-		A{
+		{
 			Node: "hello\nworld\n\n",
 		},
-		A{
+		{
 			LastNode: "hello\nworld",
 		},
-		A{
+		{
 			LastNode: "hello\nworld\n",
 		},
-		A{
+		{
 			LastNode: "hello\nworld\n\n",
 		},
 	}

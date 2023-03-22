@@ -175,7 +175,8 @@ a: 0 - 1
 a: 0 - 1
 `,
 		},
-		{`
+		{
+			`
 - a:
    b: c
    d: e
@@ -758,8 +759,7 @@ foo: > # comment
 	}
 }
 
-type Visitor struct {
-}
+type Visitor struct{}
 
 func (v *Visitor) Visit(node ast.Node) ast.Visitor {
 	tk := node.GetToken()

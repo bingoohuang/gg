@@ -3,9 +3,6 @@ package sigx
 import (
 	"bytes"
 	"context"
-	"github.com/bingoohuang/gg/pkg/iox"
-	"github.com/bingoohuang/gg/pkg/osx"
-	"github.com/bingoohuang/gg/pkg/profile"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +10,10 @@ import (
 	"runtime/pprof"
 	"syscall"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/iox"
+	"github.com/bingoohuang/gg/pkg/osx"
+	"github.com/bingoohuang/gg/pkg/profile"
 )
 
 // RegisterSignals registers signal handlers.

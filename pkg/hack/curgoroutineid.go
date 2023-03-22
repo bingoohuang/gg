@@ -33,13 +33,15 @@ func CurGoroutineID() uint64 {
 	return n
 }
 
-var goroutineSpace = []byte("goroutine ")
-var littleBuf = sync.Pool{
-	New: func() interface{} {
-		buf := make([]byte, 64)
-		return &buf
-	},
-}
+var (
+	goroutineSpace = []byte("goroutine ")
+	littleBuf      = sync.Pool{
+		New: func() interface{} {
+			buf := make([]byte, 64)
+			return &buf
+		},
+	}
+)
 
 // ParseUintBytes is like strconv.ParseUint, but using a []byte.
 func ParseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {

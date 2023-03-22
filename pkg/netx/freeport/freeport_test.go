@@ -1,11 +1,11 @@
 package freeport
 
 import (
-	"github.com/stretchr/testify/assert"
-
 	"net"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMustFreePort(t *testing.T) {
@@ -42,7 +42,6 @@ func TestGetFreePort(t *testing.T) {
 func TestGetFreePorts(t *testing.T) {
 	count := 3
 	ports, err := Ports(count)
-
 	if err != nil {
 		t.Error(err)
 	}

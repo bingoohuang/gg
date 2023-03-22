@@ -1,10 +1,11 @@
 package yaml
 
 import (
-	"github.com/bingoohuang/gg/pkg/yaml/ast"
-	"golang.org/x/xerrors"
 	"io"
 	"reflect"
+
+	"github.com/bingoohuang/gg/pkg/yaml/ast"
+	"golang.org/x/xerrors"
 )
 
 // DecodeOption functional option type for Decoder

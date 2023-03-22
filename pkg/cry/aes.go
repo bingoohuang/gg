@@ -27,7 +27,7 @@ func NewAESOpt(secret string) (*AESOpt, error) {
 		return nil, errors.Wrap(err, "NewAESOpt.hex.DecodeString")
 	}
 
-	//Create a new Cipher Block from the key
+	// Create a new Cipher Block from the key
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewAESOpt.aes.NewCipher")
@@ -53,33 +53,31 @@ func NewAESOpt(secret string) (*AESOpt, error) {
 
 // Encrypt is function to encrypt data using AES algorithm
 func (aesOpt *AESOpt) Encrypt(plainText []byte) (string, error) {
-
-	//Create a nonce. Nonce should be from GCM
+	// Create a nonce. Nonce should be from GCM
 	nonce := make([]byte, aesOpt.aesGCM.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", errors.Wrap(err, "encryptAES.io.ReadFull")
 	}
 
-	//Encrypt the data using aesGCM.Seal
-	//Since we don't want to save the nonce somewhere else in this case, we add it as a prefix to the encrypted data. The first nonce argument in Seal is the prefix.
+	// Encrypt the data using aesGCM.Seal
+	// Since we don't want to save the nonce somewhere else in this case, we add it as a prefix to the encrypted data. The first nonce argument in Seal is the prefix.
 	ciphertext := aesOpt.aesGCM.Seal(nonce, nonce, plainText, nil)
 	return fmt.Sprintf("%x", ciphertext), nil
 }
 
 // Decrypt is function to decypt data using AES algorithm
 func (aesOpt *AESOpt) Decrypt(chiperText []byte) (string, error) {
-
 	enc, _ := hex.DecodeString(string(chiperText))
 
-	//Get the nonce size
+	// Get the nonce size
 	nonceSize := aesOpt.aesGCM.NonceSize()
 	if len(enc) < nonceSize {
 		return "", errors.New("The data can't be decrypted")
 	}
-	//Extract the nonce from the encrypted data
+	// Extract the nonce from the encrypted data
 	nonce, ciphertext := enc[:nonceSize], enc[nonceSize:]
 
-	//Decrypt the data
+	// Decrypt the data
 	plainText, err := aesOpt.aesGCM.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "decryptAES.aesGCM.Open")

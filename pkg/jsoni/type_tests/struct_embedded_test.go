@@ -64,21 +64,23 @@ func init() {
 	)
 }
 
-type EmbeddedFloat64 float64
-type EmbeddedInt32 int32
-type EmbeddedMapStringString map[string]string
-type EmbeddedSliceString []string
-type EmbeddedString string
-type EmbeddedStruct struct {
-	String string
-	Int    int32
-	Float  float64
-	Struct struct {
-		X string
+type (
+	EmbeddedFloat64         float64
+	EmbeddedInt32           int32
+	EmbeddedMapStringString map[string]string
+	EmbeddedSliceString     []string
+	EmbeddedString          string
+	EmbeddedStruct          struct {
+		String string
+		Int    int32
+		Float  float64
+		Struct struct {
+			X string
+		}
+		Slice []string
+		Map   map[string]string
 	}
-	Slice []string
-	Map   map[string]string
-}
+)
 
 type OverlapDifferentLevelsE1 struct {
 	F1 int32

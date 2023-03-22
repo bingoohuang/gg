@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/mapp"
 	"io"
 	"os"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
+	"github.com/bingoohuang/gg/pkg/mapp"
 	funk "github.com/thoas/go-funk"
 )
 
@@ -394,10 +394,12 @@ func (p *MultiPart) Compile() error {
 	return nil
 }
 
-var _ SQLPart = (*LiteralPart)(nil)
-var _ SQLPart = (*IfPart)(nil)
-var _ SQLPart = (*MultiPart)(nil)
-var _ SQLPart = (*PostProcessingSQLPart)(nil)
+var (
+	_ SQLPart = (*LiteralPart)(nil)
+	_ SQLPart = (*IfPart)(nil)
+	_ SQLPart = (*MultiPart)(nil)
+	_ SQLPart = (*PostProcessingSQLPart)(nil)
+)
 
 // ParseDynamicSQL parses the dynamic sqls to structured SQLPart.
 func ParseDynamicSQL(lines []string, terminators ...string) (int, SQLPart, error) {

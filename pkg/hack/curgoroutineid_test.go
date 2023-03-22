@@ -1,8 +1,9 @@
 package hack
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGid(t *testing.T) {

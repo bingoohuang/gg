@@ -4,15 +4,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+	"reflect"
+	"strconv"
+	"strings"
+
 	"github.com/bingoohuang/gg/pkg/mathx"
 	"github.com/bingoohuang/gg/pkg/reflector"
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/strcase"
-	"log"
-	"reflect"
-	"strconv"
-	"strings"
 )
 
 type Limit struct {
@@ -36,10 +37,8 @@ type StdDB struct{ db *sql.DB }
 // GetDB returns a sql.DBGetter.
 func (f StdDB) GetDB() *sql.DB { return f.db }
 
-var (
-	// DB is the global sql.DB for convenience.
-	DB *sql.DB
-)
+// DB is the global sql.DB for convenience.
+var DB *sql.DB
 
 // CreateDao fulfils the dao (should be pointer).
 func CreateDao(dao interface{}, createDaoOpts ...CreateDaoOpter) error {
@@ -107,7 +106,6 @@ func (option *CreateDaoOpt) getSQLStmt(field StructField, tags reflector.Tags, s
 			Attrs:   tags.Map(),
 		}
 		part, err := dsi.DynamicSQL()
-
 		if err != nil {
 			option.Logger.LogError(err)
 		}
@@ -241,7 +239,8 @@ func (p *SQLParsed) eval(numIn int, f StructField, env map[string]interface{}) e
 }
 
 func (r *sqlRun) queryByName(numIn int, f StructField,
-	outTypes []reflect.Type, args []reflect.Value) ([]reflect.Value, error) {
+	outTypes []reflect.Type, args []reflect.Value,
+) ([]reflect.Value, error) {
 	var bean reflect.Value
 
 	if numIn > 0 {
@@ -436,7 +435,6 @@ func (p *SQLParsed) createNamedMap(bean reflect.Value) map[string]interface{} {
 				name := strcase.ToCamelLower(f.Name)
 				m[name] = bean.Field(i).Interface()
 			}
-
 		}
 	case reflect.Map:
 		for _, k := range bean.MapKeys() {
@@ -482,7 +480,8 @@ func (p *SQLParsed) createNamedVars(bean reflect.Value) ([]interface{}, error) {
 }
 
 func (r *sqlRun) execBySeq(numIn int, f StructField,
-	outTypes []reflect.Type, args []reflect.Value) ([]reflect.Value, error) {
+	outTypes []reflect.Type, args []reflect.Value,
+) ([]reflect.Value, error) {
 	parsed := *r.SQLParsed
 
 	if err := parsed.evalSeq(numIn, f, args); err != nil {
@@ -514,8 +513,8 @@ func (r *sqlRun) execBySeq(numIn int, f StructField,
 }
 
 func (r *sqlRun) queryBySeq(numIn int, f StructField,
-	outTypes []reflect.Type, args []reflect.Value) ([]reflect.Value, error) {
-
+	outTypes []reflect.Type, args []reflect.Value,
+) ([]reflect.Value, error) {
 	parsed := *r.SQLParsed
 	if err := parsed.evalSeq(numIn, f, args); err != nil {
 		return nil, err
@@ -554,7 +553,6 @@ func (p *SQLParsed) processQueryRows(rows *sql.Rows, outTypes []reflect.Type) ([
 
 	interceptorFn := p.getRowScanInterceptorFn()
 	mapFields, err := p.createMapFields(columns, out0Type, outTypes)
-
 	if err != nil {
 		return nil, err
 	}
@@ -718,11 +716,11 @@ func (p *SQLParsed) pagingCount(db *sql.DB, query string, vars []interface{}) (i
 	}
 
 	return count, nil
-
 }
 
 func (p *SQLParsed) createMapFields(columns []string, out0Type reflect.Type,
-	outTypes []reflect.Type) ([]selectItem, error) {
+	outTypes []reflect.Type,
+) ([]selectItem, error) {
 	switch out0Type.Kind() {
 	case reflect.Struct, reflect.Map:
 		if len(outTypes) != 1 {
@@ -898,7 +896,8 @@ func (s *singleValue) Set(val reflect.Value) {
 }
 
 func resetDests(out0Type reflect.Type, out0TypePtr bool,
-	outTypes []reflect.Type, mapFields []selectItem) ([]interface{}, []reflect.Value) {
+	outTypes []reflect.Type, mapFields []selectItem,
+) ([]interface{}, []reflect.Value) {
 	pointers := make([]interface{}, len(mapFields))
 
 	var out0 reflect.Value

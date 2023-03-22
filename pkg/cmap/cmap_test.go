@@ -2,11 +2,12 @@ package cmap
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"hash/fnv"
 	"sort"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type animal struct {
@@ -489,7 +490,6 @@ func TestFnv32(t *testing.T) {
 	if fnv32(string(key)) != hasher.Sum32() {
 		t.Errorf("Bundled fnv32 produced %d, expected result from hash/fnv32 is %d", fnv32(string(key)), hasher.Sum32())
 	}
-
 }
 
 func TestUpsert(t *testing.T) {
@@ -569,7 +569,6 @@ func TestKeysWhenRemoving(t *testing.T) {
 	}
 }
 
-//
 func TestUnDrainedIter(t *testing.T) {
 	m := New()
 	// Insert 100 elements.

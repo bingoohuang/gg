@@ -46,8 +46,10 @@ func (m *structMarshaler) UnmarshalJSON(text []byte) error {
 	return nil
 }
 
-var _ json.Marshaler = structMarshaler{}
-var _ json.Unmarshaler = &structMarshaler{}
+var (
+	_ json.Marshaler   = structMarshaler{}
+	_ json.Unmarshaler = &structMarshaler{}
+)
 
 type structMarshalerAlias structMarshaler
 

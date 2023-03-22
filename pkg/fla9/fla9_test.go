@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"sort"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bingoohuang/gg/pkg/fla9"
+	"github.com/stretchr/testify/assert"
 )
 
 func ExampleFlag() {
@@ -501,7 +501,7 @@ func TestChangingArgs(t *testing.T) {
 
 // Test that -help invokes the usage message and returns ErrHelp.
 func TestHelp(t *testing.T) {
-	var helpCalled = false
+	helpCalled := false
 	fs := fla9.NewFlagSet("help test", fla9.ContinueOnError)
 	fs.Usage = func() { helpCalled = true }
 	var fla bool
@@ -580,7 +580,6 @@ func TestPrintDefaults(t *testing.T) {
 
 // Test parsing a environment variables
 func TestParseEnv(t *testing.T) {
-
 	syscall.Setenv("BOOL", "")
 	syscall.Setenv("BOOL2", "true")
 	syscall.Setenv("INT", "22")

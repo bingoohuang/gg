@@ -3,11 +3,12 @@ package flagparse
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"reflect"
+
 	"github.com/bingoohuang/gg/pkg/man"
 	"github.com/bingoohuang/gg/pkg/yaml"
 	"github.com/bingoohuang/gg/pkg/yaml/ast"
-	"os"
-	"reflect"
 )
 
 func decodeSize(node ast.Node, typ reflect.Type) (reflect.Value, error) {

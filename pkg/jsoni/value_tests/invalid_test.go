@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
-	"testing"
 )
 
 func Test_missing_object_end(t *testing.T) {

@@ -2,9 +2,9 @@ package hlog
 
 import (
 	"bytes"
-	"github.com/bingoohuang/gg/pkg/ginx/adapt"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/ginx/adapt"
 	"github.com/bingoohuang/gg/pkg/snow"
 	"github.com/gin-gonic/gin"
 )

@@ -789,8 +789,8 @@ func indirectToStringerOrError(a interface{}) interface{} {
 		return nil
 	}
 
-	var errorType = reflect.TypeOf((*error)(nil)).Elem()
-	var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+	errorType := reflect.TypeOf((*error)(nil)).Elem()
+	fmtStringerType := reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
 	v := reflect.ValueOf(a)
 	for !v.Type().Implements(fmtStringerType) && !v.Type().Implements(errorType) && v.Kind() == reflect.Ptr && !v.IsNil() {
@@ -857,7 +857,7 @@ func ToStringE(i interface{}) (string, error) {
 
 // ToStringMapStringE casts an interface to a map[string]string type.
 func ToStringMapStringE(i interface{}) (map[string]string, error) {
-	var m = map[string]string{}
+	m := map[string]string{}
 
 	switch v := i.(type) {
 	case map[string]string:
@@ -887,7 +887,7 @@ func ToStringMapStringE(i interface{}) (map[string]string, error) {
 
 // ToStringMapStringSliceE casts an interface to a map[string][]string type.
 func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
-	var m = map[string][]string{}
+	m := map[string][]string{}
 
 	switch v := i.(type) {
 	case map[string][]string:
@@ -951,7 +951,7 @@ func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 
 // ToStringMapBoolE casts an interface to a map[string]bool type.
 func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
-	var m = map[string]bool{}
+	m := map[string]bool{}
 
 	switch v := i.(type) {
 	case map[interface{}]interface{}:
@@ -976,7 +976,7 @@ func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 
 // ToStringMapE casts an interface to a map[string]interface{} type.
 func ToStringMapE(i interface{}) (map[string]interface{}, error) {
-	var m = map[string]interface{}{}
+	m := map[string]interface{}{}
 
 	switch v := i.(type) {
 	case map[interface{}]interface{}:
@@ -996,7 +996,7 @@ func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 
 // ToStringMapIntE casts an interface to a map[string]int{} type.
 func ToStringMapIntE(i interface{}) (map[string]int, error) {
-	var m = map[string]int{}
+	m := map[string]int{}
 	if i == nil {
 		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int", i, i)
 	}
@@ -1037,7 +1037,7 @@ func ToStringMapIntE(i interface{}) (map[string]int, error) {
 
 // ToStringMapInt64E casts an interface to a map[string]int64{} type.
 func ToStringMapInt64E(i interface{}) (map[string]int64, error) {
-	var m = map[string]int64{}
+	m := map[string]int64{}
 	if i == nil {
 		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int64", i, i)
 	}

@@ -63,7 +63,9 @@ func (m *structTextMarshaler) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _ encoding.TextMarshaler = structTextMarshaler{}
-var _ encoding.TextUnmarshaler = &structTextMarshaler{}
+var (
+	_ encoding.TextMarshaler   = structTextMarshaler{}
+	_ encoding.TextUnmarshaler = &structTextMarshaler{}
+)
 
 type structTextMarshalerAlias structTextMarshaler

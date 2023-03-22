@@ -3,10 +3,11 @@ package sqx
 import (
 	"context"
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
-	"go.uber.org/multierr"
 	"log"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
+	"go.uber.org/multierr"
 )
 
 type DBTypeAware interface {
@@ -63,6 +64,7 @@ type ExecFn func(ctx context.Context, query string, args ...interface{}) (sql.Re
 func (f ExecFn) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return f(context.Background(), query, args...)
 }
+
 func (f ExecFn) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return f(ctx, query, args...)
 }
@@ -76,6 +78,7 @@ type QueryFn func(ctx context.Context, query string, args ...interface{}) (*sql.
 func (f QueryFn) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return f(context.Background(), query, args...)
 }
+
 func (f QueryFn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return f(ctx, query, args...)
 }
@@ -87,6 +90,7 @@ func (s *Sqx) Close() error {
 
 	return nil
 }
+
 func (s *Sqx) DoQuery(arg *QueryArgs) error {
 	return arg.DoQuery(s.typedDB())
 }

@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"strings"
 )
 
 func Test_decode_TextMarshaler_key_map(t *testing.T) {

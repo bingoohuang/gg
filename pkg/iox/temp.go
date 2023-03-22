@@ -70,11 +70,13 @@ func WithTempPattern(c string) WriteTempFileOptionFn {
 		o.Pattern = c
 	}
 }
+
 func WithTempDir(c string) WriteTempFileOptionFn {
 	return func(o *WriteTempFileOption) {
 		o.TempDir = c
 	}
 }
+
 func WithTempString(c string) WriteTempFileOptionFn {
 	return func(o *WriteTempFileOption) {
 		o.Content = []byte(c)

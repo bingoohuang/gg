@@ -1,10 +1,10 @@
 package test
 
 func init() {
-	var pEFace = func(val interface{}) *interface{} {
+	pEFace := func(val interface{}) *interface{} {
 		return &val
 	}
-	var pInt = func(val int) *int {
+	pInt := func(val int) *int {
 		return &val
 	}
 	unmarshalCases = append(unmarshalCases, unmarshalCase{

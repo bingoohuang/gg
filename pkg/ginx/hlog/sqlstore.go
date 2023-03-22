@@ -1,9 +1,9 @@
 package hlog
 
 import (
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"strings"
 
+	"github.com/bingoohuang/gg/pkg/sqx"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )

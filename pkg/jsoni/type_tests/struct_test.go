@@ -386,6 +386,7 @@ type withTime struct {
 func (t *withTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
+
 func (t withTime) MarshalJSON() ([]byte, error) {
 	return []byte(`"fake"`), nil
 }

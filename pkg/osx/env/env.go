@@ -1,11 +1,12 @@
 package env
 
 import (
-	"github.com/bingoohuang/gg/pkg/man"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/man"
 )
 
 func Bool(envName string, defaultValue bool) (value bool) {

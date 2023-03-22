@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type Foo struct {
@@ -21,7 +22,6 @@ func (f Foo) MarshalJSON() ([]byte, error) {
 
 // Standard Encoder has trailing newline.
 func TestEncodeMarshalJSON(t *testing.T) {
-
 	foo := Foo{
 		Bar: 123,
 	}

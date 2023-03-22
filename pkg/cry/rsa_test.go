@@ -1,8 +1,9 @@
 package cry_test
 
 import (
-	cry "github.com/firdasafridi/gocrypt"
 	"testing"
+
+	cry "github.com/bingoohuang/gg/pkg/cry"
 )
 
 // https://golang.org/src/crypto/tls/generate_cert.go

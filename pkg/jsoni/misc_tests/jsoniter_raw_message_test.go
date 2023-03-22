@@ -3,10 +3,11 @@ package misc_tests
 import (
 	"context"
 	"encoding/json"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_jsoniter_RawMessage(t *testing.T) {

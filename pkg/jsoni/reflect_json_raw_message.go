@@ -3,12 +3,15 @@ package jsoni
 import (
 	"context"
 	"encoding/json"
-	"github.com/modern-go/reflect2"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
-var jsonRawMessageType = PtrElem((*json.RawMessage)(nil))
-var jsoniRawMessageType = PtrElem((*RawMessage)(nil))
+var (
+	jsonRawMessageType  = PtrElem((*json.RawMessage)(nil))
+	jsoniRawMessageType = PtrElem((*RawMessage)(nil))
+)
 
 func createEncoderOfJsonRawMessage(_ *ctx, typ reflect2.Type) ValEncoder {
 	switch typ {

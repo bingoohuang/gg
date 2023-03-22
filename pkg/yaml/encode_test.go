@@ -14,8 +14,10 @@ import (
 	"github.com/bingoohuang/gg/pkg/yaml/ast"
 )
 
-var zero = 0
-var emptyStr = ""
+var (
+	zero     = 0
+	emptyStr = ""
+)
 
 func TestEncoder(t *testing.T) {
 	tests := []struct {
@@ -915,7 +917,7 @@ func TestEncoder_FlowRecursive(t *testing.T) {
 		M map[string][]int `yaml:",flow"`
 	}
 	v.M = map[string][]int{
-		"test": []int{1, 2, 3},
+		"test": {1, 2, 3},
 	}
 	var buf bytes.Buffer
 	if err := yaml.NewEncoder(&buf).Encode(v); err != nil {
@@ -1164,6 +1166,7 @@ func (t *tMarshal) MarshalYAML() ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
 func Test_Marshaler(t *testing.T) {
 	const expected = `- hello-world
 `
@@ -1218,10 +1221,12 @@ type FastMarshaler struct {
 	A string
 	B int
 }
-type TextMarshaler int64
-type TextMarshalerContainer struct {
-	Field TextMarshaler `yaml:"field"`
-}
+type (
+	TextMarshaler          int64
+	TextMarshalerContainer struct {
+		Field TextMarshaler `yaml:"field"`
+	}
+)
 
 func (v SlowMarshaler) MarshalYAML() ([]byte, error) {
 	var buf bytes.Buffer

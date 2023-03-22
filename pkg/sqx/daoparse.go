@@ -3,11 +3,12 @@ package sqx
 import (
 	"database/sql"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 func (p *SQLParsed) checkFuncInOut(numIn int, f StructField) error {

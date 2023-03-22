@@ -114,7 +114,8 @@ func ToStruct(b interface{}, tagName string, getter func(filedName, tagValue str
 }
 
 func parseStruct(fieldType reflect.Type, tag string, ptr bool, field reflect.Value,
-	getter func(name string, tagValue string) (interface{}, bool)) error {
+	getter func(name string, tagValue string) (interface{}, bool),
+) error {
 	fv := reflect.New(fieldType)
 	if err := ToStruct(fv.Interface(), tag, getter); err != nil {
 		return err

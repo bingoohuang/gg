@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
+
 	"github.com/bingoohuang/gg/pkg/defaults"
 	"github.com/bingoohuang/gg/pkg/reflector"
-	"reflect"
 )
 
 // CreateDaoOpt defines the options for CreateDao.

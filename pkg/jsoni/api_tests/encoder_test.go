@@ -3,9 +3,10 @@ package test
 import (
 	"bytes"
 	"encoding/json"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // Standard Encoder has trailing newline.

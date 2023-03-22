@@ -1,9 +1,10 @@
 package fn_test
 
 import (
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/fn"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGetFuncName(t *testing.T) {

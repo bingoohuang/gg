@@ -1,9 +1,9 @@
 package sqx_test
 
 import (
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"testing"
 
+	"github.com/bingoohuang/gg/pkg/sqx"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,10 +1,10 @@
 package anyfn
 
 import (
-	"github.com/bingoohuang/gg/pkg/ginx"
 	"net/http"
 	"reflect"
 
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,8 +26,10 @@ func (f InSupportFn) InSupport(argIn ArgIn, argsIn []ArgIn, c *gin.Context) (ref
 	return f(argIn, argsIn, c)
 }
 
-var GinContextType = reflect.TypeOf((*gin.Context)(nil)).Elem()
-var InvalidValue = reflect.Value{}
+var (
+	GinContextType = reflect.TypeOf((*gin.Context)(nil)).Elem()
+	InvalidValue   = reflect.Value{}
+)
 
 func GinContextSupport(arg ArgIn, argsIn []ArgIn, c *gin.Context) (reflect.Value, error) {
 	if arg.Ptr && arg.Type == GinContextType { // 直接注入gin.Context

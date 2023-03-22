@@ -1,10 +1,11 @@
 package defaults
 
 import (
-	"github.com/bingoohuang/gg/pkg/defaults/internal/fixture"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/defaults/internal/fixture"
 )
 
 type (

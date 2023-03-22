@@ -1,7 +1,7 @@
 package test
 
 func init() {
-	var pInt = func(val int) *int {
+	pInt := func(val int) *int {
 		return &val
 	}
 	marshalCases = append(marshalCases,

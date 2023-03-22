@@ -15,6 +15,7 @@ func init() {
 func CanExpandHome(s string) bool {
 	return strings.HasPrefix(s, "~")
 }
+
 func ExpandHome(s string) string {
 	if CanExpandHome(s) {
 		return filepath.Join(Home, s[1:])

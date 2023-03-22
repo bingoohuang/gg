@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"github.com/bingoohuang/gg/pkg/iox"
 	"io"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/iox"
 )
 
 // LinesChan read file into lines.
@@ -109,7 +110,7 @@ func Append(name string, data []byte, options ...AppendOptionsFn) (int, error) {
 
 	// If the file doesn't exist, create it, or append to the file
 
-	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return 0, err
 	}

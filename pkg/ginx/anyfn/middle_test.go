@@ -1,12 +1,12 @@
 package anyfn_test
 
 import (
-	"github.com/bingoohuang/gg/pkg/ginx/adapt"
-	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
-	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"reflect"
 	"testing"
 
+	"github.com/bingoohuang/gg/pkg/ginx/adapt"
+	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
+	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )

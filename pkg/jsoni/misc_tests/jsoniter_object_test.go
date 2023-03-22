@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"time"
 )
 
 func Test_empty_object(t *testing.T) {
@@ -39,7 +39,6 @@ func Test_one_field(t *testing.T) {
 		iter.Skip()
 		return true
 	}))
-
 }
 
 func Test_two_field(t *testing.T) {

@@ -2,6 +2,7 @@ package man_test
 
 import (
 	"fmt"
+
 	"github.com/bingoohuang/gg/pkg/man"
 )
 

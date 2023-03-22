@@ -61,8 +61,10 @@ type Options struct {
 	TablesPrefix string
 }
 
-var tablePrefix string
-var rbac *Rbac
+var (
+	tablePrefix string
+	rbac        *Rbac
+)
 
 // New initiates authority.
 func New(opts Options) *Rbac {
@@ -204,7 +206,7 @@ func (a *Rbac) CheckPerm(userID uint, permName string) (bool, error) {
 		return false, r.Error
 	}
 
-	//prepare an array of role ids
+	// prepare an array of role ids
 	var roleIDs []uint
 	for _, r := range userRoles {
 		roleIDs = append(roleIDs, r.RoleID)

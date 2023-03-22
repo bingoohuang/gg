@@ -198,6 +198,7 @@ type onePtrEncoder struct {
 func (e *onePtrEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
 	return e.encoder.IsEmpty(ctx, unsafe.Pointer(&p), checkZero)
 }
+
 func (e *onePtrEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
 	e.encoder.Encode(ctx, unsafe.Pointer(&p), s)
 }
@@ -224,6 +225,7 @@ func createEncoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	placeholder.encoder = encoder
 	return encoder
 }
+
 func _createEncoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	if v := createEncoderOfJsonRawMessage(ctx, typ); v != nil {
 		return v
@@ -302,6 +304,7 @@ type placeholderEncoder struct {
 func (e *placeholderEncoder) Encode(ctx context.Context, p unsafe.Pointer, s *Stream) {
 	e.encoder.Encode(ctx, p, s)
 }
+
 func (e *placeholderEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
 	return e.encoder.IsEmpty(ctx, p, checkZero)
 }

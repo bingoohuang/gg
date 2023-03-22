@@ -1,11 +1,9 @@
 package elasticsql
 
 import (
-	"testing"
-
 	"encoding/json"
-
 	"reflect"
+	"testing"
 )
 
 var selectCaseMap = map[string]string{

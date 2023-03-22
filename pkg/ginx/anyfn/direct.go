@@ -1,9 +1,9 @@
 package anyfn
 
 import (
-	"github.com/bingoohuang/gg/pkg/ginx"
 	"net/http"
 
+	"github.com/bingoohuang/gg/pkg/ginx"
 	"github.com/gin-gonic/gin"
 )
 

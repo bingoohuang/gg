@@ -13,9 +13,11 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-const maxUint = ^uint(0)
-const maxInt = int(maxUint >> 1)
-const minInt = -maxInt - 1
+const (
+	maxUint = ^uint(0)
+	maxInt  = int(maxUint >> 1)
+	minInt  = -maxInt - 1
+)
 
 // RegisterFuzzyDecoders decode input from PHP with tolerance.
 // It will handle string/number auto conversation, and treat empty [] as empty struct.
@@ -172,8 +174,7 @@ func (decoder *tolerateEmptyArrayDecoder) Decode(ctx context.Context, ptr unsafe
 	}
 }
 
-type fuzzyStringDecoder struct {
-}
+type fuzzyStringDecoder struct{}
 
 func (decoder *fuzzyStringDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
@@ -230,8 +231,7 @@ func (decoder *fuzzyIntegerDecoder) Decode(ctx context.Context, ptr unsafe.Point
 	}
 }
 
-type fuzzyFloat32Decoder struct {
-}
+type fuzzyFloat32Decoder struct{}
 
 func (decoder *fuzzyFloat32Decoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()
@@ -262,8 +262,7 @@ func (decoder *fuzzyFloat32Decoder) Decode(ctx context.Context, ptr unsafe.Point
 	}
 }
 
-type fuzzyFloat64Decoder struct {
-}
+type fuzzyFloat64Decoder struct{}
 
 func (decoder *fuzzyFloat64Decoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	valueType := iter.WhatIsNext()

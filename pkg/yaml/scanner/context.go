@@ -23,13 +23,11 @@ type Context struct {
 	literalOpt         string
 }
 
-var (
-	ctxPool = sync.Pool{
-		New: func() interface{} {
-			return createContext()
-		},
-	}
-)
+var ctxPool = sync.Pool{
+	New: func() interface{} {
+		return createContext()
+	},
+}
 
 func createContext() *Context {
 	return &Context{

@@ -133,7 +133,7 @@ func TestBackOff(t *testing.T) {
 	exp.MaxElapsedTime = testMaxElapsedTime
 	exp.Reset()
 
-	var expectedResults = []time.Duration{500, 1000, 2000, 4000, 5000, 5000, 5000, 5000, 5000, 5000}
+	expectedResults := []time.Duration{500, 1000, 2000, 4000, 5000, 5000, 5000, 5000, 5000, 5000}
 	for i, d := range expectedResults {
 		expectedResults[i] = d * time.Millisecond
 	}
@@ -141,9 +141,9 @@ func TestBackOff(t *testing.T) {
 	for _, expected := range expectedResults {
 		assertEquals(t, expected, exp.currentInterval)
 		// Assert that the next backoff falls in the expected range.
-		var minInterval = expected - time.Duration(testRandomizationFactor*float64(expected))
-		var maxInterval = expected + time.Duration(testRandomizationFactor*float64(expected))
-		var actualInterval = exp.NextBackOff()
+		minInterval := expected - time.Duration(testRandomizationFactor*float64(expected))
+		maxInterval := expected + time.Duration(testRandomizationFactor*float64(expected))
+		actualInterval := exp.NextBackOff()
 		if !(minInterval <= actualInterval && actualInterval <= maxInterval) {
 			t.Error("error")
 		}
@@ -174,18 +174,18 @@ func (c *TestClock) Now() time.Time {
 }
 
 func TestGetElapsedTime(t *testing.T) {
-	var exp = NewExponentialBackOff()
+	exp := NewExponentialBackOff()
 	exp.Clock = &TestClock{}
 	exp.Reset()
 
-	var elapsedTime = exp.GetElapsedTime()
+	elapsedTime := exp.GetElapsedTime()
 	if elapsedTime != time.Second {
 		t.Errorf("elapsedTime=%d", elapsedTime)
 	}
 }
 
 func TestMaxElapsedTime(t *testing.T) {
-	var exp = NewExponentialBackOff()
+	exp := NewExponentialBackOff()
 	exp.Clock = &TestClock{start: time.Time{}.Add(10000 * time.Second)}
 	// Change the currentElapsedTime to be 0 ensuring that the elapsed time will be greater
 	// than the max elapsed time.
@@ -194,7 +194,7 @@ func TestMaxElapsedTime(t *testing.T) {
 }
 
 func TestCustomStop(t *testing.T) {
-	var exp = NewExponentialBackOff()
+	exp := NewExponentialBackOff()
 	customStop := time.Minute
 	exp.Stop = customStop
 	exp.Clock = &TestClock{start: time.Time{}.Add(10000 * time.Second)}
@@ -248,7 +248,7 @@ func (t *testTimer) C() <-chan time.Time {
 
 func TestRetry(t *testing.T) {
 	const successOn = 3
-	var i = 0
+	i := 0
 
 	// This function is successful on "successOn" calls.
 	f := func(retryTimes int) error {
@@ -274,8 +274,8 @@ func TestRetry(t *testing.T) {
 }
 
 func TestRetryContext(t *testing.T) {
-	var cancelOn = 3
-	var i = 0
+	cancelOn := 3
+	i := 0
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -375,7 +375,7 @@ func TestRetryPermanent(t *testing.T) {
 func TestPermanent(t *testing.T) {
 	want := errors.New("foo")
 	other := errors.New("bar")
-	var err = Permanent(want)
+	err := Permanent(want)
 
 	got := errors.Unwrap(err)
 	if got != want {
@@ -404,7 +404,7 @@ func TestPermanent(t *testing.T) {
 
 func TestTicker(t *testing.T) {
 	const successOn = 3
-	var i = 0
+	i := 0
 
 	// This function is successful on "successOn" calls.
 	f := func() error {
@@ -441,7 +441,7 @@ func TestTicker(t *testing.T) {
 }
 
 func TestTickerContext(t *testing.T) {
-	var i = 0
+	i := 0
 
 	ctx, cancel := context.WithCancel(context.Background())
 

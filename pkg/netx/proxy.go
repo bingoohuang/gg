@@ -2,11 +2,12 @@ package netx
 
 import (
 	"bufio"
-	"github.com/juju/errors"
-	"golang.org/x/net/proxy"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/juju/errors"
+	"golang.org/x/net/proxy"
 )
 
 // NewProxyDialer based on proxy url.

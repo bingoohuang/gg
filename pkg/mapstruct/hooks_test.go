@@ -13,14 +13,16 @@ func TestComposeDecodeHookFunc(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "foo", nil
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "bar", nil
 	}
 
@@ -60,14 +62,16 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return int(42), nil
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		f2From = f
 		return data, nil
 	}

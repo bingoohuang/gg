@@ -686,28 +686,28 @@ func TestErrorToString(t *testing.T) {
 
 func TestStringMapStringSliceE(t *testing.T) {
 	// ToStringMapString inputs/outputs
-	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	stringMapString := map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	stringMapInterface := map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapString := map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapInterface := map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 
 	// ToStringMapStringSlice inputs/outputs
-	var stringMapStringSlice = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapInterfaceSlice = map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapInterfaceInterfaceSlice = map[string]interface{}{"key 1": []interface{}{"value 1", "value 2", "value 3"}, "key 2": []interface{}{"value 1", "value 2", "value 3"}, "key 3": []interface{}{"value 1", "value 2", "value 3"}}
-	var stringMapStringSingleSliceFieldsResult = map[string][]string{"key 1": {"value", "1"}, "key 2": {"value", "2"}, "key 3": {"value", "3"}}
-	var interfaceMapStringSlice = map[interface{}][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var interfaceMapInterfaceSlice = map[interface{}][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapStringSlice := map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapInterfaceSlice := map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapInterfaceInterfaceSlice := map[string]interface{}{"key 1": []interface{}{"value 1", "value 2", "value 3"}, "key 2": []interface{}{"value 1", "value 2", "value 3"}, "key 3": []interface{}{"value 1", "value 2", "value 3"}}
+	stringMapStringSingleSliceFieldsResult := map[string][]string{"key 1": {"value", "1"}, "key 2": {"value", "2"}, "key 3": {"value", "3"}}
+	interfaceMapStringSlice := map[interface{}][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	interfaceMapInterfaceSlice := map[interface{}][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
 
-	var stringMapStringSliceMultiple = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapStringSliceSingle = map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}, "key 3": {"value 3"}}
+	stringMapStringSliceMultiple := map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapStringSliceSingle := map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}, "key 3": {"value 3"}}
 
-	var stringMapInterface1 = map[string]interface{}{"key 1": []string{"value 1"}, "key 2": []string{"value 2"}}
-	var stringMapInterfaceResult1 = map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}}
+	stringMapInterface1 := map[string]interface{}{"key 1": []string{"value 1"}, "key 2": []string{"value 2"}}
+	stringMapInterfaceResult1 := map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}}
 
-	var jsonStringMapString = `{"key 1": "value 1", "key 2": "value 2"}`
-	var jsonStringMapStringArray = `{"key 1": ["value 1"], "key 2": ["value 2", "value 3"]}`
-	var jsonStringMapStringArrayResult = map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2", "value 3"}}
+	jsonStringMapString := `{"key 1": "value 1", "key 2": "value 2"}`
+	jsonStringMapStringArray := `{"key 1": ["value 1"], "key 2": ["value 2", "value 3"]}`
+	jsonStringMapStringArrayResult := map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2", "value 3"}}
 
 	type Key struct {
 		k string
@@ -907,13 +907,13 @@ func TestToStringMapInt64E(t *testing.T) {
 }
 
 func TestToStringMapStringE(t *testing.T) {
-	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var jsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}`
-	var invalidJsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"`
-	var emptyString = ""
+	stringMapString := map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	stringMapInterface := map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapString := map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapInterface := map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	jsonString := `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}`
+	invalidJsonString := `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"`
+	emptyString := ""
 
 	tests := []struct {
 		input  interface{}

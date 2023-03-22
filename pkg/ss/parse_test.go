@@ -1,9 +1,10 @@
 package ss
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"unicode"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStripSpaces(t *testing.T) {

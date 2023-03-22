@@ -2,10 +2,11 @@ package test
 
 import (
 	"encoding/json"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 //func Test_large_file(t *testing.T) {
@@ -117,7 +118,7 @@ func init() {
     "fuzzy": false
   },
   "company": "hello"
-}]`), 0666)
+}]`), 0o666)
 }
 
 /*

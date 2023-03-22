@@ -1,11 +1,11 @@
 package cast_test
 
 import (
-	"github.com/bingoohuang/gg/pkg/ginx/cast"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/ginx/cast"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,9 +3,10 @@ package test
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_marshal_indent(t *testing.T) {

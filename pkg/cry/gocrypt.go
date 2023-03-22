@@ -12,9 +12,7 @@ type GocryptOption interface {
 	Decrypt(chipherText []byte) (string, error)
 }
 
-//
 // Option contains an option from initial algorithm encryptioin & decryption.
-//
 type Option struct {
 	AESOpt  GocryptOption
 	DESOpt  GocryptOption
@@ -24,25 +22,19 @@ type Option struct {
 	Postfix string
 }
 
-//
 // New create and initialize new option for struct field encryption.
 //
 // It needs option from aes, rc4, or des for initialitaion
-//
 func New(opt *Option) *Option {
 	return opt
 }
 
-//
 // Encrypt is function to set struct field encrypted
-//
 func (opt *Option) Encrypt(structVal interface{}) error {
 	return read(structVal, opt.encrypt)
 }
 
-//
 // Decrypt is function to set struct field decrypted
-//
 func (opt *Option) Decrypt(structVal interface{}) error {
 	return read(structVal, opt.decrypt)
 }

@@ -16,8 +16,8 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/gofuzz v1.0.0
-	github.com/gookit/color v1.5.0
-	github.com/gookit/goutil v0.4.4
+	github.com/gookit/color v1.5.2
+	github.com/gookit/goutil v0.6.7
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f
 	github.com/kortschak/utter v1.5.0
@@ -36,9 +36,9 @@ require (
 	github.com/thoas/go-funk v0.9.0
 	go.uber.org/goleak v1.2.0
 	go.uber.org/multierr v1.6.0
-	golang.org/x/net v0.4.0
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	golang.org/x/text v0.5.0
+	golang.org/x/net v0.8.0
+	golang.org/x/sync v0.1.0
+	golang.org/x/text v0.8.0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -102,12 +102,12 @@ require (
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/src-d/go-oniguruma v1.0.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
+	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.opencensus.io v0.22.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
-	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	google.golang.org/grpc v1.31.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

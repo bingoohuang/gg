@@ -26,6 +26,7 @@ func WithRemoveTrailingZeros(yes bool) FormatFloatOptionConfigFn {
 		c.RemoveTrailingZeros = yes
 	}
 }
+
 func WithPrec(prec int) FormatFloatOptionConfigFn {
 	return func(c *FormatFloatOptionConfig) {
 		c.Prec = prec

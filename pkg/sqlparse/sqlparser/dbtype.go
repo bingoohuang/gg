@@ -5,14 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/reflector"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"log"
 	"math/bits"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/reflector"
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 type DBType string
@@ -636,7 +637,7 @@ func fixInsertPlaceholders(insertStmt *Insert) {
 
 	if diff > 0 {
 		pl := []byte(ss.If(questionVals > 0, "?", ":?"))
-		var appendVarArgs = make([]Expr, 0, diff)
+		appendVarArgs := make([]Expr, 0, diff)
 		for i := 0; i < diff; i++ {
 			appendVarArgs = append(appendVarArgs, NewValArg(pl))
 		}

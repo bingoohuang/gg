@@ -132,10 +132,12 @@ func TestIterator_ReadInt_chunkedInput(t *testing.T) {
 }
 
 // jsonFloatIntArray generates JSON array where every
-//  - even item is float 0.1
-//  - odd item is integer 0
 //
-//  [0.1, 0, 0.1, 0]
+//   - even item is float 0.1
+//
+//   - odd item is integer 0
+//
+//     [0.1, 0, 0.1, 0]
 func jsonFloatIntArray(t *testing.T, numberOfItems int) []byte {
 	t.Helper()
 	numbers := make([]jsoni.Any, numberOfItems)

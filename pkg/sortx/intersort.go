@@ -22,10 +22,12 @@ func (is Slice) Len() int           { return len(is) }
 func (is Slice) Swap(i, j int)      { is[i], is[j] = is[j], is[i] }
 func (is Slice) Less(i, j int) bool { return less(is[i], is[j]) }
 
-type Lesser func(a, b interface{}) bool
-type SortConfig struct {
-	Less Lesser
-}
+type (
+	Lesser     func(a, b interface{}) bool
+	SortConfig struct {
+		Less Lesser
+	}
+)
 
 type LessSlice struct {
 	Slice

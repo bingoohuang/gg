@@ -4,8 +4,9 @@ package sqx
 import (
 	"context"
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 // Result defines the result structure of sql execution.

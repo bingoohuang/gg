@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	var pString = func(val string) *string {
+	pString := func(val string) *string {
 		return &val
 	}
 	epoch := time.Unix(0, 0)
@@ -218,11 +218,13 @@ type structRecursive struct {
 	Me     *structRecursive
 }
 
-type omit *struct{}
-type CacheItem struct {
-	Key    string `json:"key"`
-	MaxAge int    `json:"cacheAge"`
-}
+type (
+	omit      *struct{}
+	CacheItem struct {
+		Key    string `json:"key"`
+		MaxAge int    `json:"cacheAge"`
+	}
+)
 
 type orderA struct {
 	Field2 string

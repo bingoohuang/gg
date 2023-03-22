@@ -258,7 +258,7 @@ func kindOf(v interface{}) reflect.Kind {
 func createDirectory(dir string) (err error) {
 	if _, err = os.Stat(dir); err != nil {
 		if os.IsNotExist(err) {
-			if err = os.MkdirAll(dir, 0755); err != nil {
+			if err = os.MkdirAll(dir, 0o755); err != nil {
 				return
 			}
 		}

@@ -2,13 +2,14 @@ package test
 
 import (
 	"context"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/modern-go/reflect2"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"strconv"
 	"testing"
 	"unsafe"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/modern-go/reflect2"
+	"github.com/stretchr/testify/require"
 )
 
 type TestObject1 struct {

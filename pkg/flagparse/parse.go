@@ -3,18 +3,19 @@ package flagparse
 import (
 	"embed"
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/bingoohuang/gg/pkg/cast"
 	"github.com/bingoohuang/gg/pkg/ctl"
 	flag "github.com/bingoohuang/gg/pkg/fla9"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/v"
-	"log"
-	"net/http"
-	_ "net/http/pprof" // Comment this line to disable pprof endpoint.
-	"os"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type PostProcessor interface {

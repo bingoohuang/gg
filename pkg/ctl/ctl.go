@@ -3,8 +3,8 @@ package ctl
 import (
 	"bytes"
 	"embed"
+	_ "embed"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/v"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"text/template"
 
-	_ "embed"
+	"github.com/bingoohuang/gg/pkg/v"
 )
 
 type Config struct {

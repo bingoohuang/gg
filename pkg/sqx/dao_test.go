@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/sqx"
 	"github.com/stretchr/testify/assert"
 )
 

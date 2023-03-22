@@ -3,11 +3,11 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"log"
 
 	"github.com/Shopify/sarama"
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 type ProducerConfig struct {

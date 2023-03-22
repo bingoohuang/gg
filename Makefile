@@ -60,6 +60,7 @@ fmt-update:
 	go install github.com/mgechev/revive@master
 	go install github.com/daixiang0/gci@latest
 	go install github.com/google/osv-scanner/cmd/osv-scanner@v1
+	go install github.com/polyfloyd/go-errorlint@latest
 
 fmt:
 	gofumpt -l -w .
@@ -70,6 +71,7 @@ fmt:
 	goimports -w .
 	gci write .
 	osv-scanner -r .
+	go-errorlint ./...
 
 install-upx: init
 	${goinstall}

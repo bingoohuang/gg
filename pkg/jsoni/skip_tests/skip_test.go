@@ -3,11 +3,12 @@ package skip_tests
 import (
 	"encoding/json"
 	"errors"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"io"
 	"reflect"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 type testCase struct {

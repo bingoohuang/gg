@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
 	"github.com/bingoohuang/gg/pkg/randx"
@@ -11,8 +14,6 @@ import (
 	"github.com/bingoohuang/gg/pkg/strcase"
 	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 type MapStringBytes map[string][]byte
@@ -188,6 +189,7 @@ func TestInt64(t *testing.T) {
 	s, _ := c.MarshalToString(ctx, f)
 	assert.Equal(t, `{"foo":"12344"}`, s)
 }
+
 func TestUInt64(t *testing.T) {
 	f := struct {
 		Foo uint64
@@ -214,9 +216,11 @@ type structFieldDecoder struct {
 	fieldDecoder jsoni.ValDecoder
 }
 
-var hashes []int64
-var hashMap = make(map[int64]*structFieldDecoder)
-var switchMap = &tenFieldsStructDecoder{}
+var (
+	hashes    []int64
+	hashMap   = make(map[int64]*structFieldDecoder)
+	switchMap = &tenFieldsStructDecoder{}
+)
 
 func init() {
 	obj := reflector.New(switchMap)

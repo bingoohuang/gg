@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ss"
-	"github.com/bingoohuang/gg/pkg/strcase"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
+	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/gg/pkg/strcase"
 )
 
 // ErrConditionKind tells that the condition kind should be struct or its pointer
@@ -151,6 +151,7 @@ func (s *SQL) adaptUpdate(db SqxDB) error {
 
 	return nil
 }
+
 func (s *SQL) adaptQuery(db SqxDB) error {
 	if dbTypeAware, ok := db.(DBTypeAware); ok {
 		dbType := dbTypeAware.GetDBType()

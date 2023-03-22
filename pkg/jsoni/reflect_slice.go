@@ -3,9 +3,10 @@ package jsoni
 import (
 	"context"
 	"fmt"
-	"github.com/modern-go/reflect2"
 	"io"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
 func decoderOfSlice(ctx *ctx, typ reflect2.Type) ValDecoder {

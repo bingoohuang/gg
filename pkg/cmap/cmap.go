@@ -48,7 +48,6 @@ func New(options ...OptionFn) *Map {
 		Shared:     m,
 		ShardCount: option.ShardCount,
 	}
-
 }
 
 // GetShard returns shard under given key

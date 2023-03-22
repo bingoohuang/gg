@@ -3,8 +3,9 @@ package english
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/man"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/man"
 )
 
 // These are included because they are common technical terms.

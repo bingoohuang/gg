@@ -27,8 +27,10 @@ const (
 	ObjectValue
 )
 
-var hexDigits []byte
-var valueTypes []ValueType
+var (
+	hexDigits  []byte
+	valueTypes []ValueType
+)
 
 func init() {
 	hexDigits = make([]byte, 256)

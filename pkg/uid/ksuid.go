@@ -41,8 +41,9 @@ const (
 )
 
 // KSUID is 20 bytes:
-//  00-03 byte: uint32 BE UTC timestamp with custom epoch
-//  04-19 byte: random "payload"
+//
+//	00-03 byte: uint32 BE UTC timestamp with custom epoch
+//	04-19 byte: random "payload"
 type KSUID [byteLength]byte
 
 var (
@@ -444,9 +445,7 @@ const (
 	offsetLowercase  = 36
 )
 
-var (
-	errShortBuffer = errors.New("the output buffer is too small to hold to decoded value")
-)
+var errShortBuffer = errors.New("the output buffer is too small to hold to decoded value")
 
 // Converts a base 62 byte into the number value that it represents.
 func base62Value(digit byte) byte {

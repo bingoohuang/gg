@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"testing"
 
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"github.com/bingoohuang/gg/pkg/sqx"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"

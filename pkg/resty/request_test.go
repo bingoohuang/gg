@@ -9,7 +9,6 @@ import (
 	"crypto/tls"
 	"encoding/xml"
 	"errors"
-	"github.com/bingoohuang/gg/pkg/iox"
 	"io"
 	"net"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/iox"
 	"github.com/stretchr/testify/assert"
 )
 

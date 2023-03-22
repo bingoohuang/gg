@@ -2,11 +2,11 @@ package sqx
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/shellwords"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"net"
 	"strings"
 
+	"github.com/bingoohuang/gg/pkg/shellwords"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
@@ -145,7 +145,6 @@ func compatibleMySQLClientCmd(s string) string {
 	p := shellwords.NewParser()
 	p.ParseEnv = true
 	args, err := p.Parse(s)
-
 	if err != nil {
 		logrus.Fatalf("Fail to parse ds %s error %v", s, err)
 	}

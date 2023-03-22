@@ -46,7 +46,7 @@ func ExampleMarshal() {
 }
 
 func ExampleUnmarshal() {
-	var jsonBlob = []byte(`[
+	jsonBlob := []byte(`[
 		{"Name": "Platypus", "Order": "Monotremata"},
 		{"Name": "Quoll",    "Order": "Dasyuromorphia"}
 	]`)
@@ -98,7 +98,7 @@ func ExampleConfigFastest_Marshal() {
 }
 
 func ExampleConfigFastest_Unmarshal() {
-	var jsonBlob = []byte(`[
+	jsonBlob := []byte(`[
 		{"Name": "Platypus", "Order": "Monotremata"},
 		{"Name": "Quoll",    "Order": "Dasyuromorphia"}
 	]`)

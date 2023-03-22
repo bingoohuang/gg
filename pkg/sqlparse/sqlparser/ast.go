@@ -2671,6 +2671,7 @@ func shouldQuote(s string) bool {
 
 	return true
 }
+
 func formatID2(buf *TrackedBuffer, original, lowered string) {
 	for i, c := range original {
 		if !isLetter(uint16(c)) {

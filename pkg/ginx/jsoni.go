@@ -3,19 +3,22 @@ package ginx
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
 	"github.com/bingoohuang/gg/pkg/strcase"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"io"
-	"net/http"
 )
 
 // ShouldBind checks the Content-Type to select a binding engine automatically,
 // Depending on the "Content-Type" header different bindings are used:
-//     "application/json" --> JSON binding
-//     "application/xml"  --> XML binding
+//
+//	"application/json" --> JSON binding
+//	"application/xml"  --> XML binding
+//
 // otherwise --> returns an error
 // It parses the request's body as JSON if Content-Type == "application/json" using JSON or XML as a JSON input.
 // It decodes the json payload into the struct specified as a pointer.

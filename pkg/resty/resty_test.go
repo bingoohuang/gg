@@ -328,7 +328,7 @@ func createFormPostServer(t *testing.T) *httptest.Server {
 				t.Logf("LastName: %v", r.FormValue("last_name"))
 
 				targetPath := filepath.Join(getTestDataPath(), "upload")
-				_ = os.MkdirAll(targetPath, 0700)
+				_ = os.MkdirAll(targetPath, 0o700)
 
 				for _, fhdrs := range r.MultipartForm.File {
 					for _, hdr := range fhdrs {
@@ -340,7 +340,7 @@ func createFormPostServer(t *testing.T) *httptest.Server {
 						t.Logf("Write name: %v", fname)
 
 						infile, _ := hdr.Open()
-						f, err := os.OpenFile(filepath.Join(targetPath, fname), os.O_WRONLY|os.O_CREATE, 0666)
+						f, err := os.OpenFile(filepath.Join(targetPath, fname), os.O_WRONLY|os.O_CREATE, 0o666)
 						if err != nil {
 							t.Logf("Error: %v", err)
 							return
@@ -376,13 +376,13 @@ func createFilePostServer(t *testing.T) *httptest.Server {
 		}
 
 		targetPath := filepath.Join(getTestDataPath(), "upload-large")
-		_ = os.MkdirAll(targetPath, 0700)
+		_ = os.MkdirAll(targetPath, 0o700)
 		defer cleanupFiles(targetPath)
 
 		switch r.URL.Path {
 		case "/upload":
 			f, err := os.OpenFile(filepath.Join(targetPath, "large-file.png"),
-				os.O_WRONLY|os.O_CREATE, 0666)
+				os.O_WRONLY|os.O_CREATE, 0o666)
 			if err != nil {
 				t.Logf("Error: %v", err)
 				return

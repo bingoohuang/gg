@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/modern-go/reflect2"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
+	"github.com/stretchr/testify/assert"
 )
 
 type JSONError struct {
@@ -19,8 +20,7 @@ func (e JSONError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.Error.Error())
 }
 
-type errorEncoder struct {
-}
+type errorEncoder struct{}
 
 func (e errorEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
 	err := *((*error)(ptr))
@@ -45,7 +45,7 @@ func TestError(t *testing.T) {
 	j, _ := json.Marshal(A{Err: JSONError{errors.New("err")}})
 	assert.Equal(t, `{"err":"err"}`, string(j))
 
-	var jc = Config{
+	jc := Config{
 		EscapeHTML: true,
 	}.Froze()
 	jc.RegisterTypeEncoder(reflect2.TypeOfPtr((*error)(nil)).Elem().String(), &errorEncoder{})

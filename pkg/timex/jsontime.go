@@ -49,7 +49,8 @@ func (t *JSONTime) UnmarshalJSON(b []byte) error {
 		"2006-01-02 15:04:05.999999999Z07:00", // time.RFC3339Nano,
 		"2006-01-02 15:04:05Z07:00",           // time.RFC3339,
 		"2006-01-02 15:04:05.000000",
-		"2006-01-02 15:04:05.000"} {
+		"2006-01-02 15:04:05.000",
+	} {
 		if tt, err := parser(f, v); err == nil {
 			*t = JSONTime(tt)
 			return nil

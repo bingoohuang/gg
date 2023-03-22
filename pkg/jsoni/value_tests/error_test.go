@@ -1,10 +1,11 @@
 package test
 
 import (
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_errorInput(t *testing.T) {

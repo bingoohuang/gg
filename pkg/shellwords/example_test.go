@@ -2,9 +2,10 @@ package shellwords_test
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/shellwords"
 	"log"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/shellwords"
 )
 
 func isSpace(r byte) bool {

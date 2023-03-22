@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/bingoohuang/gg/pkg/mapstruct"
+	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 )
 
 // QueryAsNumber executes a query which only returns number like count(*) sql.
@@ -451,6 +451,7 @@ func (s SQL) prepareContext() (ctx context.Context, cancel func()) {
 
 	return ctx, func() {}
 }
+
 func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, *sql.Rows, []string, error) {
 	if err := s.adaptQuery(db); err != nil {
 		return nil, nil, nil, err
@@ -460,7 +461,6 @@ func (s *SQL) prepareQuery(db SqxDB, optionFns ...QueryOptionFn) (*QueryOption, 
 	defer cancel()
 	ctx = context.WithValue(ctx, AdaptedKey, s.adapted)
 	r, err := db.QueryContext(ctx, s.Q, s.Vars...)
-
 	if err != nil {
 		return nil, nil, nil, err
 	}

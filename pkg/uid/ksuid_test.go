@@ -125,7 +125,7 @@ func TestEncodeAndDecode(t *testing.T) {
 }
 
 func TestMarshalText(t *testing.T) {
-	var id1 = New()
+	id1 := New()
 	var id2 KSUID
 
 	if err := id2.UnmarshalText([]byte(id1.String())); err != nil {
@@ -144,7 +144,7 @@ func TestMarshalText(t *testing.T) {
 }
 
 func TestMarshalBinary(t *testing.T) {
-	var id1 = New()
+	id1 := New()
 	var id2 KSUID
 
 	if err := id2.UnmarshalBinary(id1.Bytes()); err != nil {
@@ -163,7 +163,7 @@ func TestMarshalBinary(t *testing.T) {
 }
 
 func TestMarshalJSON(t *testing.T) {
-	var id1 = New()
+	id1 := New()
 	var id2 KSUID
 
 	if b, err := json.Marshal(id1); err != nil {
@@ -176,7 +176,7 @@ func TestMarshalJSON(t *testing.T) {
 }
 
 func TestFlag(t *testing.T) {
-	var id1 = New()
+	id1 := New()
 	var id2 KSUID
 
 	fset := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -606,7 +606,6 @@ func TestEncodeAndDecodeBase62(t *testing.T) {
 
 	if len(encoded) < len(helloWorld) {
 		t.Fatal("length of encoded base62 string", encoded, "should be >= than raw bytes!")
-
 	}
 
 	if bytes.Compare(helloWorld, decoded) != 0 {

@@ -3,9 +3,10 @@ package jsoni
 import (
 	"context"
 	"encoding/json"
-	"github.com/modern-go/reflect2"
 	"strconv"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
 type Number string
@@ -33,8 +34,10 @@ func CastJsonNumber(val interface{}) (string, bool) {
 	return "", false
 }
 
-var jsonNumberType = PtrElem((*json.Number)(nil))
-var jsoniNumberType = PtrElem((*Number)(nil))
+var (
+	jsonNumberType  = PtrElem((*json.Number)(nil))
+	jsoniNumberType = PtrElem((*Number)(nil))
+)
 
 func createDecoderOfJsonNumber(_ *ctx, typ reflect2.Type) ValDecoder {
 	if typ.AssignableTo(jsonNumberType) {

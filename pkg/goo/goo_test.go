@@ -1403,8 +1403,7 @@ type Bark interface {
 	Bark()
 }
 
-type Cell struct {
-}
+type Cell struct{}
 
 type Animal struct {
 	Name string
@@ -1428,7 +1427,6 @@ func (dog Dog) Run() {
 }
 
 func (dog Dog) Test(arg string, i *int) {
-
 }
 
 func (dog Dog) TestOutputParam() string {

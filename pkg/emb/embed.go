@@ -36,7 +36,6 @@ func Asset(f fs.FS, name string, useGzip bool) (data []byte, hash, contentType s
 	fn, err = f.Open(name)
 	if err != nil {
 		return nil, "", "", err
-
 	}
 	data, err = io.ReadAll(fn)
 	if err != nil {

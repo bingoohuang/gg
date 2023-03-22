@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -358,9 +359,11 @@ func Test_write_int32(t *testing.T) {
 }
 
 func Test_write_uint64(t *testing.T) {
-	vals := []uint64{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
+	vals := []uint64{
+		0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
 		0xfffffffff, 0xffffffffff, 0xfffffffffff, 0xffffffffffff, 0xfffffffffffff, 0xffffffffffffff,
-		0xfffffffffffffff, 0xffffffffffffffff}
+		0xfffffffffffffff, 0xffffffffffffffff,
+	}
 	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {
@@ -393,9 +396,11 @@ func Test_write_uint64(t *testing.T) {
 }
 
 func Test_write_int64(t *testing.T) {
-	vals := []int64{0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
+	vals := []int64{
+		0, 1, 11, 111, 255, 999999, 0xfff, 0xffff, 0xfffff, 0xffffff, 0xfffffff, 0xffffffff,
 		0xfffffffff, 0xffffffffff, 0xfffffffffff, 0xffffffffffff, 0xfffffffffffff, 0xffffffffffffff,
-		0xfffffffffffffff, 0x7fffffffffffffff, -0x8000000000000000}
+		0xfffffffffffffff, 0x7fffffffffffffff, -0x8000000000000000,
+	}
 	ctx := context.Background()
 	for _, val := range vals {
 		t.Run(fmt.Sprintf("%v", val), func(t *testing.T) {

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/modern-go/reflect2"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type unmarshalCase struct {

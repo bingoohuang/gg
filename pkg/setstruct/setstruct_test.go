@@ -1,12 +1,13 @@
 package setstruct_test
 
 import (
-	"github.com/bingoohuang/gg/pkg/setstruct"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/setstruct"
+	"github.com/stretchr/testify/assert"
 )
 
 type MyParser string

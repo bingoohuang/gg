@@ -73,8 +73,7 @@ func (p *parser) parseTag(ctx *context) (ast.Node, error) {
 		err   error
 	)
 	switch token.ReservedTagKeyword(tagToken.Value) {
-	case token.MappingTag,
-		token.OrderedMapTag:
+	case token.MappingTag, token.OrderedMapTag:
 		value, err = p.parseMapping(ctx)
 	case token.IntegerTag,
 		token.FloatTag,
@@ -88,8 +87,7 @@ func (p *parser) parseTag(ctx *context) (ast.Node, error) {
 		} else {
 			value = p.parseScalarValue(ctx.currentToken())
 		}
-	case token.SequenceTag,
-		token.SetTag:
+	case token.SequenceTag, token.SetTag:
 		err = errors.ErrSyntax(fmt.Sprintf("sorry, currently not supported %s tag", tagToken.Value), tagToken)
 	default:
 		// custom tag

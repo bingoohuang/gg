@@ -2,10 +2,11 @@ package extra
 
 import (
 	"context"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/modern-go/reflect2"
 	"unicode/utf8"
 	"unsafe"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/modern-go/reflect2"
 )
 
 // safeSet holds the value true if the ASCII character with the given array
@@ -133,8 +134,7 @@ func (extension *BinaryAsStringExtension) CreateDecoder(typ reflect2.Type) jsoni
 	return nil
 }
 
-type binaryAsStringCodec struct {
-}
+type binaryAsStringCodec struct{}
 
 func (codec *binaryAsStringCodec) Decode(_ context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 	rawBytes := iter.ReadStringAsSlice()
@@ -161,9 +161,11 @@ func (codec *binaryAsStringCodec) Decode(_ context.Context, ptr unsafe.Pointer, 
 	}
 	*(*[]byte)(ptr) = bytes
 }
+
 func (codec *binaryAsStringCodec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ bool) bool {
 	return len(*((*[]byte)(ptr))) == 0
 }
+
 func (codec *binaryAsStringCodec) Encode(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 	newBuffer := writeBytes(stream.Buffer(), *(*[]byte)(ptr))
 	stream.SetBuffer(newBuffer)

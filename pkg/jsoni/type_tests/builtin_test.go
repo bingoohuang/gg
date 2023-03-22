@@ -48,22 +48,24 @@ func init() {
 	)
 }
 
-type boolAlias bool
-type byteAlias byte
-type float32Alias float32
-type float64Alias float64
-type ptrFloat64Alias *float64
-type int8Alias int8
-type int16Alias int16
-type int32Alias int32
-type ptrInt32Alias *int32
-type int64Alias int64
-type stringAlias string
-type ptrStringAlias *string
-type uint8Alias uint8
-type uint16Alias uint16
-type uint32Alias uint32
-type uintptrAlias uintptr
-type uintAlias uint
-type uint64Alias uint64
-type intAlias int
+type (
+	boolAlias       bool
+	byteAlias       byte
+	float32Alias    float32
+	float64Alias    float64
+	ptrFloat64Alias *float64
+	int8Alias       int8
+	int16Alias      int16
+	int32Alias      int32
+	ptrInt32Alias   *int32
+	int64Alias      int64
+	stringAlias     string
+	ptrStringAlias  *string
+	uint8Alias      uint8
+	uint16Alias     uint16
+	uint32Alias     uint32
+	uintptrAlias    uintptr
+	uintAlias       uint
+	uint64Alias     uint64
+	intAlias        int
+)

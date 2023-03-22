@@ -2,11 +2,11 @@ package sqlparser
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertDBType(t *testing.T) {

@@ -2,10 +2,11 @@ package dm
 
 import (
 	"errors"
-	"gitee.com/chunanyong/dm"
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"io"
 	"reflect"
+
+	"gitee.com/chunanyong/dm"
+	"github.com/bingoohuang/gg/pkg/sqx"
 )
 
 func ConvertDmClob(value interface{}) (interface{}, error) {

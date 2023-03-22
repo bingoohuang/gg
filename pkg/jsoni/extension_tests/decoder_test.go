@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/modern-go/reflect2"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 	"time"
 	"unsafe"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/modern-go/reflect2"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_customize_type_decoder(t *testing.T) {
@@ -23,7 +24,7 @@ func Test_customize_type_decoder(t *testing.T) {
 		}
 		*((*time.Time)(ptr)) = t
 	})
-	//defer jsoni.ConfigDefault.(*frozenConfig).cleanDecoders()
+	// defer jsoni.ConfigDefault.(*frozenConfig).cleanDecoders()
 	val := time.Time{}
 	err := jsoni.Unmarshal([]byte(`"2016-12-05 08:43:28"`), &val)
 	if err != nil {
@@ -37,13 +38,13 @@ func Test_customize_type_decoder(t *testing.T) {
 
 func Test_customize_byte_array_encoder(t *testing.T) {
 	t.Skip()
-	//jsoni.ConfigDefault.(*frozenConfig).cleanEncoders()
+	// jsoni.ConfigDefault.(*frozenConfig).cleanEncoders()
 	should := require.New(t)
 	jsoni.RegisterTypeEncoderFunc("[]uint8", func(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 		t := *((*[]byte)(ptr))
 		stream.WriteString(string(t))
 	}, nil)
-	//defer jsoni.ConfigDefault.(*frozenConfig).cleanEncoders()
+	// defer jsoni.ConfigDefault.(*frozenConfig).cleanEncoders()
 	val := []byte("abc")
 	str, err := jsoni.MarshalToString(val)
 	should.Nil(err)
@@ -91,7 +92,7 @@ func Test_customize_field_decoder(t *testing.T) {
 	jsoni.RegisterFieldDecoderFunc("jsoni.Tom", "field1", func(ctx context.Context, ptr unsafe.Pointer, iter *jsoni.Iterator) {
 		*((*string)(ptr)) = strconv.Itoa(iter.ReadInt())
 	})
-	//defer jsoni.ConfigDefault.(*frozenConfig).cleanDecoders()
+	// defer jsoni.ConfigDefault.(*frozenConfig).cleanDecoders()
 	tom := Tom{}
 	err := jsoni.Unmarshal([]byte(`{"field1": 100}`), &tom)
 	if err != nil {

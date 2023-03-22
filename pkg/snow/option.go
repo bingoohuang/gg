@@ -1,8 +1,9 @@
 package snow
 
 import (
-	"github.com/bingoohuang/gg/pkg/goip"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/goip"
 )
 
 // Option for the snowflake

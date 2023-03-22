@@ -1,22 +1,20 @@
 package hlog_test
 
 import (
+	"io/ioutil"
+	"net/http"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/ginx/adapt"
 	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
 	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"github.com/bingoohuang/gg/pkg/ginx/hlog"
 	"github.com/bingoohuang/gg/pkg/sqx"
-	"io/ioutil"
-	"net/http"
-	"testing"
-
 	"github.com/bingoohuang/golog"
 	"github.com/bingoohuang/golog/pkg/ginlogrus"
-
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {

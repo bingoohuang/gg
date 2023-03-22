@@ -1,9 +1,10 @@
 package extra
 
 import (
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func init() {

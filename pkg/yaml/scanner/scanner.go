@@ -341,7 +341,7 @@ func (s *Scanner) scanDoubleQuote(ctx *Context) (tk *token.Token, pos int) {
 				case 'x':
 					if idx+3 >= size {
 						// TODO: need to return error
-						//err = xerrors.New("invalid escape character \\x")
+						// err = xerrors.New("invalid escape character \\x")
 						return
 					}
 					codeNum := hexRunesToInt(src[idx+2 : idx+4])
@@ -351,7 +351,7 @@ func (s *Scanner) scanDoubleQuote(ctx *Context) (tk *token.Token, pos int) {
 				case 'u':
 					if idx+5 >= size {
 						// TODO: need to return error
-						//err = xerrors.New("invalid escape character \\u")
+						// err = xerrors.New("invalid escape character \\u")
 						return
 					}
 					codeNum := hexRunesToInt(src[idx+2 : idx+6])
@@ -361,7 +361,7 @@ func (s *Scanner) scanDoubleQuote(ctx *Context) (tk *token.Token, pos int) {
 				case 'U':
 					if idx+9 >= size {
 						// TODO: need to return error
-						//err = xerrors.New("invalid escape character \\U")
+						// err = xerrors.New("invalid escape character \\U")
 						return
 					}
 					codeNum := hexRunesToInt(src[idx+2 : idx+10])

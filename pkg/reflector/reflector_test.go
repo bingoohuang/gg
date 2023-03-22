@@ -286,7 +286,6 @@ func TestSetFieldNonPointer(t *testing.T) {
 
 	// This actually don't work because p is a struct and reflector is working on it's own copy:
 	assert.Equal(t, "", street)
-
 }
 
 func TestSetField(t *testing.T) {
@@ -704,7 +703,6 @@ func TestMapLenGetSet(t *testing.T) {
 		assert.False(t, found)
 		assert.Equal(t, nil, val)
 	}
-
 }
 
 func TestMapSet(t *testing.T) {

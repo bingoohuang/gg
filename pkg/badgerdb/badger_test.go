@@ -2,9 +2,10 @@ package badgerdb
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/bytex"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNew(t *testing.T) {

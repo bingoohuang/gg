@@ -1,9 +1,10 @@
 package timex
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseDuration(t *testing.T) {

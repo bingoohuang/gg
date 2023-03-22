@@ -2,7 +2,6 @@ package profile
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"log"
 	"os"
 	"runtime"
@@ -10,6 +9,8 @@ import (
 	"runtime/trace"
 	"sync/atomic"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 const (

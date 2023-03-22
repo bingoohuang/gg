@@ -320,15 +320,13 @@ func TestMap_InterfaceNested(t *testing.T) {
 	}).Dump(m1)
 }
 
-var (
-	myOpts = struct {
-		opt0 *int
-		opt1 bool
-		opt2 int
-		opt3 float64
-		opt4 string
-	}{nil, true, 22, 34.45, "abc"}
-)
+var myOpts = struct {
+	opt0 *int
+	opt1 bool
+	opt2 int
+	opt3 float64
+	opt4 string
+}{nil, true, 22, 34.45, "abc"}
 
 // ------------------------- map -------------------------
 
@@ -342,12 +340,9 @@ type st1 struct {
 	Name string
 }
 
-var (
-	s1 = st1{st0{2}, 23, "inhere"}
-)
+var s1 = st1{st0{2}, 23, "inhere"}
 
 func TestDump_Struct(t *testing.T) {
-
 }
 
 func TestStruct_WithNested(t *testing.T) {

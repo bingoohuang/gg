@@ -44,8 +44,10 @@ func (m *StringMarshaler) UnmarshalJSON(text []byte) error {
 	return nil
 }
 
-var _ json.Marshaler = *new(StringMarshaler)
-var _ json.Unmarshaler = new(StringMarshaler)
+var (
+	_ json.Marshaler   = *new(StringMarshaler)
+	_ json.Unmarshaler = new(StringMarshaler)
+)
 
 func init() {
 	testCases = append(testCases, (*StringMarshaler)(nil))

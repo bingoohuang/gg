@@ -24,8 +24,7 @@ func SetFlag(n Node) {
 	n.Accept(&setter)
 }
 
-type flagSetter struct {
-}
+type flagSetter struct{}
 
 func (f *flagSetter) Enter(in Node) (Node, bool) {
 	return in, false

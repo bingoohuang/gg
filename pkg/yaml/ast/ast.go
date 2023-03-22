@@ -883,7 +883,8 @@ func (n *LiteralNode) String() string {
 	if n.Comment != nil {
 		return fmt.Sprintf("%s %s\n%s", n.Start.Value, n.Comment.String(), lit)
 	}
-	return fmt.Sprintf("%s\n%s", n.Start.Value, lit)}
+	return fmt.Sprintf("%s\n%s", n.Start.Value, lit)
+}
 
 func (n *LiteralNode) stringWithoutComment() string {
 	return n.String()
@@ -1884,7 +1885,6 @@ func (n *CommentGroupNode) StringWithSpace(col int) string {
 		values = append(values, space+comment.String())
 	}
 	return strings.Join(values, "\n")
-
 }
 
 func (n *CommentGroupNode) stringWithoutComment() string {

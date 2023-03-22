@@ -4,10 +4,11 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/mapp"
 	"log"
 	"runtime/debug"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/mapp"
 )
 
 const drainWorkers = 8
@@ -72,7 +73,8 @@ func NewTimingWheel(interval time.Duration, numSlots int, execute Execute) (*Tim
 }
 
 func newTimingWheelWithClock(interval time.Duration, numSlots int, execute Execute,
-	ticker *time.Ticker) (*TimingWheel, error) {
+	ticker *time.Ticker,
+) (*TimingWheel, error) {
 	tw := &TimingWheel{
 		interval:      interval,
 		ticker:        ticker,

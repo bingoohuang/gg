@@ -359,111 +359,109 @@ const (
 	TimestampTag ReservedTagKeyword = "!!timestamp"
 )
 
-var (
-	// ReservedTagKeywordMap map for reserved tag keywords
-	ReservedTagKeywordMap = map[ReservedTagKeyword]func(string, string, *Position) *Token{
-		IntegerTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		FloatTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		NullTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		SequenceTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		MappingTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		StringTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		BinaryTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		OrderedMapTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		SetTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-		TimestampTag: func(value, org string, pos *Position) *Token {
-			return &Token{
-				Type:          TagType,
-				CharacterType: CharacterTypeIndicator,
-				Indicator:     NodePropertyIndicator,
-				Value:         value,
-				Origin:        org,
-				Position:      pos,
-			}
-		},
-	}
-)
+// ReservedTagKeywordMap map for reserved tag keywords
+var ReservedTagKeywordMap = map[ReservedTagKeyword]func(string, string, *Position) *Token{
+	IntegerTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	FloatTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	NullTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	SequenceTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	MappingTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	StringTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	BinaryTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	OrderedMapTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	SetTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+	TimestampTag: func(value, org string, pos *Position) *Token {
+		return &Token{
+			Type:          TagType,
+			CharacterType: CharacterTypeIndicator,
+			Indicator:     NodePropertyIndicator,
+			Value:         value,
+			Origin:        org,
+			Position:      pos,
+		}
+	},
+}
 
 type numType int
 

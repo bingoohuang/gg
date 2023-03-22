@@ -2,13 +2,14 @@ package mapstruct
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type NullTime struct {

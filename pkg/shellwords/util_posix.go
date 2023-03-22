@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package shellwords
@@ -22,7 +23,6 @@ func shellRun(line, dir string) (string, error) {
 	}
 
 	b, err := cmd.Output()
-
 	if err != nil {
 		if eerr, ok := err.(*exec.ExitError); ok {
 			b = eerr.Stderr

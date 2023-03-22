@@ -3,10 +3,11 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_disallowUnknownFields(t *testing.T) {

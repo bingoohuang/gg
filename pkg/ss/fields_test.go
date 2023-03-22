@@ -1,9 +1,10 @@
 package ss_test
 
 import (
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestFieldsX(t *testing.T) {
@@ -17,6 +18,7 @@ func TestFieldsX(t *testing.T) {
 	assert.Equal(t, []string{"(中 华)", "(人 民)"}, ss.FieldsX(" (中 华) (人 民)  ", "(", ")", -1))
 	assert.Equal(t, []string{"(中 华)", "(人 民)  共和国"}, ss.FieldsX(" (中 华) (人 民)  共和国", "(", ")", 2))
 }
+
 func TestFields(t *testing.T) {
 	assert.Nil(t, ss.FieldsN("a b c", 0), nil)
 	assert.Equal(t, []string{"a b c"}, ss.FieldsN(" a b c ", 1))

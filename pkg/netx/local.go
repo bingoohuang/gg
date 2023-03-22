@@ -2,13 +2,14 @@ package netx
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/bingoohuang/gg/pkg/goip"
 	"github.com/bingoohuang/gg/pkg/netx/freeport"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/golog/pkg/randx"
 	"github.com/go-resty/resty/v2"
-	"net/http"
-	"time"
 )
 
 // IsLocalAddr 判断addr（ip，域名等）是否指向本机

@@ -3,9 +3,10 @@ package test
 import (
 	"context"
 	"encoding/json"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 func init() {

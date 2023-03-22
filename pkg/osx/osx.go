@@ -2,8 +2,9 @@ package osx
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/osx/env"
 	"os"
+
+	"github.com/bingoohuang/gg/pkg/osx/env"
 )
 
 func ExitIfErr(err error) {

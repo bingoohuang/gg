@@ -4,10 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/delay"
-	"github.com/bingoohuang/gg/pkg/iox"
-	"github.com/bingoohuang/gg/pkg/man"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"log"
 	"os"
@@ -16,6 +12,11 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/delay"
+	"github.com/bingoohuang/gg/pkg/iox"
+	"github.com/bingoohuang/gg/pkg/man"
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 // QueueWriter output parsed http messages
@@ -234,5 +235,4 @@ func (p *QueueWriter) Close() error {
 }
 
 func (p *QueueWriter) removeExpiredFiles() {
-
 }

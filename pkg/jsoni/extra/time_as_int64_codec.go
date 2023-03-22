@@ -2,9 +2,10 @@ package extra
 
 import (
 	"context"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"time"
 	"unsafe"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 // RegisterTimeAsInt64Codec encode/decode time since number of unit since epoch. the precision is the unit.
@@ -26,6 +27,7 @@ func (codec *timeAsInt64Codec) IsEmpty(_ context.Context, ptr unsafe.Pointer, _ 
 	ts := *((*time.Time)(ptr))
 	return ts.UnixNano() == 0
 }
+
 func (codec *timeAsInt64Codec) Encode(_ context.Context, ptr unsafe.Pointer, stream *jsoni.Stream) {
 	ts := *((*time.Time)(ptr))
 	stream.WriteInt64(ts.UnixNano() / codec.precision.Nanoseconds())

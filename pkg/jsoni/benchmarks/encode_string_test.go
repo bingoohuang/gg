@@ -3,8 +3,9 @@ package test
 import (
 	"bytes"
 	"context"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 func Benchmark_encode_string_with_SetEscapeHTML(b *testing.B) {
@@ -13,7 +14,7 @@ func Benchmark_encode_string_with_SetEscapeHTML(b *testing.B) {
 		B bool
 		I int
 	}
-	var json = jsoni.ConfigCompatibleWithStandardLibrary
+	json := jsoni.ConfigCompatibleWithStandardLibrary
 	b.ReportAllocs()
 	ctx := context.Background()
 	for i := 0; i < b.N; i++ {

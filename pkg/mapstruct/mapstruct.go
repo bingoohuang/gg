@@ -9,84 +9,84 @@
 //
 // The simplest function to start with is Decode.
 //
-// Field Tags
+// # Field Tags
 //
 // When decoding to a struct, mapstruct will use the field name by
 // default to perform the mapping. For example, if a struct has a field
 // "Username" then mapstruct will look for a key in the source value
 // of "username" (case insensitive).
 //
-//     type User struct {
-//         Username string
-//     }
+//	type User struct {
+//	    Username string
+//	}
 //
 // You can change the behavior of mapstruct by using struct tags.
 // The default struct tag that mapstruct looks for is "mapstruct"
 // but you can customize it using Config.
 //
-// Renaming Fields
+// # Renaming Fields
 //
 // To rename the key that mapstruct looks for, use the "mapstruct"
 // tag and set a value directly. For example, to change the "username" example
 // above to "user":
 //
-//     type User struct {
-//         Username string `mapstruct:"user"`
-//     }
+//	type User struct {
+//	    Username string `mapstruct:"user"`
+//	}
 //
-// Embedded Structs and Squashing
+// # Embedded Structs and Squashing
 //
 // Embedded structs are treated as if they're another field with that name.
 // By default, the two structs below are equivalent when decoding with
 // mapstruct:
 //
-//     type Person struct {
-//         Name string
-//     }
+//	type Person struct {
+//	    Name string
+//	}
 //
-//     type Friend struct {
-//         Person
-//     }
+//	type Friend struct {
+//	    Person
+//	}
 //
-//     type Friend struct {
-//         Person Person
-//     }
+//	type Friend struct {
+//	    Person Person
+//	}
 //
 // This would require an input that looks like below:
 //
-//     map[string]interface{}{
-//         "person": map[string]interface{}{"name": "alice"},
-//     }
+//	map[string]interface{}{
+//	    "person": map[string]interface{}{"name": "alice"},
+//	}
 //
 // If your "person" value is NOT nested, then you can append ",squash" to
 // your tag value and mapstruct will treat it as if the embedded struct
 // were part of the struct directly. Example:
 //
-//     type Friend struct {
-//         Person `mapstruct:",squash"`
-//     }
+//	type Friend struct {
+//	    Person `mapstruct:",squash"`
+//	}
 //
 // Now the following input would be accepted:
 //
-//     map[string]interface{}{
-//         "name": "alice",
-//     }
+//	map[string]interface{}{
+//	    "name": "alice",
+//	}
 //
 // When decoding from a struct to a map, the squash tag squashes the struct
 // fields into a single map. Using the example structs from above:
 //
-//     Friend{Person: Person{Name: "alice"}}
+//	Friend{Person: Person{Name: "alice"}}
 //
 // Will be decoded into a map:
 //
-//     map[string]interface{}{
-//         "name": "alice",
-//     }
+//	map[string]interface{}{
+//	    "name": "alice",
+//	}
 //
 // Config has a field that changes the behavior of mapstruct
 // to always squash embedded structs.
 //
-// Remainder Values
+// # Remainder Values
 //
 // If there are any unmapped keys in the source value, mapstruct by
 // default will silently ignore them. You can error by setting ErrorUnused
@@ -98,20 +98,20 @@
 // probably be a "map[string]interface{}" or "map[interface{}]interface{}".
 // See example below:
 //
-//     type Friend struct {
-//         Name  string
-//         Other map[string]interface{} `mapstruct:",remain"`
-//     }
+//	type Friend struct {
+//	    Name  string
+//	    Other map[string]interface{} `mapstruct:",remain"`
+//	}
 //
 // Given the input below, Other would be populated with the other
 // values that weren't used (everything but "name"):
 //
-//     map[string]interface{}{
-//         "name":    "bob",
-//         "address": "123 Maple St.",
-//     }
+//	map[string]interface{}{
+//	    "name":    "bob",
+//	    "address": "123 Maple St.",
+//	}
 //
-// Omit Empty Values
+// # Omit Empty Values
 //
 // When decoding from a struct to any other value, you may use the
 // ",omitempty" suffix on your tag to omit that value if it equates to
@@ -122,37 +122,37 @@
 // field value is zero and a numeric type, the field is empty, and it won't
 // be encoded into the destination type.
 //
-//     type Source {
-//         Age int `mapstruct:",omitempty"`
-//     }
+//	type Source {
+//	    Age int `mapstruct:",omitempty"`
+//	}
 //
-// Unexported fields
+// # Unexported fields
 //
 // Since unexported (private) struct fields cannot be set outside the package
 // where they are defined, the decoder will simply skip them.
 //
 // For this output type definition:
 //
-//     type Exported struct {
-//         private string // this unexported field will be skipped
-//         Public string
-//     }
+//	type Exported struct {
+//	    private string // this unexported field will be skipped
+//	    Public string
+//	}
 //
 // Using this map as input:
 //
-//     map[string]interface{}{
-//         "private": "I will be ignored",
-//         "Public":  "I made it through!",
-//     }
+//	map[string]interface{}{
+//	    "private": "I will be ignored",
+//	    "Public":  "I made it through!",
+//	}
 //
 // The following struct will be decoded:
 //
-//     type Exported struct {
-//         private: "" // field is left with an empty string (zero value)
-//         Public: "I made it through!"
-//     }
+//	type Exported struct {
+//	    private: "" // field is left with an empty string (zero value)
+//	    Public: "I made it through!"
+//	}
 //
-// Other Configuration
+// # Other Configuration
 //
 // mapstruct is highly configurable. See the Config struct
 // for other features and options that are supported.
@@ -162,12 +162,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/araddon/dateparse"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/araddon/dateparse"
 )
 
 // HookFunc is the callback function that can be used for
@@ -444,9 +445,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	return err
 }
 
-var (
-	TimeType = reflect.TypeOf((*time.Time)(nil)).Elem()
-)
+var TimeType = reflect.TypeOf((*time.Time)(nil)).Elem()
 
 // This decodes a basic type (bool, int, string, etc.) and sets the
 // value to "data" of that type.

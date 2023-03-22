@@ -9,9 +9,11 @@ import (
 	"sync"
 )
 
-var sqlDriverNamesByType = map[reflect.Type]string{}
-var sqlDriverNamesByTypeLock sync.Mutex
-var sqlDriverNamesByTypeOnce sync.Once
+var (
+	sqlDriverNamesByType     = map[reflect.Type]string{}
+	sqlDriverNamesByTypeLock sync.Mutex
+	sqlDriverNamesByTypeOnce sync.Once
+)
 
 // The database/sql API doesn't provide a way to get the registry name for
 // a driver from the driver type.

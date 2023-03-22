@@ -209,11 +209,13 @@ b:
 	}
 }
 
-type ObjectMap map[string]*Object
-type ObjectDecl struct {
-	Name    string `yaml:"-"`
-	*Object `yaml:",inline,anchor"`
-}
+type (
+	ObjectMap  map[string]*Object
+	ObjectDecl struct {
+		Name    string `yaml:"-"`
+		*Object `yaml:",inline,anchor"`
+	}
+)
 
 func (m ObjectMap) MarshalYAML() (interface{}, error) {
 	newMap := map[string]*ObjectDecl{}

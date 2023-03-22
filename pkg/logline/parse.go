@@ -2,13 +2,14 @@ package logline
 
 import (
 	"errors"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 var filters = map[string]Converter{
@@ -113,8 +114,10 @@ func (o Option) Replace(s string) string {
 	return s
 }
 
-type OptionFn func(*Option)
-type OptionFns []OptionFn
+type (
+	OptionFn  func(*Option)
+	OptionFns []OptionFn
+)
 
 func (fs OptionFns) Apply(option *Option) {
 	for _, f := range fs {
@@ -247,11 +250,13 @@ func TimeValue(layout string) Converter { return &timeValue{layout: layout} }
 func UriPath() Converter                { return &uriPath{} }
 func DurationPath() Converter           { return &durationPath{} }
 
-type durationPath struct{}
-type uriPath struct{}
-type timeValue struct{ layout string }
-type digitsValue struct{}
-type floatValue struct{}
+type (
+	durationPath struct{}
+	uriPath      struct{}
+	timeValue    struct{ layout string }
+	digitsValue  struct{}
+	floatValue   struct{}
+)
 
 func (t timeValue) Convert(v interface{}) (interface{}, error) {
 	return time.Parse(t.layout, v.(string))
@@ -272,6 +277,7 @@ func (t floatValue) Convert(v interface{}) (interface{}, error) {
 	}
 	return strconv.ParseFloat(vs, 64)
 }
+
 func (uriPath) Convert(v interface{}) (interface{}, error) {
 	u, err := url.Parse(v.(string))
 	if err != nil {

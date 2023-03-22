@@ -3,11 +3,11 @@ package test
 import "io"
 
 func init() {
-	var pCloser1 = func(str string) *io.Closer {
+	pCloser1 := func(str string) *io.Closer {
 		closer := io.Closer(strCloser1(str))
 		return &closer
 	}
-	var pCloser2 = func(str string) *io.Closer {
+	pCloser2 := func(str string) *io.Closer {
 		strCloser := strCloser2(str)
 		closer := io.Closer(&strCloser)
 		return &closer

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -169,7 +168,6 @@ func TestBacktick(t *testing.T) {
 	parser := NewParser()
 	parser.ParseBacktick = true
 	args, err := parser.Parse("echo `go version`")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +223,6 @@ func TestBacktickMulti(t *testing.T) {
 	parser := NewParser()
 	parser.ParseBacktick = true
 	args, err := parser.Parse(`echo $(go env GOPATH && go env GOROOT)`)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,7 +289,6 @@ func TestEnv(t *testing.T) {
 	parser := NewParser()
 	parser.ParseEnv = true
 	args, err := parser.Parse("echo $FOO")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +304,6 @@ func TestCustomEnv(t *testing.T) {
 	parser.ParseEnv = true
 	parser.Getenv = func(k string) string { return map[string]string{"FOO": "baz"}[k] }
 	args, err := parser.Parse("echo $FOO")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +319,6 @@ func TestNoEnv(t *testing.T) {
 	parser := NewParser()
 	parser.ParseEnv = true
 	args, err := parser.Parse("echo $BAR")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -341,7 +335,6 @@ func TestEnvArguments(t *testing.T) {
 	parser := NewParser()
 	parser.ParseEnv = true
 	args, err := parser.Parse("echo $FOO")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +351,6 @@ func TestEnvArgumentsFail(t *testing.T) {
 	parser := NewParser()
 	parser.ParseEnv = true
 	_, err := parser.Parse("echo $FOO")
-
 	if err != nil {
 		t.Fatal("Should not be an error")
 	}
@@ -389,7 +381,6 @@ func TestDupEnv(t *testing.T) {
 	parser := NewParser()
 	parser.ParseEnv = true
 	args, err := parser.Parse("echo $$FOO$")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,7 +409,6 @@ func TestHaveMore(t *testing.T) {
 
 	line := "echo foo; seq 1 10"
 	args, err := parser.Parse(line)
-
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -456,7 +446,6 @@ func TestHaveRedirect(t *testing.T) {
 
 	line := "ls -la 2>foo"
 	args, err := parser.Parse(line)
-
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -475,7 +464,6 @@ func TestBackquoteInFlag(t *testing.T) {
 	parser := NewParser()
 	parser.ParseBacktick = true
 	args, err := parser.Parse("cmd -flag=`echo val1` -flag=val2")
-
 	if err != nil {
 		panic(err)
 	}

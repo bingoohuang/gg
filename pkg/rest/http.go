@@ -6,11 +6,12 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 type Rest struct {
@@ -59,10 +60,10 @@ type Rsp struct {
 }
 
 var Client = &http.Client{
-	//Timeout: 10 * time.Second,
+	// Timeout: 10 * time.Second,
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		//DisableKeepAlives: true,
+		// DisableKeepAlives: true,
 	},
 }
 

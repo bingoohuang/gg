@@ -79,7 +79,8 @@ func StringToSliceHookFunc(sep string) HookFunc {
 	return func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f != reflect.String || t != reflect.Slice {
 			return data, nil
 		}
@@ -99,7 +100,8 @@ func StringToTimeDurationHookFunc() HookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -118,7 +120,8 @@ func StringToIPHookFunc() HookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -142,7 +145,8 @@ func StringToIPNetHookFunc() HookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -162,7 +166,8 @@ func StringToTimeHookFunc(layout string) HookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -183,7 +188,8 @@ func StringToTimeHookFunc(layout string) HookFunc {
 func WeaklyTypedHook(
 	f reflect.Kind,
 	t reflect.Kind,
-	data interface{}) (interface{}, error) {
+	data interface{},
+) (interface{}, error) {
 	dataVal := reflect.ValueOf(data)
 	switch t {
 	case reflect.String:
@@ -236,7 +242,8 @@ func TextUnmarshallerHookFunc() HookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}

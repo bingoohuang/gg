@@ -2,11 +2,12 @@ package badgerdb
 
 import (
 	"errors"
-	"github.com/bingoohuang/gg/pkg/osx"
-	"github.com/dgraph-io/badger/v3"
 	"io/ioutil"
 	"log"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/osx"
+	"github.com/dgraph-io/badger/v3"
 )
 
 type Badger struct {
@@ -102,8 +103,10 @@ func (o OpenOptions) Apply() badger.Options {
 	return options
 }
 
-type OpenOptionsFn func(*OpenOptions)
-type OpenOptionsFns []OpenOptionsFn
+type (
+	OpenOptionsFn  func(*OpenOptions)
+	OpenOptionsFns []OpenOptionsFn
+)
 
 func (fns OpenOptionsFns) Create() *OpenOptions {
 	o := &OpenOptions{}
@@ -126,8 +129,10 @@ func (o SetOptions) Apply(e *badger.Entry) {
 	e.WithMeta(o.Meta)
 }
 
-type SetOptionsFn func(*SetOptions)
-type SetOptionsFns []SetOptionsFn
+type (
+	SetOptionsFn  func(*SetOptions)
+	SetOptionsFns []SetOptionsFn
+)
 
 func (fns SetOptionsFns) Create() *SetOptions {
 	o := &SetOptions{}

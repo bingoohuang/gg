@@ -1,9 +1,10 @@
 package yaml
 
 import (
-	"golang.org/x/xerrors"
 	"reflect"
 	"strconv"
+
+	"golang.org/x/xerrors"
 )
 
 // CastUint64 casts an uint64 to target typ.

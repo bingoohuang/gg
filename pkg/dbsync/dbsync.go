@@ -3,10 +3,11 @@ package dbsync
 import (
 	"context"
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/mapp"
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"log"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/mapp"
+	"github.com/bingoohuang/gg/pkg/sqx"
 )
 
 type DbSync struct {

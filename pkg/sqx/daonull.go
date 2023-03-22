@@ -3,8 +3,9 @@ package sqx
 import (
 	"database/sql"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/reflector"
 	"reflect"
+
+	"github.com/bingoohuang/gg/pkg/reflector"
 )
 
 // NullAny represents any that may be null.
@@ -18,13 +19,13 @@ type NullAny struct {
 //
 // The src value will be of one of the following types:
 //
-//    int64
-//    float64
-//    bool
-//    []byte
-//    string
-//    time.Time
-//    nil - for NULL values
+//	int64
+//	float64
+//	bool
+//	[]byte
+//	string
+//	time.Time
+//	nil - for NULL values
 //
 // An error should be returned if the value cannot be stored
 // without loss of information.

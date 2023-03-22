@@ -88,11 +88,10 @@ func Test_wrap_object_and_convert_to_any(t *testing.T) {
 	should.Equal(`{"Field1":"hello"}`, any.ToString())
 
 	// cannot pass!
-	//stream := NewStream(ConfigDefault, nil, 32)
-	//any.WriteTo(stream)
-	//should.Equal(`{"Field1":"hello"}`, string(stream.Buffer()))
+	// stream := NewStream(ConfigDefault, nil, 32)
+	// any.WriteTo(stream)
+	// should.Equal(`{"Field1":"hello"}`, string(stream.Buffer()))
 	// cannot pass!
-
 }
 
 func Test_any_within_struct(t *testing.T) {

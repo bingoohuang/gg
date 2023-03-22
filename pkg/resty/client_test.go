@@ -80,7 +80,6 @@ func TestClientAuthScheme(t *testing.T) {
 	resp2, err2 := c.R().Get("/profile")
 	assert.Nil(t, err2)
 	assert.Equal(t, http.StatusOK, resp2.StatusCode())
-
 }
 
 func TestOnAfterMiddleware(t *testing.T) {
@@ -368,7 +367,7 @@ func TestClientOptions(t *testing.T) {
 	assert.Equal(t, mrwt, client.RetryMaxWaitTime)
 
 	client.AddRetryAfterErrorCondition()
-	//assert.True(t, reflect.DeepEqual(client.RetryConditions[0],
+	// assert.True(t, reflect.DeepEqual(client.RetryConditions[0],
 	//	func(response *Response, err error) bool { return response.IsError() }))
 
 	err := &AuthError{}
@@ -532,8 +531,7 @@ func TestDebugBodySizeLimit(t *testing.T) {
 }
 
 // CustomRoundTripper just for test
-type CustomRoundTripper struct {
-}
+type CustomRoundTripper struct{}
 
 // RoundTrip just for test
 func (rt *CustomRoundTripper) RoundTrip(_ *http.Request) (*http.Response, error) {
@@ -693,7 +691,7 @@ func TestClientOnResponseError(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var assertErrorHook = func(r *Request, err error) {
+			assertErrorHook := func(r *Request, err error) {
 				assert.NotNil(t, r)
 				v, ok := err.(*ResponseError)
 				assert.Equal(t, test.hasResponse, ok)

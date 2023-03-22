@@ -1,12 +1,13 @@
 package rest
 
 import (
-	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
+
+	"github.com/bingoohuang/gg/pkg/ss"
 )
 
 func LogResponse(r *http.Response, verbose string) {

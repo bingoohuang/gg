@@ -2,9 +2,10 @@ package sqx
 
 import (
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/reflector"
 	"log"
 	"reflect"
+
+	"github.com/bingoohuang/gg/pkg/reflector"
 )
 
 // DaoLogger is the interface for dao logging.

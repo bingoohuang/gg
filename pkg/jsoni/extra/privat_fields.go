@@ -1,9 +1,10 @@
 package extra
 
 import (
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"strings"
 	"unicode"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 // SupportPrivateFields include private fields when encoding/decoding

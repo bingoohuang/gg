@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/sqx"
-	"go.uber.org/multierr"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/sqx"
+	"go.uber.org/multierr"
 )
 
 type Config struct {
@@ -39,6 +40,7 @@ func DefaultDuration(s, defaultValue time.Duration) time.Duration {
 	}
 	return s
 }
+
 func Default(s, defaultValue string) string {
 	if s == "" {
 		return defaultValue
@@ -192,8 +194,8 @@ func (c *Client) Del(k string) (er error) {
 	}()
 
 	return nil
-
 }
+
 func (c *Client) del(k string) (er error) {
 	m := map[string]string{
 		"k":    k,

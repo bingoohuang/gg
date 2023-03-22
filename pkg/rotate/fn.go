@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"compress/gzip"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/timex"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/timex"
 )
 
 // bufWriter is a Writer interface that also has a Flush method.

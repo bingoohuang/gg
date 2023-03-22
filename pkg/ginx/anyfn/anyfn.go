@@ -4,11 +4,9 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/bingoohuang/gg/pkg/ginx/adapt"
-
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // DirectDealer is the dealer for a specified type.

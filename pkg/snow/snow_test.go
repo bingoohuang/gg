@@ -3,10 +3,11 @@ package snow
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewNodeLocalIP(t *testing.T) {
@@ -182,7 +183,6 @@ func TestBase2(t *testing.T) {
 	i := oID.Base2()
 
 	pID, err := ParseBase2(i)
-
 	if err != nil {
 		t.Fatalf("error parsing, %s", err)
 	}
@@ -216,7 +216,6 @@ func TestBase32(t *testing.T) {
 		sf := node.Next()
 		b32i := sf.Base32()
 		psf, err := ParseBase32([]byte(b32i))
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,7 +269,6 @@ func TestBase58(t *testing.T) {
 		sf := node.Next()
 		b58 := sf.Base58()
 		psf, err := ParseBase58([]byte(b58))
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -450,6 +448,7 @@ func BenchmarkBase32(b *testing.B) {
 		sf.Base32()
 	}
 }
+
 func BenchmarkParseBase58(b *testing.B) {
 	node, _ := NewNode(WithNodeID(1))
 	sf := node.Next()
@@ -476,6 +475,7 @@ func BenchmarkBase58(b *testing.B) {
 		sf.Base58()
 	}
 }
+
 func BenchmarkGenerate(b *testing.B) {
 	node, _ := NewNode(WithNodeID(1))
 

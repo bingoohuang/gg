@@ -3,9 +3,10 @@ package dbsync
 import (
 	"database/sql"
 	"fmt"
+	"testing"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSync(t *testing.T) {
@@ -27,6 +28,6 @@ func TestSync(t *testing.T) {
 
 	dbsync.Start()
 
-	//time.Sleep(1 * time.Hour)
+	// time.Sleep(1 * time.Hour)
 	dbsync.Stop()
 }

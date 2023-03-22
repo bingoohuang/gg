@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/firdasafridi/gocrypt"
+	"github.com/bingoohuang/gg/pkg/cry"
 )
 
 func ExampleNewAESOpt() {

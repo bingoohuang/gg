@@ -2,12 +2,12 @@ package anyfn_test
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ginx/adapt"
-	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
-	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"net/http"
 	"testing"
 
+	"github.com/bingoohuang/gg/pkg/ginx/adapt"
+	"github.com/bingoohuang/gg/pkg/ginx/anyfn"
+	"github.com/bingoohuang/gg/pkg/ginx/gintest"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )

@@ -1,10 +1,11 @@
 package extra
 
 import (
-	"github.com/bingoohuang/gg/pkg/jsoni"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_time_as_int64(t *testing.T) {

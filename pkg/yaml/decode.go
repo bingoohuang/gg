@@ -614,9 +614,7 @@ func (d *Decoder) decodeByUnmarshaler(ctx context.Context, dst reflect.Value, sr
 	return xerrors.Errorf("does not implemented Unmarshaler")
 }
 
-var (
-	astNodeType = reflect.TypeOf((*ast.Node)(nil)).Elem()
-)
+var astNodeType = reflect.TypeOf((*ast.Node)(nil)).Elem()
 
 func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.Node) error {
 	if src.Type() == ast.AnchorType {

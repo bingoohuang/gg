@@ -178,7 +178,7 @@ func TestAssignRole(t *testing.T) {
 		t.Error("failed assigning roles to perm")
 	}
 
-	//clean up
+	// clean up
 	db.Where("user_id=?", 1).Delete(rbac.UserRole{})
 	db.Where("name=?", "role-a").Delete(rbac.Role{})
 	db.Where("name=?", "role-b").Delete(rbac.Role{})
@@ -234,7 +234,7 @@ func TestCheckPerm(t *testing.T) {
 		t.Error("unexpected error while creating role.", err)
 	}
 
-	//create perms
+	// create perms
 	err = auth.NewPerm("perm-a")
 	if err != nil {
 		t.Error("unexpected error while creating perm to be assigned.", err)
@@ -357,7 +357,7 @@ func TestCheckRolePerm(t *testing.T) {
 		t.Error("expecting false when checking a missing perm")
 	}
 
-	//clean up
+	// clean up
 	var r rbac.Role
 	db.Where("name=?", "role-a").First(&r)
 	db.Where("role_id=?", r.ID).Delete(rbac.RolePerm{})
@@ -382,7 +382,7 @@ func TestRevokeRole(t *testing.T) {
 		t.Error("unexpected error while assigning role.", err)
 	}
 
-	//test
+	// test
 	err = auth.RevokeRole(1, "role-a")
 	if err != nil {
 		t.Error("unexpected error revoking user role.", err)

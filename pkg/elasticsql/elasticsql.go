@@ -3,9 +3,10 @@ package elasticsql
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/bingoohuang/gg/pkg/sqlparse/sqlparser"
 	"github.com/bingoohuang/gg/pkg/ss"
-	"strings"
 )
 
 // Convert will transform sql to elasticsearch dsl string
@@ -24,7 +25,7 @@ func Convert(sql string) (dsl string, err error) {
 		return "", err
 	}
 
-	//sql valid, start to handle
+	// sql valid, start to handle
 	switch t := stmt.(type) {
 	case *sqlparser.Select:
 		return handleSelect(t)
@@ -310,7 +311,7 @@ func handleSelectWhere(expr *sqlparser.Expr, topLevel bool, parent *sqlparser.Ex
 		boolExpr := parentBoolExpr.Expr
 
 		// if paren is the top level, bool must is needed
-		var isThisTopLevel = false
+		isThisTopLevel := false
 		if topLevel {
 			isThisTopLevel = true
 		}

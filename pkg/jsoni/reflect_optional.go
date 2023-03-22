@@ -2,8 +2,9 @@ package jsoni
 
 import (
 	"context"
-	"github.com/modern-go/reflect2"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
 func decoderOfOptional(ctx *ctx, typ reflect2.Type) ValDecoder {
@@ -31,12 +32,12 @@ func (d *OptionalDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
 		if *((*unsafe.Pointer)(ptr)) == nil {
-			//pointer to null, we have to allocate memory to hold the value
+			// pointer to null, we have to allocate memory to hold the value
 			newPtr := d.ValueType.UnsafeNew()
 			d.ValueDecoder.Decode(ctx, newPtr, iter)
 			*((*unsafe.Pointer)(ptr)) = newPtr
 		} else {
-			//reuse existing instance
+			// reuse existing instance
 			d.ValueDecoder.Decode(ctx, *((*unsafe.Pointer)(ptr)), iter)
 		}
 	}
@@ -50,12 +51,12 @@ type dereferenceDecoder struct {
 
 func (d *dereferenceDecoder) Decode(ctx context.Context, ptr unsafe.Pointer, iter *Iterator) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
-		//pointer to null, we have to allocate memory to hold the value
+		// pointer to null, we have to allocate memory to hold the value
 		newPtr := d.valueType.UnsafeNew()
 		d.valueDecoder.Decode(ctx, newPtr, iter)
 		*((*unsafe.Pointer)(ptr)) = newPtr
 	} else {
-		//reuse existing instance
+		// reuse existing instance
 		d.valueDecoder.Decode(ctx, *((*unsafe.Pointer)(ptr)), iter)
 	}
 }
@@ -91,7 +92,6 @@ func (e *dereferenceEncoder) Encode(ctx context.Context, ptr unsafe.Pointer, str
 func (e *dereferenceEncoder) IsEmpty(ctx context.Context, ptr unsafe.Pointer, checkZero bool) bool {
 	if dePtr := *((*unsafe.Pointer)(ptr)); dePtr != nil {
 		return e.ValueEncoder.IsEmpty(ctx, dePtr, checkZero)
-
 	}
 	return true
 }

@@ -2,17 +2,18 @@ package sqlkv_test
 
 import (
 	"fmt"
+	"log"
+	"net"
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/gokv/sqlkv"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/src-d/go-mysql-server"
+	sqle "github.com/src-d/go-mysql-server"
 	"github.com/src-d/go-mysql-server/auth"
 	"github.com/src-d/go-mysql-server/memory"
 	"github.com/src-d/go-mysql-server/server"
 	"github.com/src-d/go-mysql-server/sql"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"net"
-	"testing"
 )
 
 func TestSQL(t *testing.T) {

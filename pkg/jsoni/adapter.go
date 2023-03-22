@@ -51,6 +51,7 @@ func MarshalContext(ctx context.Context, v interface{}) ([]byte, error) {
 func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 	return MarshalIndentContext(context.Background(), v, prefix, indent)
 }
+
 func MarshalIndentContext(ctx context.Context, v interface{}, prefix, indent string) ([]byte, error) {
 	return ConfigDefault.MarshalIndent(ctx, v, prefix, indent)
 }

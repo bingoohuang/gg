@@ -3,12 +3,13 @@ package jsoni
 import (
 	"context"
 	"fmt"
-	"github.com/modern-go/reflect2"
 	"reflect"
 	"sort"
 	"strings"
 	"unicode"
 	"unsafe"
+
+	"github.com/modern-go/reflect2"
 )
 
 type Extensions []Extension
@@ -18,6 +19,7 @@ func (es Extensions) UpdateStructDescriptor(structDescriptor *StructDescriptor) 
 		extension.UpdateStructDescriptor(structDescriptor)
 	}
 }
+
 func (es Extensions) CreateMapKeyEncoder(typ reflect2.Type) ValEncoder {
 	for _, extension := range es {
 		if v := extension.CreateMapKeyEncoder(typ); v != nil {
@@ -195,6 +197,7 @@ type funcEncoder struct {
 func (e *funcEncoder) Encode(ctx context.Context, p unsafe.Pointer, stream *Stream) {
 	e.fn(ctx, p, stream)
 }
+
 func (e *funcEncoder) IsEmpty(ctx context.Context, p unsafe.Pointer, checkZero bool) bool {
 	return e.isEmptyFn != nil && e.isEmptyFn(ctx, p, checkZero)
 }
@@ -294,6 +297,7 @@ func getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 
 	return d
 }
+
 func _getTypeDecoderFromExtension(ctx *ctx, typ reflect2.Type) ValDecoder {
 	if d := ctx.frozenConfig.extensions.createDecoder(typ); d != nil {
 		return d
@@ -373,8 +377,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 					fieldEncoder := b.Encoder.(*structFieldEncoder)
 					omitempty := fieldEncoder.omitempty
 					nilAsEmpty := fieldEncoder.nilAsEmpty
-					b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder,
-						omitempty: omitempty, nilAsEmpty: nilAsEmpty}
+					b.Encoder = &structFieldEncoder{
+						field: field, fieldEncoder: b.Encoder,
+						omitempty: omitempty, nilAsEmpty: nilAsEmpty,
+					}
 					b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 					embeddedBindings = append(embeddedBindings, b)
 				}
@@ -389,8 +395,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 						omitempty := fieldEncoder.omitempty
 						nilAsEmpty := fieldEncoder.nilAsEmpty
 						b.Encoder = &dereferenceEncoder{ValueEncoder: b.Encoder}
-						b.Encoder = &structFieldEncoder{field: field, fieldEncoder: b.Encoder,
-							omitempty: omitempty, nilAsEmpty: nilAsEmpty}
+						b.Encoder = &structFieldEncoder{
+							field: field, fieldEncoder: b.Encoder,
+							omitempty: omitempty, nilAsEmpty: nilAsEmpty,
+						}
 						b.Decoder = &dereferenceDecoder{valueType: ptrType.Elem(), valueDecoder: b.Decoder}
 						b.Decoder = &structFieldDecoder{field: field, fieldDecoder: b.Decoder}
 						embeddedBindings = append(embeddedBindings, b)
@@ -409,8 +417,10 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 		if encoder == nil {
 			encoder = encoderOfType(ctx.append(field.Name()), field.Type())
 		}
-		binding := &Binding{Field: field, FromNames: fieldNames, ToNames: fieldNames,
-			Decoder: decoder, Encoder: encoder}
+		binding := &Binding{
+			Field: field, FromNames: fieldNames, ToNames: fieldNames,
+			Decoder: decoder, Encoder: encoder,
+		}
 		binding.levels = []int{i}
 		bindings = append(bindings, binding)
 	}
@@ -418,7 +428,8 @@ func describeStruct(ctx *ctx, typ reflect2.Type) *StructDescriptor {
 }
 
 func createStructDescriptor(ctx *ctx, typ reflect2.Type, bindings []*Binding,
-	embeddedBindings []*Binding) *StructDescriptor {
+	embeddedBindings []*Binding,
+) *StructDescriptor {
 	structDescriptor := &StructDescriptor{Type: typ, Fields: bindings}
 	ctx.frozenConfig.extensions.UpdateStructDescriptor(structDescriptor)
 	ctx.encoderExtension.UpdateStructDescriptor(structDescriptor)
@@ -481,8 +492,10 @@ func processTags(structDescriptor *StructDescriptor, cfg *frozenConfig) {
 			}
 		}
 		b.Decoder = &structFieldDecoder{field: b.Field, fieldDecoder: b.Decoder}
-		b.Encoder = &structFieldEncoder{field: b.Field, fieldEncoder: b.Encoder,
-			omitempty: shouldOmitEmpty, nilAsEmpty: nilAsEmpty, clearQuotes: clearQuotes}
+		b.Encoder = &structFieldEncoder{
+			field: b.Field, fieldEncoder: b.Encoder,
+			omitempty: shouldOmitEmpty, nilAsEmpty: nilAsEmpty, clearQuotes: clearQuotes,
+		}
 	}
 }
 

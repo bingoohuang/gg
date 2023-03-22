@@ -3,10 +3,11 @@ package logline
 import (
 	"bufio"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParse(t *testing.T) {
@@ -61,8 +62,8 @@ func TestParse(t *testing.T) {
 	}, m2)
 
 	// https://qsli.github.io/2016/12/23/tomcat-access-log/
-	//parseFile(`/Users/bingoobjca/Downloads/localhost_access_log2021-05-21.txt`, p)
-	//parseFile(`/Users/bingoobjca/Downloads/scaffold_access_log.2021-05-19.log`, p2)
+	// parseFile(`/Users/bingoobjca/Downloads/localhost_access_log2021-05-21.txt`, p)
+	// parseFile(`/Users/bingoobjca/Downloads/scaffold_access_log.2021-05-19.log`, p2)
 }
 
 func parseFile(file string, p *Pattern) {

@@ -2,10 +2,11 @@ package reflector
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"image"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type t int // A type definition

@@ -2,8 +2,9 @@ package sqx
 
 import (
 	"database/sql"
-	"github.com/bingoohuang/gg/pkg/reflector"
 	"reflect"
+
+	"github.com/bingoohuang/gg/pkg/reflector"
 )
 
 // 参考 https://github.com/uber-go/dig/blob/master/types.go

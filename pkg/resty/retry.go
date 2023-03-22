@@ -188,20 +188,22 @@ func jitterBackoff(min, max time.Duration, attempt int) time.Duration {
 	return result
 }
 
-var rnd = newRnd()
-var rndMu sync.Mutex
+var (
+	rnd   = newRnd()
+	rndMu sync.Mutex
+)
 
 func randDuration(center time.Duration) time.Duration {
 	rndMu.Lock()
 	defer rndMu.Unlock()
 
-	var ri = int64(center)
-	var jitter = rnd.Int63n(ri)
+	ri := int64(center)
+	jitter := rnd.Int63n(ri)
 	return time.Duration(math.Abs(float64(ri + jitter)))
 }
 
 func newRnd() *rand.Rand {
-	var seed = time.Now().UnixNano()
-	var src = rand.NewSource(seed)
+	seed := time.Now().UnixNano()
+	src := rand.NewSource(seed)
 	return rand.New(src)
 }

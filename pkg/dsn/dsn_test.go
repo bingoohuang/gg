@@ -1,9 +1,10 @@
 package dsn_test
 
 import (
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/dsn"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestParseFlag(t *testing.T) {

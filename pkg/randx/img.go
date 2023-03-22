@@ -3,9 +3,6 @@ package randx
 import (
 	"bytes"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/man"
-	"github.com/bingoohuang/gg/pkg/ss"
-	"github.com/pbnjay/pixfont"
 	"image"
 	"image/color"
 	"image/draw"
@@ -14,6 +11,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/bingoohuang/gg/pkg/man"
+	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/pbnjay/pixfont"
 )
 
 type RandomImageResult struct {
@@ -109,7 +110,7 @@ type ImgConfig struct {
 }
 
 func (c *ImgConfig) GenFile(filename string, fileSize int) int {
-	f, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
+	f, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0o600)
 	defer f.Close()
 
 	data, imgSize := c.Gen(filepath.Ext(filename))

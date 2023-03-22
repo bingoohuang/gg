@@ -47,7 +47,7 @@ func ExampleTypeOf() {
 			field.Name()
 			field.Type()
 			field.Get(&MyStruct{})
-			//field.Set(testStructInstance, nil)
+			// field.Set(testStructInstance, nil)
 			field.Tags()
 			tag, err := field.TagByName("json")
 			if err == nil {

@@ -58,7 +58,6 @@ func Test_read_any_to_int(t *testing.T) {
 		any := jsoni.Get([]byte(k))
 		should.Equal(int64(v), any.ToInt64(), fmt.Sprintf("original val is %v", k))
 	}
-
 }
 
 var uintConvertMap = map[string]int{
@@ -109,7 +108,6 @@ func Test_read_any_to_uint(t *testing.T) {
 		any := jsoni.Get([]byte(k))
 		should.Equal(uint(v), any.ToUint(), fmt.Sprintf("origin val %v", k))
 	}
-
 }
 
 func Test_read_int64_to_any(t *testing.T) {
@@ -130,6 +128,7 @@ func Test_read_int64_to_any(t *testing.T) {
 	any.WriteTo(context.Background(), stream)
 	should.Equal("12345", string(stream.Buffer()))
 }
+
 func Test_read_int32_to_any(t *testing.T) {
 	should := require.New(t)
 	any := jsoni.WrapInt32(12345)
@@ -194,6 +193,6 @@ func Test_int_lazy_any_get(t *testing.T) {
 	should := require.New(t)
 	any := jsoni.Get([]byte("1234"))
 	// panic!!
-	//should.Equal(any.LastError(), io.EOF)
+	// should.Equal(any.LastError(), io.EOF)
 	should.Equal(jsoni.InvalidValue, any.Get(1, "2").ValueType())
 }

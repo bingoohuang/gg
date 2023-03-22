@@ -67,7 +67,6 @@ func Match(pattern, name string, matchOptions ...MatchOptionsFn) (matched bool) 
 //
 // On Windows, escaping is disabled. Instead, '\\' is treated as
 // path separator.
-//
 func MatchE(pattern, name string, matchOptions ...MatchOptionsFn) (matched bool, err error) {
 	options := MatchOptionsFns(matchOptions).CreateOptions()
 Pattern:

@@ -1,9 +1,10 @@
 package ss_test
 
 import (
+	"testing"
+
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestJoinMap(t *testing.T) {

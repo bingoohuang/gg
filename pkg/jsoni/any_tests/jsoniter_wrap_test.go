@@ -26,8 +26,8 @@ func Test_wrap_and_valuetype_everything(t *testing.T) {
 	any = jsoni.Wrap(int16(10))
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	should.Equal(any.LastError(), nil)
-	//i = int16(10)
-	//should.Equal(i, any.GetInterface())
+	// i = int16(10)
+	// should.Equal(i, any.GetInterface())
 
 	any = jsoni.Wrap(int32(10))
 	should.Equal(any.ValueType(), jsoni.NumberValue)
@@ -44,8 +44,8 @@ func Test_wrap_and_valuetype_everything(t *testing.T) {
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	should.Equal(any.LastError(), nil)
 	// not equal
-	//i = uint(10)
-	//should.Equal(i, any.GetInterface())
+	// i = uint(10)
+	// should.Equal(i, any.GetInterface())
 	any = jsoni.Wrap(uint8(10))
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	should.Equal(any.LastError(), nil)
@@ -70,8 +70,8 @@ func Test_wrap_and_valuetype_everything(t *testing.T) {
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	should.Equal(any.LastError(), nil)
 	// not equal
-	//i = float32(10)
-	//should.Equal(i, any.GetInterface())
+	// i = float32(10)
+	// should.Equal(i, any.GetInterface())
 	any = jsoni.Wrap(float64(10))
 	should.Equal(any.ValueType(), jsoni.NumberValue)
 	should.Equal(any.LastError(), nil)
@@ -116,5 +116,4 @@ func Test_wrap_and_valuetype_everything(t *testing.T) {
 	i = "abc"
 	should.Equal(i, any.GetInterface(nil))
 	should.Equal(nil, any.LastError())
-
 }

@@ -2,10 +2,11 @@ package misc_tests
 
 import (
 	"encoding/json"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
 )
 
 type Level1 struct {

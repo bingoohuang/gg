@@ -2,11 +2,12 @@ package sqx_test
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/sqx"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/sqx"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPtr(t *testing.T) {
@@ -39,7 +40,9 @@ func TestSplitSql3(t *testing.T) {
 		"ADD COLUMN `PREFERENTIAL_WAY` CHAR(3) NULL COMMENT '优惠方式:''0:现金券;1:减免,2:赠送金额 ;' AFTER `PAY_TYPE`; "
 	sqls := sqx.SplitSqls(sql, ';')
 
-	assert.Equal(t, []string{"ALTER TABLE `tt_l_mbrcard_chg`",
+	assert.Equal(t, []string{
+		"ALTER TABLE `tt_l_mbrcard_chg`",
 		"ADD COLUMN `PREFERENTIAL_WAY` CHAR(3) NULL " +
-			"COMMENT '优惠方式:''0:现金券;1:减免,2:赠送金额 ;' AFTER `PAY_TYPE`"}, sqls)
+			"COMMENT '优惠方式:''0:现金券;1:减免,2:赠送金额 ;' AFTER `PAY_TYPE`",
+	}, sqls)
 }

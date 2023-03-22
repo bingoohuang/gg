@@ -14,8 +14,10 @@ import (
 	fuzz "github.com/google/gofuzz"
 )
 
-var testCases []interface{}
-var asymmetricTestCases [][2]interface{}
+var (
+	testCases           []interface{}
+	asymmetricTestCases [][2]interface{}
+)
 
 type selectedSymmetricCase struct {
 	testCase interface{}

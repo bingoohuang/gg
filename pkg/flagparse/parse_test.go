@@ -2,9 +2,10 @@ package flagparse
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Arg is the application's argument options.

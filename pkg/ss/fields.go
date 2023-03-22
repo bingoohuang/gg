@@ -11,9 +11,11 @@ import (
 // characters, as defined by unicode.IsSpace, returning a slice of substrings of s or an
 // empty slice if s contains only white space.
 // The count determines the number of substrings to return:
-//   n > 0: at most n substrings; the last substring will be the unsplit remainder.
-//   n == 0: the result is nil (zero substrings)
-//   n < 0: all substrings
+//
+//	n > 0: at most n substrings; the last substring will be the unsplit remainder.
+//	n == 0: the result is nil (zero substrings)
+//	n < 0: all substrings
+//
 // Code are copy from strings.Fields and add count parameter to control the max fields.
 func FieldsX(s, keepStart, keepEnd string, count int) []string { // nolint gocognit
 	if count == 0 {
@@ -254,9 +256,11 @@ func ExpandRange(f string) []string {
 // characters, as defined by unicode.IsSpace, returning a slice of substrings of s or an
 // empty slice if s contains only white space.
 // The count determines the number of substrings to return:
-//   n > 0: at most n substrings; the last substring will be the unsplit remainder.
-//   n == 0: the result is nil (zero substrings)
-//   n < 0: all substrings
+//
+//	n > 0: at most n substrings; the last substring will be the unsplit remainder.
+//	n == 0: the result is nil (zero substrings)
+//	n < 0: all substrings
+//
 // Code are copy from strings.Fields and add count parameter to control the max fields.
 func FieldsN(s string, count int) []string {
 	if count == 0 {

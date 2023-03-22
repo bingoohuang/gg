@@ -2,10 +2,9 @@ package snow
 
 import (
 	"encoding/binary"
+	"net"
 
 	"github.com/bingoohuang/gg/pkg/goip"
-
-	"net"
 )
 
 func defaultIPNodeID() int64 {

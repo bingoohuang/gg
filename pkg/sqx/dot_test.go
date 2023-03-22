@@ -2,11 +2,11 @@ package sqx_test
 
 import (
 	"bufio"
-	"github.com/bingoohuang/gg/pkg/sqx"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/bingoohuang/gg/pkg/sqx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,15 +14,17 @@ import (
 type mss = map[string]string
 
 func TestGetTag(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		line, want string
 		attrs      mss
 	}{
 		{"SELECT 1+1", "", nil},
 		{"-- Some Comment", "", mss{"Some": "", "Comment": ""}},
 		{"-- name:  ", "", mss{"name": ""}},
-		{"-- name: find-users-by-name dbtype: mysql", "find-users-by-name",
-			mss{"name": "find-users-by-name", "dbtype": "mysql"}},
+		{
+			"-- name: find-users-by-name dbtype: mysql", "find-users-by-name",
+			mss{"name": "find-users-by-name", "dbtype": "mysql"},
+		},
 		{"  --  name:  save-user ", "save-user", mss{"name": "save-user"}},
 	}
 
@@ -323,8 +325,10 @@ func TestParseDynamicSQL(t *testing.T) {
 	}
 
 	{
-		lines, part, err := sqx.ParseDynamicSQL([]string{"-- if a", "-- if b", "ab", "-- elseif c ", "ac", "-- end",
-			"-- else ", "x", "-- end"})
+		lines, part, err := sqx.ParseDynamicSQL([]string{
+			"-- if a", "-- if b", "ab", "-- elseif c ", "ac", "-- end",
+			"-- else ", "x", "-- end",
+		})
 		that.Nil(err)
 		that.Equal(9, lines)
 		that.Equal(&sqx.MultiPart{Parts: []sqx.SQLPart{

@@ -53,5 +53,7 @@ func (m *StringTextMarshaler) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _ encoding.TextMarshaler = *new(StringTextMarshaler)
-var _ encoding.TextUnmarshaler = new(StringTextMarshaler)
+var (
+	_ encoding.TextMarshaler   = *new(StringTextMarshaler)
+	_ encoding.TextUnmarshaler = new(StringTextMarshaler)
+)

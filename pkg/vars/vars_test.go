@@ -1,8 +1,9 @@
 package vars
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVars(t *testing.T) {
