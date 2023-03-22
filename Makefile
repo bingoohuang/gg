@@ -1,5 +1,5 @@
 .PHONY: test install git.commit git.branch default
-all: test install
+all: install
 
 app=$(notdir $(shell pwd))
 appVersion := 1.0.0
