@@ -61,6 +61,7 @@ fmt-update:
 	go install github.com/daixiang0/gci@latest
 	go install github.com/google/osv-scanner/cmd/osv-scanner@v1
 	go install github.com/polyfloyd/go-errorlint@latest
+	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 
 fmt:
 	gofumpt -l -w .
@@ -72,6 +73,8 @@ fmt:
 	gci write .
 	osv-scanner -r .
 	go-errorlint ./...
+	betteralign -apply ./...
+
 
 install-upx: init
 	${goinstall}
