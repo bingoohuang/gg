@@ -18,3 +18,4 @@
 /pkg/fla9/testdata/missing.sample
 *.output
 /.vscode
+._*
