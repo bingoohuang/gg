@@ -63,6 +63,8 @@ fmt-update:
 	go install github.com/polyfloyd/go-errorlint@latest
 	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 	go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
+	# Use right mirror functions for string/[]byte performance bust
+	go install github.com/butuzov/mirror/cmd/mirror@latest
 
 fmt:
 	gofumpt -l -w .
@@ -76,6 +78,10 @@ fmt:
 	go-errorlint ./...
 	betteralign -apply ./...
 	gocritic check ./...
+	# Use right mirror functions for string/[]byte performance bust
+	# too slow
+	# mirror ./...
+
 
 install-upx: init
 	${goinstall}
