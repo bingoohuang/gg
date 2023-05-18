@@ -13,6 +13,8 @@ func Bool(envName string, defaultValue bool) (value bool) {
 	switch s := os.Getenv(envName); strings.ToLower(s) {
 	case "yes", "y", "1", "on", "true", "t":
 		return true
+	case "no", "n", "0", "off", "false", "f":
+		return false
 	}
 	return defaultValue
 }
