@@ -22,7 +22,7 @@ flags1 = -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersio
 flags2 = ${extldflags} ${flags1}
 buildTags = $(if $(TAGS),-tags=$(TAGS),)
 buildFlags = ${buildTags} -trimpath -ldflags="'${flags1}'"
-goinstall_target = $(if $(TARGET),$(TARGET),...)
+goinstall_target = $(if $(TARGET),$(TARGET),./...)
 
 goinstall = go install ${buildTags} -trimpath -ldflags='${flags1}' ${goinstall_target}
 gobin := $(shell go env GOBIN)
