@@ -11,12 +11,13 @@ import (
 )
 
 type ProducerConfig struct {
-	Topic        string
-	Version      string
-	Brokers      []string
-	Codec        string
-	Sync         bool
-	RequiredAcks sarama.RequiredAcks
+	Topic           string
+	Version         string
+	Brokers         []string
+	Codec           string
+	MaxMessageBytes int
+	Sync            bool
+	RequiredAcks    sarama.RequiredAcks
 
 	TlsConfig TlsConfig
 	Context   context.Context
@@ -119,7 +120,11 @@ func (c *ProducerConfig) NewProducer() (*Producer, error) {
 	sc.Producer.Compression = ParseCodec(c.Codec)
 	sc.Producer.RequiredAcks = c.RequiredAcks
 	sc.Producer.Retry.Max = 3 // Retry up to x times to produce the message
-	sc.Producer.MaxMessageBytes = int(sarama.MaxRequestSize)
+	if c.MaxMessageBytes > 0 {
+		sc.Producer.MaxMessageBytes = c.MaxMessageBytes
+	} else {
+		sc.Producer.MaxMessageBytes = int(sarama.MaxRequestSize)
+	}
 	sc.Producer.Return.Successes = true
 	if tc := c.TlsConfig.Create(); tc != nil {
 		sc.Net.TLS.Config = tc
