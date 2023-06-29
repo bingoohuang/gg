@@ -8,14 +8,14 @@ import (
 )
 
 type Valuer interface {
-	Value(name, params, expr string) interface{}
+	Value(name, params, expr string) (any, error)
 }
 
-type ValuerHandler func(name, params string) interface{}
+type ValuerHandler func(name, params string) (any, error)
 
-func (f ValuerHandler) Value(name, params string) interface{} { return f(name, params) }
+func (f ValuerHandler) Value(name, params string) (any, error) { return f(name, params) }
 
-func (s Subs) Eval(valuer Valuer) interface{} {
+func (s Subs) Eval(valuer Valuer) (any, error) {
 	if len(s) == 1 && s.CountVars() == len(s) {
 		v := s[0].(*SubVar)
 		return valuer.Value(v.Name, v.Params, v.Expr)
@@ -27,12 +27,15 @@ func (s Subs) Eval(valuer Valuer) interface{} {
 		case *SubTxt:
 			value += v.Val
 		case *SubVar:
-			vv := valuer.Value(v.Name, v.Params, v.Expr)
+			vv, err := valuer.Value(v.Name, v.Params, v.Expr)
+			if err != nil {
+				return nil, err
+			}
 			value += ToString(vv)
 		}
 	}
 
-	return value
+	return value, nil
 }
 
 type SubTxt struct {
@@ -175,7 +178,7 @@ func validNameRune(r int32) bool {
 		r == '_' || r == '-' || r == '.'
 }
 
-func ToString(value interface{}) string {
+func ToString(value any) string {
 	switch vv := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("%d", vv)
