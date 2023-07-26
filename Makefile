@@ -67,6 +67,7 @@ fmt-update:
 	go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
 	# Use right mirror functions for string/[]byte performance bust
 	go install github.com/butuzov/mirror/cmd/mirror@latest
+	go install golang.org/x/vuln/cmd/govulncheck@latest
 
 fmt:
 	gofumpt -l -w .
@@ -83,6 +84,7 @@ fmt:
 	# Use right mirror functions for string/[]byte performance bust
 	# too slow
 	# mirror ./...
+	govulncheck ./...
 
 
 install-upx: init
