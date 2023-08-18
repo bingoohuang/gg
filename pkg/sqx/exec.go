@@ -149,8 +149,10 @@ func (o QueryOption) allowRowNum(rowNum int) bool {
 // Query queries return with result.
 func (s SQL) Query(db SqxDB, result interface{}, optionFns ...QueryOptionFn) error {
 	err := s.query(db, result, optionFns...)
-	logQueryError(s.NoLog, s.Name, nil, err)
-	logRows(s.Name, GetQueryRows(result))
+	if !s.NoLog {
+		logQueryError(true, s.Name, nil, err)
+		logRows(s.Name, GetQueryRows(result))
+	}
 	return err
 }
 
