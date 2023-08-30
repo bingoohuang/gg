@@ -23,7 +23,7 @@ require (
 	github.com/kortschak/utter v1.5.0
 	github.com/kr/pretty v0.3.0
 	github.com/mattn/go-colorable v0.1.8
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/pbnjay/pixfont v0.0.0-20200714042608-33b744692567
