@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/bingoohuang/gg/pkg/ss"
 )
 

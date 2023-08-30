@@ -70,7 +70,7 @@ func createTestDatabase(dbName string) (*memory.Database, error) {
 
 	db := memory.NewDatabase(dbName)
 	table := memory.NewTable(tableName, sql.Schema{
-		{Name: "k", Type: sql.VarChar(10), Nullable: false, Source: tableName, PrimaryKey: true},
+		{Name: "k", Type: sql.VarChar(10), Nullable: false, Source: tableName},
 		{Name: "v", Type: sql.Text, Nullable: false, Source: tableName},
 		{Name: "state", Type: sql.Int8, Nullable: false, Source: tableName},
 		{Name: "updated", Type: sql.VarChar(30), Nullable: true, Source: tableName},
