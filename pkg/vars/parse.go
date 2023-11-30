@@ -86,12 +86,12 @@ func ParseExpr(src string) Subs {
 		if s[0] == '@' {
 			s = s[1:]
 			left += "@"
-		} else if s[0] == '{' {
-			if rb := strings.IndexByte(s, '}'); rb > 0 {
+		} else if bracket := PairBracket(s[0]); bracket != nil {
+			if rb := strings.IndexByte(s, bracket.Right); rb > 0 {
 				fn := s[1:rb]
 				s = s[rb+1:]
 
-				subLiteral, subVar := parseName(&fn, &left, true)
+				subLiteral, subVar := parseName(&fn, &left, bracket)
 				if subLiteral != nil {
 					subs = append(subs, subLiteral)
 				}
@@ -100,7 +100,7 @@ func ParseExpr(src string) Subs {
 				}
 			}
 		} else {
-			subLiteral, subVar := parseName(&s, &left, false)
+			subLiteral, subVar := parseName(&s, &left, bracket)
 			if subLiteral != nil {
 				subs = append(subs, subLiteral)
 			}
@@ -121,7 +121,26 @@ func ParseExpr(src string) Subs {
 	return subs
 }
 
-func parseName(s, left *string, withBrackets bool) (subLiteral, subVar Sub) {
+type Bracket struct {
+	Left  byte
+	Right byte
+}
+
+func PairBracket(left byte) *Bracket {
+	switch left {
+	case '{':
+		return &Bracket{Left: '{', Right: '}'}
+	case '[':
+		return &Bracket{Left: '[', Right: ']'}
+	case '#', '%', '`':
+		return &Bracket{Left: left, Right: left}
+	case '<':
+		return &Bracket{Left: '<', Right: '>'}
+	}
+	return nil
+}
+
+func parseName(s, left *string, bracket *Bracket) (subLiteral, subVar Sub) {
 	original := *s
 	name := ""
 	offset := 0
@@ -153,21 +172,21 @@ func parseName(s, left *string, withBrackets bool) (subLiteral, subVar Sub) {
 			if rb := strings.IndexByte(*s, ')'); rb > 0 {
 				sv.Params = (*s)[offset+1 : rb]
 				*s = (*s)[rb+1:]
-				sv.Expr = wrap(original[:rb+1], withBrackets)
+				sv.Expr = wrap(original[:rb+1], bracket)
 				return
 			}
 		}
 	}
 
 	*s = (*s)[offset:]
-	sv.Expr = wrap(original[:offset], withBrackets)
+	sv.Expr = wrap(original[:offset], bracket)
 
 	return
 }
 
-func wrap(s string, brackets bool) string {
-	if brackets {
-		return "@{" + s + "}"
+func wrap(s string, bracket *Bracket) string {
+	if bracket != nil {
+		return "@" + string(bracket.Left) + s + string(bracket.Right)
 	}
 
 	return "@" + s
