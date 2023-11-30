@@ -87,7 +87,7 @@ func ParseExpr(src string) Subs {
 			s = s[1:]
 			left += "@"
 		} else if bracket := PairBracket(s[0]); bracket != nil {
-			if rb := strings.IndexByte(s, bracket.Right); rb > 0 {
+			if rb := strings.IndexByte(s[1:], bracket.Right); rb > 0 {
 				fn := s[1:rb]
 				s = s[rb+1:]
 
