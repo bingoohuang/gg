@@ -169,7 +169,7 @@ func parseName(s, left *string, bracket *Bracket) (subLiteral, subVar Sub) {
 
 	if !nonParam && offset > 0 && offset < len(*s) {
 		if (*s)[offset] == '(' {
-			if rb := strings.IndexByte(*s, ')'); rb > 0 {
+			if rb := strings.LastIndexByte(*s, ')'); rb > 0 {
 				sv.Params = (*s)[offset+1 : rb]
 				*s = (*s)[rb+1:]
 				sv.Expr = wrap(original[:rb+1], bracket)
