@@ -56,9 +56,9 @@ lint:
 fmt-update:
 	go install mvdan.cc/gofumpt@latest
 	go install golang.org/x/tools/cmd/...@latest 	# for goimports
-	go install github.com/mgechev/revive@master
+	# go install github.com/mgechev/revive@master
 	go install github.com/daixiang0/gci@latest
-	go install github.com/google/osv-scanner/cmd/osv-scanner@v1
+	go install github.com/google/osv-scanner/cmd/osv-scanner@latest
 	go install github.com/polyfloyd/go-errorlint@latest
 	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 	go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
@@ -116,6 +116,10 @@ arm-upx: init
 	GOOS=linux GOARCH=arm64 ${goinstall}
 	upx --best --lzma ${gobin}/linux_arm64/${app}*
 	ls -lh  ${gobin}/linux_arm64/${app}*
+mac-arm: init
+	GOOS=darwin GOARCH=arm64 ${goinstall}
+	upx --best --lzma ${gobin}/darwin_arm64/${app}*
+	ls -lh  ${gobin}/darwin_arm64/${app}*
 
 upx:
 	ls -lh ${gobin}/${app}*
