@@ -60,6 +60,7 @@ func DetectDriverName(driverName, dataSourceName string) string {
 	// MySQL |mysql |user:pass@tcp(127.0.0.1:3306)/mydb?charset=utf8
 	// 达梦 |dm| dm://user:pass@127.0.0.1:5236
 	// 人大金仓|pgx|postgres://user:pass@127.0.0.1:54321/mydb?sslmode=disable
+	// 华为GaussDB|opengauss://user:pass@127.0.0.1:54321/mydb?sslmode=disable
 
 	if driverName == "" {
 		if strings.Contains(dataSourceName, "://") {
