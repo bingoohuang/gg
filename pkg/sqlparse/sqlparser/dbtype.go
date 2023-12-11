@@ -34,7 +34,7 @@ const (
 // ToDBType converts driverName to different DBType.
 func ToDBType(driverName string) DBType {
 	switch strings.ToLower(driverName) {
-	case "pgx":
+	case "pgx", "opengauss":
 		return Postgresql
 	default:
 		return DBType(driverName)
