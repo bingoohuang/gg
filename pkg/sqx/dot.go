@@ -10,9 +10,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/vm"
 	"github.com/bingoohuang/gg/pkg/mapp"
+	"github.com/expr-lang/expr"
+	"github.com/expr-lang/expr/vm"
 	funk "github.com/thoas/go-funk"
 )
 
