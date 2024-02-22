@@ -110,8 +110,8 @@ windows: init
 	ls -lh  ${gobin}/windows_amd64/${app}*
 windows-upx: init
 	GOOS=windows GOARCH=amd64 ${goinstall}
-	upx --best --lzma ${gobin}/windows_amd64/${app}
-	ls -lh  ${gobin}/windows_amd64/${app}
+	upx --best --lzma ${gobin}/windows_amd64/${app}*
+	ls -lh  ${gobin}/windows_amd64/${app}*
 arm: init
 	GOOS=linux GOARCH=arm64 ${goinstall}
 	ls -lh  ${gobin}/linux_arm64/${app}*
