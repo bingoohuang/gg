@@ -66,3 +66,21 @@ func ParseRequiredAcks(acks string) sarama.RequiredAcks {
 		return sarama.WaitForLocal
 	}
 }
+
+func SASLVersion(kafkaVersion sarama.KafkaVersion, saslVersion *int) (int16, error) {
+	if saslVersion == nil {
+		if kafkaVersion.IsAtLeast(sarama.V1_0_0_0) {
+			return sarama.SASLHandshakeV1, nil
+		}
+		return sarama.SASLHandshakeV0, nil
+	}
+
+	switch *saslVersion {
+	case 0:
+		return sarama.SASLHandshakeV0, nil
+	case 1:
+		return sarama.SASLHandshakeV1, nil
+	default:
+		return 0, fmt.Errorf("invalid SASL version")
+	}
+}

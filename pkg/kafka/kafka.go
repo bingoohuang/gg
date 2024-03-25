@@ -21,6 +21,10 @@ type ProducerConfig struct {
 
 	TlsConfig TlsConfig
 	Context   context.Context
+
+	SASLUser     string
+	SASLPassword string
+	SASLVersion  *int
 }
 
 type PublishResponse struct {
@@ -129,6 +133,19 @@ func (c *ProducerConfig) NewProducer() (*Producer, error) {
 	if tc := c.TlsConfig.Create(); tc != nil {
 		sc.Net.TLS.Config = tc
 		sc.Net.TLS.Enable = true
+	}
+
+	if c.SASLUser != "" {
+		sc.Net.SASL.Enable = true
+		sc.Net.SASL.User = c.SASLUser
+		sc.Net.SASL.Password = c.SASLPassword
+		sc.Net.SASL.Handshake = true
+		sc.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+		version, err := SASLVersion(sc.Version, c.SASLVersion)
+		if err != nil {
+			return nil, err
+		}
+		sc.Net.SASL.Version = version
 	}
 
 	// On the broker side, you may want to change the following settings to get
