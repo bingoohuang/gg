@@ -20,7 +20,7 @@ func open(driverName, dataSourceName string) (*sql.DB, error) {
 
 func tryUrlEncodePass(driverName string, dataSourceName string) string {
 	switch driverName {
-	case "pgx", "dm":
+	case "pgx", "dm", "opengauss":
 		s := dataSourceName
 		p1 := strings.Index(s, "://")
 		p2 := 0
