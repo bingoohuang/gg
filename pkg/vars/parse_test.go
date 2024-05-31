@@ -10,6 +10,8 @@ func subTxt(n string) *SubTxt         { return &SubTxt{Val: n} }
 func subVar(n, p, exp string) *SubVar { return &SubVar{Name: n, Params: p, Expr: exp} }
 
 func TestParseExpr(t *testing.T) {
+	assert.Equal(t, Subs{subTxt("values('"), subVar("random_int", "15-95", "@random_int(15-95)"),
+		subTxt("','"), subVar("身份证", "", "@身份证"), subTxt("')")}, ParseExpr("values('@random_int(15-95)','@身份证')"))
 	assert.Equal(t, Subs{subVar("中文", "", "@中文")}, ParseExpr("@中文"))
 	assert.Equal(t, Subs{subVar("fn", "", "@fn")}, ParseExpr("@fn"))
 	assert.Equal(t, Subs{subVar("fn.1", "", "@fn.1")}, ParseExpr("@fn.1"))
