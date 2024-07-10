@@ -162,6 +162,10 @@ type IdQuoter interface {
 	Quote(string) string
 }
 
+type NoneIdQuoter struct{}
+
+func (NoneIdQuoter) Quote(s string) string { return s }
+
 type MySQLIdQuoter struct{}
 
 func (MySQLIdQuoter) Quote(s string) string {
@@ -461,6 +465,8 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 	case Mysql, Sqlite3, Gbase, Clickhouse:
 		// https://www.sqlite.org/lang_keywords.html
 		buf.IdQuoter = &MySQLIdQuoter{}
+	case Oracle:
+		buf.IdQuoter = &NoneIdQuoter{}
 	default:
 		buf.IdQuoter = &DoubleQuoteIdQuoter{}
 	}
