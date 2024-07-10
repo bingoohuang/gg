@@ -31,11 +31,23 @@ import (
 type TrackedBuffer struct {
 	IdQuoter
 	PlaceholderFormatter
-
+	ForceTableAs ForceTableAsMode
 	*bytes.Buffer
 	bindLocations []bindLocation
 	nodeFormatter func(buf *TrackedBuffer, node SQLNode)
 }
+
+// ForceTableAsMode 强制在生成表别名时的选项
+type ForceTableAsMode int
+
+const (
+	// ForceTableAsDefault 与原始语句保持相同 e.g. 原始: select 1 from dual d, 格式化: select 1 from dual d
+	ForceTableAsDefault ForceTableAsMode = iota
+	// ForceTableAsKeep 强制保留 e.g. 原始: select 1 from dual d, 格式化: select 1 from dual as d
+	ForceTableAsKeep
+	// ForceTableAsNone   强制不保留 e.g. 原始: select 1 from dual as d, 格式化: select 1 from dual d
+	ForceTableAsNone
+)
 
 // NewTrackedBuffer creates a new TrackedBuffer.
 func NewTrackedBuffer(nodeFormatter func(buf *TrackedBuffer, node SQLNode)) *TrackedBuffer {

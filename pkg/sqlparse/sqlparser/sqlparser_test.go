@@ -1,6 +1,7 @@
 package sqlparser
 
 import (
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -15,6 +16,12 @@ func checkEqual(t *testing.T, src interface{}, dst interface{}) {
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("not equal %v and %v", src, dst)
 	}
+}
+
+func TestOracleTableAliasAs(t *testing.T) {
+	stmt, err := Parse(`select 1 from dual d`)
+	assert.Nil(t, err)
+	assert.Equal(t, "select 1 from dual d", String(stmt))
 }
 
 func TestDropTableParsing(t *testing.T) {

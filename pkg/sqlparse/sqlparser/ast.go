@@ -1137,7 +1137,18 @@ type AliasedTableExpr struct {
 func (node *AliasedTableExpr) Format(buf *TrackedBuffer) {
 	buf.Myprintf("%v", node.Expr)
 	if !node.As.IsEmpty() {
-		buf.Myprintf(" as %v", node.As)
+		switch buf.ForceTableAs {
+		case ForceTableAsDefault:
+			if node.As.as {
+				buf.Myprintf(" as %v", node.As)
+			} else {
+				buf.Myprintf(" %v", node.As)
+			}
+		case ForceTableAsKeep:
+			buf.Myprintf(" as %v", node.As)
+		case ForceTableAsNone:
+			buf.Myprintf(" %v", node.As)
+		}
 	}
 	if node.Hints != nil {
 		// Hint node provides the space padding.
@@ -2572,12 +2583,18 @@ func (node *ColIdent) UnmarshalJSON(b []byte) error {
 // TableIdent is a case sensitive SQL identifier. It will be escaped with
 // backquotes if necessary.
 type TableIdent struct {
-	v string
+	v  string
+	as bool
 }
 
 // NewTableIdent creates a new TableIdent.
 func NewTableIdent(str string) TableIdent {
 	return TableIdent{v: str}
+}
+
+// NewTableIdentAs creates a new TableIdent.
+func NewTableIdentAs(str string) TableIdent {
+	return TableIdent{v: str, as: true}
 }
 
 // Format formats the node.

@@ -201,7 +201,7 @@ func forceEOF(yylex interface{}) {
 %type <empty> not_exists_opt non_rename_operation to_opt index_opt constraint_opt using_opt
 %type <bytes> reserved_keyword non_reserved_keyword
 %type <colIdent> sql_id reserved_sql_id col_alias as_ci_opt
-%type <tableIdent> table_id reserved_table_id table_alias as_opt_id
+%type <tableIdent> table_id reserved_table_id table_alias table_alias_as as_opt_id
 %type <empty> as_opt
 %type <empty> force_eof ddl_force_eof
 %type <str> charset
@@ -687,7 +687,7 @@ as_opt_id:
   {
     $$ = $1
   }
-| AS table_alias
+| AS table_alias_as
   {
     $$ = $2
   }
@@ -697,6 +697,13 @@ table_alias:
 | STRING
   {
     $$ = NewTableIdent(string($1))
+  }
+
+table_alias_as:
+  table_id
+| STRING
+  {
+    $$ = NewTableIdentAs(string($1))
   }
 
 inner_join:
