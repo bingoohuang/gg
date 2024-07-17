@@ -24,6 +24,8 @@ type Config struct {
 
 	// RefreshInterval will Refresh the key values from the database in every Refresh interval.
 	RefreshInterval time.Duration
+
+	Dbx *sqx.Sqx
 }
 
 // Client is a gokv.Store implementation for SQL databases.
@@ -87,9 +89,13 @@ func (c *Client) tickerRefresh() {
 
 // All list the keys in the store.
 func (c *Client) All() (kvs map[string]string, er error) {
-	_, dbx, err := sqx.Open(c.DriverName, c.DataSourceName)
-	if err != nil {
-		return nil, err
+	dbx := c.Dbx
+	if dbx == nil {
+		var err error
+		_, dbx, err = sqx.Open(c.DriverName, c.DataSourceName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	defer func() { er = multierr.Append(er, dbx.Close()) }()
