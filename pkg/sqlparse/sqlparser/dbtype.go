@@ -119,6 +119,17 @@ func (n *CompatibleLimit) Format(buf *TrackedBuffer) {
 			buf.Myprintf(" offset %v rows", n.Offset)
 		}
 		buf.Myprintf(" fetch next %v rows only", n.Rowcount)
+		if n.Offset != nil && n.Rowcount != nil {
+			offsetVar, ok1 := n.Offset.(*SQLVal)
+			rowcount, ok2 := n.Rowcount.(*SQLVal)
+			if ok1 && ok2 && offsetVar.Seq > rowcount.Seq {
+				i := offsetVar.Seq - 1
+				j := rowcount.Seq - 1
+				n.SwapArgs = func(args []interface{}) {
+					args[i], args[j] = args[j], args[i]
+				}
+			}
+		}
 	default:
 		panic(ErrUnsupportedDBType)
 	}
