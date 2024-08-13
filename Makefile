@@ -25,11 +25,12 @@ gitInfo = $(gitBranch)-$(gitCommit)
 pkg := github.com/bingoohuang/gg/pkg/v
 hostname := $(shell hostname)
 hostip := $(shell hostname -I 2>/dev/null || ifconfig -a | grep inet | grep -v inet6 | grep -v 127.0.0.1 | awk '{print $$2}')
+BuildCI := $(if $(BUILD_CI),$(BUILD_CI),Unknown)
 
 extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
 # https://github.com/kubermatic/kubeone/blob/master/Makefile
-flags1 = -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitInfo) -X $(pkg).GoVersion=$(goVersion) -X $(pkg).BuildHost=$(hostname) -X $(pkg).BuildIP=$(hostip)
+flags1 = -s -w -X $(pkg).BuildTime=$(buildTime) -X $(pkg).AppVersion=$(appVersion) -X $(pkg).GitCommit=$(gitInfo) -X $(pkg).GoVersion=$(goVersion) -X $(pkg).BuildHost=$(hostname) -X $(pkg).BuildIP=$(hostip) -X $(pkg).BuildCI=$(BuildCI)
 flags2 = ${extldflags} ${flags1}
 buildTags = $(if $(TAGS),-tags=$(TAGS),)
 buildFlags = ${buildTags} -trimpath -ldflags="'${flags1}'"
