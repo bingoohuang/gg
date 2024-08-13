@@ -25,7 +25,7 @@ gitInfo = $(gitBranch)-$(gitCommit)
 pkg := github.com/bingoohuang/gg/pkg/v
 hostname := $(shell hostname)
 hostip := $(shell hostname -I 2>/dev/null || ifconfig -a | grep inet | grep -v inet6 | grep -v 127.0.0.1 | awk '{print $$2}')
-BuildCI := $(if $(BUILD_CI),$(BUILD_CI),Unknown)
+BuildCI := $(if $(BUILD_TAG),$(BUILD_TAG),Unknown)
 
 extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
