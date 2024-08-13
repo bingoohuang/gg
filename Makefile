@@ -34,19 +34,25 @@ flags1 = -s -w -X "$(pkg).BuildTime=$(buildTime)" -X "$(pkg).AppVersion=$(appVer
 flags2 = ${extldflags} ${flags1}
 buildTags = $(if $(TAGS),-tags=$(TAGS),)
 buildFlags = ${buildTags} -trimpath -ldflags="'${flags1}'"
+
+gobin := $(shell go env GOBIN)
+# try $GOPATN/bin if $gobin is empty
+gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
+
 goinstall_target = $(if $(TARGET),$(TARGET),./...)
 
 # 不包含 -o
 ifeq (,$(findstring -o,$(TARGET)))
   goSubCmd := install
+  LS_BIN = 	ls -lh ${gobin}/${app}*
 else
   goSubCmd := build
+  builtBin := $(shell echo "$(TARGET)" | sed -n 's/.*-o \([^ ]*\).*/\1/p')
+  LS_BIN = ls -hl `readlink -f ${builtBin}`
 endif
 
 goinstall = go ${goSubCmd} ${buildTags} ${VENDOR_FLAG} -trimpath -ldflags='${flags1}' ${goinstall_target}
-gobin := $(shell go env GOBIN)
-# try $GOPATN/bin if $gobin is empty
-gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
+
 
 osname := $(shell uname -s | awk '{print tolower($$0)}')
 osarch := $(shell uname -m)
@@ -124,7 +130,7 @@ install-upx: init
 
 install: init
 	${goinstall}
-	ls -lh ${gobin}/${app}*
+	${LS_BIN}
 
 linux: init
 	GOOS=linux GOARCH=amd64 ${goinstall}
