@@ -36,7 +36,14 @@ buildTags = $(if $(TAGS),-tags=$(TAGS),)
 buildFlags = ${buildTags} -trimpath -ldflags="'${flags1}'"
 goinstall_target = $(if $(TARGET),$(TARGET),./...)
 
-goinstall = go install ${buildTags} ${VENDOR_FLAG} -trimpath -ldflags='${flags1}' ${goinstall_target}
+# 不包含 -o
+ifeq (,$(findstring -o,$(TARGET)))
+  goSubCmd := install
+else
+  goSubCmd := build
+endif
+
+goinstall = go ${goSubCmd} ${buildTags} ${VENDOR_FLAG} -trimpath -ldflags='${flags1}' ${goinstall_target}
 gobin := $(shell go env GOBIN)
 # try $GOPATN/bin if $gobin is empty
 gobin := $(if $(gobin),$(gobin),$(shell go env GOPATH)/bin)
