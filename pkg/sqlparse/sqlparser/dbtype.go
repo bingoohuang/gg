@@ -171,15 +171,58 @@ func (t DBType) createPagingClause(plFormatter PlaceholderFormatter, p *Paging, 
 
 type IdQuoter interface {
 	Quote(string) string
+	QuoteQualifier(qualifier, val string) string
 }
 
-type NoneIdQuoter struct{}
+const (
+	quote  = '\''
+	escape = '\\'
+)
 
-func (NoneIdQuoter) Quote(s string) string { return s }
+// SingleQuote returns a single-quoted Go string literal representing s. But, nothing else escapes.
+func SingleQuote(s string) string {
+	out := []rune{quote}
+	for _, r := range s {
+		switch r {
+		case quote:
+			out = append(out, escape, r)
+		default:
+			out = append(out, r)
+		}
+	}
+	out = append(out, quote)
+	return string(out)
+}
+
+type KeywordQuoter struct {
+	DBType
+}
+
+func (kq KeywordQuoter) QuoteQualifier(qualifier, s string) string {
+	namesMap := quoteNames[kq.DBType]
+	if len(namesMap) > 0 && namesMap[strings.ToUpper(s)] {
+		return SingleQuote(qualifier + "." + s)
+	}
+
+	return qualifier + "." + s
+}
+
+func (kq KeywordQuoter) Quote(s string) string {
+	namesMap := quoteNames[kq.DBType]
+	if len(namesMap) > 0 && namesMap[strings.ToUpper(s)] {
+		return SingleQuote(s)
+	}
+
+	return s
+}
 
 type MySQLIdQuoter struct{}
 
-func (MySQLIdQuoter) Quote(s string) string {
+func (kq MySQLIdQuoter) QuoteQualifier(qualifier, s string) string {
+	return qualifier + "." + kq.Quote(s)
+}
+
+func (kq MySQLIdQuoter) Quote(s string) string {
 	b := new(bytes.Buffer)
 	b.WriteByte('`')
 	for _, c := range s {
@@ -194,7 +237,11 @@ func (MySQLIdQuoter) Quote(s string) string {
 
 type DoubleQuoteIdQuoter struct{}
 
-func (DoubleQuoteIdQuoter) Quote(s string) string {
+func (kq DoubleQuoteIdQuoter) QuoteQualifier(qualifier, s string) string {
+	return qualifier + "." + kq.Quote(s)
+}
+
+func (kq DoubleQuoteIdQuoter) Quote(s string) string {
 	return strconv.Quote(s)
 }
 
@@ -399,6 +446,174 @@ const CreateCountingQuery = -1
 
 var numReg = regexp.MustCompile(`^[1-9]\d*$`)
 
+// 在Oracle数据库中，使用双引号（"）来引用列名通常有以下几个特定含义：
+// 区分大小写：Oracle默认情况下列名是大小写不敏感的，但是当你使用双引号将列名括起来时，它将变得大小写敏感。这意味着，如果列名在数据库中是大写，你在使用时也需要使用大写。
+// 保留字：如果列名是SQL保留字，例如 SELECT、FROM 等，使用双引号可以避免语法错误，因为双引号告诉Oracle这个保留字是列名而不是SQL关键字。
+// 特殊字符：如果列名中包含特殊字符或空格，使用双引号可以正确引用这些列名。
+// 跨数据库兼容性：在某些情况下，使用双引号引用列名可以提高SQL语句在不同数据库系统间的兼容性，因为有些数据库系统默认使用双引号来区分标识符。
+// 例如，以下是一个使用双引号的Oracle查询语句示例：
+// SELECT "ColumnName" FROM "TableName";
+// 在这个例子中，如果ColumnName是一个保留字或者包含特殊字符，使用双引号可以确保Oracle正确解析它为列名。同时，如果列名的大小写与数据库中实际的大小写不一致，使用双引号也可以确保正确引用。
+
+var quoteNames = map[DBType]map[string]bool{
+	Oracle: toMap([]string{
+		// https://docs.oracle.com/cd/B10501_01/appdev.920/a42525/apb.htm
+
+		"NUMBER", "BINARY_INTEGER", "BINARY_FLOAT", "BINARY_DOUBLE",
+		"CHAR", "VARCHAR2", "CLOB", "DATE",
+		"TIMESTAMP", "INTERVAL", "BLOB", "NCLOB",
+		"ROWID", "UROWID", "BOOLEAN", "XMLTYPE",
+		"RAW", "LONG", "BFILE", "VARRAY",
+
+		// Oracle Reserved Words
+		"ACCESS", "ELSE", "MODIFY", "START",
+		"ADD", "EXCLUSIVE", "NOAUDIT", "SELECT",
+		"ALL", "EXISTS", "NOCOMPRESS", "SESSION",
+		"ALTER", "FILE", "NOT", "SET",
+		"AND", "FLOAT", "NOTFOUND", "SHARE",
+		"ANY", "FOR", "NOWAIT", "SIZE",
+		"ARRAYLEN", "FROM", "NULL", "SMALLINT",
+		"AS", "GRANT", "NUMBER", "SQLBUF",
+		"ASC", "GROUP", "OF", "SUCCESSFUL",
+		"AUDIT", "HAVING", "OFFLINE", "SYNONYM",
+		"BETWEEN", "IDENTIFIED", "ON", "SYSDATE",
+		"BY", "IMMEDIATE", "ONLINE", "TABLE",
+		"CHAR", "IN", "OPTION", "THEN",
+		"CHECK", "INCREMENT", "OR", "TO",
+		"CLUSTER", "INDEX", "ORDER", "TRIGGER",
+		"COLUMN", "INITIAL", "PCTFREE", "UID",
+		"COMMENT", "INSERT", "PRIOR", "UNION",
+		"COMPRESS", "INTEGER", "PRIVILEGES", "UNIQUE",
+		"CONNECT", "INTERSECT", "PUBLIC", "UPDATE",
+		"CREATE", "INTO", "RAW", "USER",
+		"CURRENT", "IS", "RENAME", "VALIDATE",
+		"DATE", "LEVEL", "RESOURCE", "VALUES",
+		"DECIMAL", "LIKE", "REVOKE", "VARCHAR",
+		"DEFAULT", "LOCK", "ROW", "VARCHAR2",
+		"DELETE", "LONG", "ROWID", "VIEW",
+		"DESC", "MAXEXTENTS", "ROWLABEL", "WHENEVER",
+		"DISTINCT", "MINUS", "ROWNUM", "WHERE",
+		"DROP", "MODE", "ROWS", "WITH",
+
+		// Oracle Keywords
+		"ADMIN", "CURSOR", "FOUND", "MOUNT",
+		"AFTER", "CYCLE", "FUNCTION", "NEXT",
+		"ALLOCATE", "DATABASE", "GO", "NEW",
+		"ANALYZE", "DATAFILE", "GOTO", "NOARCHIVELOG",
+		"ARCHIVE", "DBA", "GROUPS", "NOCACHE",
+		"ARCHIVELOG", "DEC", "INCLUDING", "NOCYCLE",
+		"AUTHORIZATION", "DECLARE", "INDICATOR", "NOMAXVALUE",
+		"AVG", "DISABLE", "INITRANS", "NOMINVALUE",
+		"BACKUP", "DISMOUNT", "INSTANCE", "NONE",
+		"BEGIN", "DOUBLE", "INT", "NOORDER",
+		"BECOME", "DUMP", "KEY", "NORESETLOGS",
+		"BEFORE", "EACH", "LANGUAGE", "NORMAL",
+		"BLOCK", "ENABLE", "LAYER", "NOSORT",
+		"BODY", "END", "LINK", "NUMERIC",
+		"CACHE", "ESCAPE", "LISTS", "OFF",
+		"CANCEL", "EVENTS", "LOGFILE", "OLD",
+		"CASCADE", "EXCEPT", "MANAGE", "ONLY",
+		"CHANGE", "EXCEPTIONS", "MANUAL", "OPEN",
+		"CHARACTER", "EXEC", "MAX", "OPTIMAL",
+		"CHECKPOINT", "EXPLAIN", "MAXDATAFILES", "OWN",
+		"CLOSE", "EXECUTE", "MAXINSTANCES", "PACKAGE",
+		"COBOL", "EXTENT", "MAXLOGFILES", "PARALLEL",
+		"COMMIT", "EXTERNALLY", "MAXLOGHISTORY", "PCTINCREASE",
+		"COMPILE", "FETCH", "MAXLOGMEMBERS", "PCTUSED",
+		"CONSTRAINT", "FLUSH", "MAXTRANS", "PLAN",
+		"CONSTRAINTS", "FREELIST", "MAXVALUE", "PLI",
+		"CONTENTS", "FREELISTS", "MIN", "PRECISION",
+		"CONTINUE", "FORCE", "MINEXTENTS", "PRIMARY",
+		"CONTROLFILE", "FOREIGN", "MINVALUE", "PRIVATE",
+		"COUNT", "FORTRAN", "MODULE", "PROCEDURE",
+
+		// Oracle Keywords (continued):
+		"PROFILE", "SAVEPOINT", "SQLSTATE", "TRACING",
+		"QUOTA", "SCHEMA", "STATEMENT_ID", "TRANSACTION",
+		"READ", "SCN", "STATISTICS", "TRIGGERS",
+		"REAL", "SECTION", "STOP", "TRUNCATE",
+		"RECOVER", "SEGMENT", "STORAGE", "UNDER",
+		"REFERENCES", "SEQUENCE", "SUM", "UNLIMITED",
+		"REFERENCING", "SHARED", "SWITCH", "UNTIL",
+		"RESETLOGS", "SNAPSHOT", "SYSTEM", "USE",
+		"RESTRICTED", "SOME", "TABLES", "USING",
+		"REUSE", "SORT", "TABLESPACE", "WHEN",
+		"ROLE", "SQL", "TEMPORARY", "WRITE",
+		"ROLES", "SQLCODE", "THREAD", "WORK",
+		"ROLLBACK", "SQLERROR", "TIME",
+
+		// PL/SQL Reserved Words
+		"ABORT", "BETWEEN", "CRASH", "DIGITS",
+		"ACCEPT", "BINARY_INTEGER", "CREATE", "DISPOSE",
+		"ACCESS", "BODY", "CURRENT", "DISTINCT",
+		"ADD", "BOOLEAN", "CURRVAL", "DO",
+		"ALL", "BY", "CURSOR", "DROP",
+		"ALTER", "CASE", "DATABASE", "ELSE",
+		"AND", "CHAR", "DATA_BASE", "ELSIF",
+		"ANY", "CHAR_BASE", "DATE", "END",
+		"ARRAY", "CHECK", "DBA", "ENTRY",
+		"ARRAYLEN", "CLOSE", "DEBUGOFF", "EXCEPTION",
+		"AS", "CLUSTER", "DEBUGON", "EXCEPTION_INIT",
+		"ASC", "CLUSTERS", "DECLARE", "EXISTS",
+		"ASSERT", "COLUMNS", "DEFAULT", "FALSE",
+		"ASSIGN", "AT", "COMMIT", "DEFINITION", "FETCH",
+		"AUTHORIZATION", "COMPRESS", "DELAY", "FLOAT",
+		"AVG", "CONNECT", "CONSTANT", "DESC", "FROM",
+
+		"FUNCTION", "NEW", "RELEASE", "SUM",
+		"GENERIC", "NEXTVAL", "REMR", "TABAUTH",
+		"GOTO", "NOCOMPRESS", "RENAME", "TABLE",
+		"GRANT", "NOT", "RESOURCE", "TABLES",
+		"GROUP", "NULL", "RETURN", "TASK",
+		"HAVING", "NUMBER", "REVERSE", "TERMINATE",
+		"IDENTIFIED", "NUMBER_BASE", "REVOKE", "THEN",
+		"IF", "OF", "ROLLBACK", "TO",
+		"IN", "ON", "ROWID", "TRUE",
+		"INDEX", "OPEN", "ROWLABEL", "TYPE",
+		"INDEXES", "OPTION", "ROWNUM", "UNION",
+		"INDICATOR", "OR", "ROWTYPE", "UNIQUE",
+		"INSERT", "ORDER", "RUN", "UPDATE",
+		"INTEGER", "OTHERS", "SAVEPOINT", "USE",
+		"INTERSECT", "OUT", "SCHEMA", "VALUES",
+		"INTO", "PACKAGE", "SELECT", "VARCHAR",
+		"IS", "PARTITION", "SEPARATE", "VARCHAR2",
+		"LEVEL", "PCTFREE", "SET", "VARIANCE",
+		"LIKE", "POSITIVE", "SIZE", "VIEW",
+		"LIMITED", "PRAGMA", "SMALLINT", "VIEWS",
+		"LOOP", "PRIOR", "SPACE", "WHEN",
+		"MAX", "PRIVATE", "SQL", "WHERE",
+		"MIN", "PROCEDURE", "SQLCODE", "WHILE",
+		"MINUS", "PUBLIC", "SQLERRM", "WITH",
+		"MLSLABEL", "RAISE", "START", "WORK",
+		"MOD", "RANGE", "STATEMENT", "XOR",
+		"MODE", "REAL", "STDDEV", "NATURAL",
+		"RECORD", "SUBTYPE",
+	}),
+}
+
+func toMap(arr []string) map[string]bool {
+	m := make(map[string]bool)
+	for _, el := range arr {
+		m[strings.ToUpper(el)] = true
+	}
+
+	return m
+}
+
+// RegisterQuoteNames 根据数据库类型 dbType，注册 需要添加双引号的字段名称
+func RegisterQuoteNames(dbType DBType, names []string) {
+	namesMap := quoteNames[dbType]
+	if len(namesMap) == 0 {
+		namesMap = make(map[string]bool)
+	}
+
+	for _, name := range names {
+		namesMap[strings.ToUpper(name)] = true
+	}
+
+	quoteNames[dbType] = namesMap
+}
+
 // Convert converts query to target db type.
 // 1. adjust the SQL variable symbols by different type, such as ?,? $1,$2.
 // 1. quote table name, field names.
@@ -477,7 +692,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 		// https://www.sqlite.org/lang_keywords.html
 		buf.IdQuoter = &MySQLIdQuoter{}
 	case Oracle:
-		buf.IdQuoter = &NoneIdQuoter{}
+		buf.IdQuoter = &KeywordQuoter{DBType: Oracle}
 	default:
 		buf.IdQuoter = &DoubleQuoteIdQuoter{}
 	}
