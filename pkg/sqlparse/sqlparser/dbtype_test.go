@@ -100,20 +100,26 @@ func TestConvertDBType(t *testing.T) {
 	assert.Equal(t, q74, r.ConvertQuery())
 
 	const q75 = `select id, item_code, item_name, group_code, group_name, status, sort, comment, create_time, update_time from sys_dictionary where group_code = 'monitor_kv_warn.metrics_type' order by sort`
-	const q76 = `select id, item_code, item_name, group_code, group_name, status, 'sort', 'comment', create_time, update_time from sys_dictionary where group_code = 'monitor_kv_warn.metrics_type' order by 'sort'`
+	const q76 = `select id, item_code, item_name, group_code, group_name, status, "SORT", "COMMENT", create_time, update_time from sys_dictionary where group_code = 'monitor_kv_warn.metrics_type' order by "SORT"`
 	r, err = Oracle.Convert(q75)
 	assert.Nil(t, err)
 	assert.Equal(t, q76, r.ConvertQuery())
 
-	q77 := "select  id,name, rtx, 'desc', warn_level, create_time, update_time, account, type, initialized from warn_template order by update_time desc limit 10"
-	q78 := `select id, name, rtx, 'desc', warn_level, create_time, update_time, account, 'type', initialized from warn_template order by update_time desc fetch next 10 rows only`
+	q77 := "select  id,name, rtx, `desc`, warn_level, create_time, update_time, account, type, initialized from warn_template order by update_time desc limit 10"
+	q78 := `select id, name, rtx, "DESC", warn_level, create_time, update_time, account, "TYPE", initialized from warn_template order by update_time desc fetch next 10 rows only`
 	r, err = Oracle.Convert(q77)
 	assert.Nil(t, err)
 	assert.Equal(t, q78, r.ConvertQuery())
 
 	q79 := `select hi.server_ip as ip, mhi.name, mhi.version, mhi.status, mhi.timestamp from host_info hi left join (select m1.id, m1.ip, m1.name, m1.version, m1.status, timestamp from meta_heartbeat_info m1 join (select ip, name, max(timestamp) as max_time from meta_heartbeat_info group by ip, name) m2 on m1.ip = m2.ip and m1.name = m2.name and m1.timestamp = m2.max_time) mhi on hi.server_ip = mhi.ip`
-	q80 := `select hi.server_ip as ip, mhi.name, mhi.version, mhi.status, 'mhi.timestamp' from host_info hi left join (select m1.id, m1.ip, m1.name, m1.version, m1.status, 'timestamp' from meta_heartbeat_info m1 join (select ip, name, max('timestamp') as max_time from meta_heartbeat_info group by ip, name) m2 on m1.ip = m2.ip and m1.name = m2.name and 'm1.timestamp' = m2.max_time) mhi on hi.server_ip = mhi.ip`
+	q80 := `select hi.server_ip as ip, mhi.name, mhi.version, mhi.status, mhi."TIMESTAMP" from host_info hi left join (select m1.id, m1.ip, m1.name, m1.version, m1.status, "TIMESTAMP" from meta_heartbeat_info m1 join (select ip, name, max("TIMESTAMP") as max_time from meta_heartbeat_info group by ip, name) m2 on m1.ip = m2.ip and m1.name = m2.name and m1."TIMESTAMP" = m2.max_time) mhi on hi.server_ip = mhi.ip`
 	r, err = Oracle.Convert(q79)
 	assert.Nil(t, err)
 	assert.Equal(t, q80, r.ConvertQuery())
+
+	q81 := `insert into meta_heartbeat_info(id, ip, name, version, status, TIMESTAMP) values ('192.168.127.109:meta-agent:1.0.0', '192.168.127.109', 'meta-agent', '1.0.0', 'started', '1724205143073')`
+	q82 := `insert into meta_heartbeat_info(id, ip, name, version, status, "TIMESTAMP") values ('192.168.127.109:meta-agent:1.0.0', '192.168.127.109', 'meta-agent', '1.0.0', 'started', '1724205143073')`
+	r, err = Oracle.Convert(q81)
+	assert.Nil(t, err)
+	assert.Equal(t, q82, r.ConvertQuery())
 }

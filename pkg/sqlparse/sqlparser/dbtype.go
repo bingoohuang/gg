@@ -171,7 +171,6 @@ func (t DBType) createPagingClause(plFormatter PlaceholderFormatter, p *Paging, 
 
 type IdQuoter interface {
 	Quote(string) string
-	QuoteQualifier(qualifier, val string) string
 }
 
 const (
@@ -196,31 +195,27 @@ func SingleQuote(s string) string {
 
 type KeywordQuoter struct {
 	DBType
-}
-
-func (kq KeywordQuoter) QuoteQualifier(qualifier, s string) string {
-	namesMap := quoteNames[kq.DBType]
-	if len(namesMap) > 0 && namesMap[strings.ToUpper(s)] {
-		return SingleQuote(qualifier + "." + s)
-	}
-
-	return qualifier + "." + s
+	Upper bool
 }
 
 func (kq KeywordQuoter) Quote(s string) string {
 	namesMap := quoteNames[kq.DBType]
 	if len(namesMap) > 0 && namesMap[strings.ToUpper(s)] {
-		return SingleQuote(s)
+		return strconv.Quote(kq.upper(s))
+	}
+
+	return s
+}
+
+func (kq KeywordQuoter) upper(s string) string {
+	if kq.Upper {
+		return strings.ToUpper(s)
 	}
 
 	return s
 }
 
 type MySQLIdQuoter struct{}
-
-func (kq MySQLIdQuoter) QuoteQualifier(qualifier, s string) string {
-	return qualifier + "." + kq.Quote(s)
-}
 
 func (kq MySQLIdQuoter) Quote(s string) string {
 	b := new(bytes.Buffer)
@@ -236,10 +231,6 @@ func (kq MySQLIdQuoter) Quote(s string) string {
 }
 
 type DoubleQuoteIdQuoter struct{}
-
-func (kq DoubleQuoteIdQuoter) QuoteQualifier(qualifier, s string) string {
-	return qualifier + "." + kq.Quote(s)
-}
 
 func (kq DoubleQuoteIdQuoter) Quote(s string) string {
 	return strconv.Quote(s)
@@ -692,7 +683,7 @@ func (t DBType) Convert(query string, options ...ConvertOption) (*ConvertResult,
 		// https://www.sqlite.org/lang_keywords.html
 		buf.IdQuoter = &MySQLIdQuoter{}
 	case Oracle:
-		buf.IdQuoter = &KeywordQuoter{DBType: Oracle}
+		buf.IdQuoter = &KeywordQuoter{DBType: Oracle, Upper: true}
 	default:
 		buf.IdQuoter = &DoubleQuoteIdQuoter{}
 	}

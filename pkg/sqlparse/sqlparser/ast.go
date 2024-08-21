@@ -1795,12 +1795,6 @@ type ColName struct {
 // Format formats the node.
 func (node *ColName) Format(buf *TrackedBuffer) {
 	if !node.Qualifier.IsEmpty() {
-		if buf.IdQuoter != nil {
-			buf.WriteString(buf.IdQuoter.QuoteQualifier(
-				node.Qualifier.Name.String(), node.Name.String()))
-			return
-		}
-
 		buf.Myprintf("%v.", node.Qualifier)
 	}
 	buf.Myprintf("%v", node.Name)
