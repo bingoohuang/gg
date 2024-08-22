@@ -792,7 +792,7 @@ func (p *SQLParsed) makeStructField(col string, outType reflect.Type) selectItem
 func matchesField2Col(structType reflect.Type, field, col string) bool {
 	f, _ := structType.FieldByName(field)
 	if tagName := f.Tag.Get("name"); tagName != "" {
-		return tagName == col
+		return strings.EqualFold(strcase.ToCamel(tagName), strcase.ToCamel(col))
 	}
 
 	return ss.AnyOfFold(field, col, strcase.ToCamel(col))
